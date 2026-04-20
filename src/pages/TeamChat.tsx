@@ -843,12 +843,12 @@ export function TeamChatPage() {
     }
   }, []);
 
+  const groupLastRead = lastReadTimes['group'] ?? getLastRead('group');
+  const groupUnread = useUnreadCount(groupMessages, groupLastRead);
+
   if (!currentUser) return null;
 
   const otherReps = reps.filter((r) => r.active && r.id !== currentUser.id);
-
-  const groupLastRead = lastReadTimes['group'] ?? getLastRead('group');
-  const groupUnread = useUnreadCount(groupMessages, groupLastRead);
 
   const handleSelectChannel = (ch: 'group' | number) => {
     setActiveChannel(ch);

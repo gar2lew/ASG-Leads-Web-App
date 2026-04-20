@@ -63,6 +63,7 @@ export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const setStoreLeads = useAppStore((s) => s.setLeads);
 
   useEffect(() => {
     const q = collection(db, 'leads');
@@ -74,6 +75,7 @@ export function useLeads() {
           ...d.data(),
         })) as Lead[];
         setLeads(leadsData);
+        setStoreLeads(leadsData);
         setLoading(false);
       },
       (err) => {
@@ -83,7 +85,7 @@ export function useLeads() {
       }
     );
     return () => unsubscribe();
-  }, []);
+  }, [setStoreLeads]);
 
   return { leads, loading, error };
 }
@@ -423,6 +425,7 @@ export function useAppSettings(): { settings: AppSettings | null; loading: boole
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const setStatusColors = useAppStore((s) => s.setStatusColors);
+  const updateSettings = useAppStore((s) => s.updateSettings);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -431,6 +434,7 @@ export function useAppSettings(): { settings: AppSettings | null; loading: boole
         if (snapshot.exists()) {
           const data = snapshot.data() as AppSettings;
           setSettings(data);
+          updateSettings(data);
           // Sync status colours into global store (merge with defaults so any missing key still shows)
           if (data.statusColors) {
             setStatusColors({ ...DEFAULT_STATUS_COLORS, ...data.statusColors });
@@ -443,8 +447,7 @@ export function useAppSettings(): { settings: AppSettings | null; loading: boole
       (err) => { console.error('Settings listener error:', err); setLoading(false); }
     );
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setStatusColors, updateSettings]);
 
   return { settings, loading };
 }

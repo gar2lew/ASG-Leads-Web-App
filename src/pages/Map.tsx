@@ -29,7 +29,7 @@ import { MapPin, X, Navigation, Crosshair, Layers, Trash2, PenLine, Undo2, Plus,
 import { LeadSidebar } from '../components/LeadSidebar';
 import CallLogger from '../components/CallLogger';
 
-const MAPS_API_KEY = 'AIzaSyCoxDjRMuDT6NO661xzrgYvvnjo7P6isS8';
+const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? import.meta.env.VITE_GOOGLE_PLACES_API_KEY ?? '';
 const LIBRARIES: ('places' | 'geometry' | 'geocoding' | 'visualization')[] = ['visualization'];
 
 // Fallback centre when geolocation is unavailable and no cached position

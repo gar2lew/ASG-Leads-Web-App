@@ -80,7 +80,7 @@ import {
 
 // ── Google Sheets Quick Pull constants ───────────────────────────────────────
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
-const GOOGLE_API_KEY = "AIzaSyCoxDjRMuDT6NO661xzrgYvvnjo7P6isS8";
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY ?? import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 // ── Dark mode (class-based, persisted) ───────────────────────────────────────
 function useDarkMode(): [boolean, () => void] {
@@ -956,6 +956,11 @@ function AppShell() {
     setQuickPulling(true);
     try {
       const tab = encodeURIComponent(`${sheetsConfig.tab}!A:Z`);
+      if (!cachedToken && !GOOGLE_API_KEY) {
+        showToast("Google Sheets API key is not configured", "error");
+        return;
+      }
+
       const url = cachedToken
         ? `${SHEETS_API}/${sheetId}/values/${tab}`
         : `${SHEETS_API}/${sheetId}/values/${tab}?key=${GOOGLE_API_KEY}`;

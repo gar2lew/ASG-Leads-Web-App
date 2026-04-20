@@ -121,7 +121,10 @@ export function LeadSidebar({ lead, onClose, onSave, onDelete, onCall, customPin
         .map((d) => d.data().name as string);
       setOtherViewers(others);
     });
-    return () => { unsub(); deleteDoc(presenceRef); };
+    return () => {
+      unsub();
+      void deleteDoc(presenceRef).catch((err) => console.warn('Presence cleanup failed:', err));
+    };
   }, [lead.id, currentUser]);
 
   // Auto-save debounce — after 1.5s of no changes, save silently
@@ -252,23 +255,23 @@ export function LeadSidebar({ lead, onClose, onSave, onDelete, onCall, customPin
   return (
     <>
       {/* Backdrop — only in modal mode */}
-      {!isPanel && <div className="fixed inset-0 bg-black/50 z-40" onClick={handleClose} />}
+      {!isPanel && <div className="fixed inset-0 bg-black/45 z-40" onClick={handleClose} />}
 
       {/* Card wrapper */}
       <div className={isPanel
-        ? "flex flex-col h-full w-full bg-white dark:bg-slate-900"
+        ? "flex flex-col h-full w-full bg-[var(--surface)] text-[var(--text)]"
         : "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       }>
         <div className={isPanel
           ? "flex flex-col h-full w-full"
-          : "bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[94vh] flex flex-col"
+          : "bg-[var(--surface)] text-[var(--text)] rounded-2xl shadow-2xl w-[90vw] max-w-5xl max-h-[90vh] flex flex-col overflow-hidden"
         }>
 
           {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div className="flex items-start justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+          <div className="flex items-start justify-between px-5 py-4 border-b border-[var(--border)] flex-shrink-0">
             <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">{lead.name}</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <h2 className="text-lg font-bold text-[var(--text)] leading-tight truncate">{lead.name}</h2>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5 flex items-center gap-1.5 flex-wrap">
                 {dqRepName} · {lead.status}
                 {lead.dnqFellOver && (
                   <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400">
@@ -307,7 +310,8 @@ export function LeadSidebar({ lead, onClose, onSave, onDelete, onCall, customPin
               </button>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition text-gray-500"
+                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition text-[var(--text-muted)]"
+                aria-label="Close lead details"
               >
                 <X size={18} />
               </button>
@@ -905,15 +909,15 @@ function timeAgoMs(ms: number): string {
 }
 
 const inputCls =
-  'w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400';
+  'w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] text-sm focus:outline-none focus:ring-2 focus:ring-amber-400';
 
 const readOnlyCls =
-  'w-full px-3 py-2 rounded-lg border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-gray-700 dark:text-gray-300 text-sm';
+  'w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text-muted)] text-sm';
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">{label}</label>
       {children}
     </div>
   );

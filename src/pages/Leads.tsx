@@ -191,9 +191,8 @@ export function LeadsPage({ addLeadOpen = false, onAddLeadOpenChange, pendingCal
         </div>
       )}
 
-      {/* Body: table + optional inline sidebar on lg+ */}
+      {/* Body: table */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Table — fills space; sidebar sits beside it on lg+ */}
         <div className="flex-1 overflow-hidden min-w-0 transition-all duration-200">
           <DataTable
             leads={leads}
@@ -206,33 +205,17 @@ export function LeadsPage({ addLeadOpen = false, onAddLeadOpenChange, pendingCal
             isAdmin={currentUser?.role === 'admin'}
           />
         </div>
-
-        {/* Inline sidebar panel — desktop only (lg+) */}
-        {showSidebar && selectedLead && (
-          <div className="hidden lg:flex w-[480px] flex-shrink-0 border-l border-gray-200 dark:border-slate-700 overflow-hidden">
-            <LeadSidebar
-              lead={selectedLead}
-              onClose={handleCloseSidebar}
-              onSave={handleSaveLead}
-              onDelete={handleDeleteLead}
-              onCall={handleAddCall}
-              mode="panel"
-            />
-          </div>
-        )}
       </div>
 
-      {/* Mobile overlay sidebar (< lg) */}
+      {/* Lead details modal */}
       {showSidebar && selectedLead && (
-        <div className="lg:hidden">
-          <LeadSidebar
-            lead={selectedLead}
-            onClose={handleCloseSidebar}
-            onSave={handleSaveLead}
-            onDelete={handleDeleteLead}
-            onCall={handleAddCall}
-          />
-        </div>
+        <LeadSidebar
+          lead={selectedLead}
+          onClose={handleCloseSidebar}
+          onSave={handleSaveLead}
+          onDelete={handleDeleteLead}
+          onCall={handleAddCall}
+        />
       )}
 
       {/* Call Logger Modal */}

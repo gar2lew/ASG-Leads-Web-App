@@ -24,7 +24,7 @@ import {
 const CLIENT_ID = '685269806752-qip9oh4413gd0r4p4emkis3dpb5lanjh.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
-const GOOGLE_API_KEY = 'AIzaSyCoxDjRMuDT6NO661xzrgYvvnjo7P6isS8';
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY ?? import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 // ── Lead field definitions (what can be mapped from/to a sheet column) ────────
 // NOTE: 'address' is a virtual field — on Push it combines houseNum+street+suburb+postcode
@@ -757,6 +757,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
             const addressStr = [lead.houseNum, lead.street, lead.suburb, lead.postcode, 'WA', 'Australia']
               .filter(Boolean)
               .join(' ');
+            if (!GOOGLE_API_KEY) continue;
             const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(addressStr)}&key=${GOOGLE_API_KEY}`;
             const res = await fetch(url, { referrerPolicy: 'strict-origin-when-cross-origin' });
             const data = await res.json();
@@ -787,6 +788,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     setAnalysis(null);
     setSyncResult(null);
     try {
+      if (!GOOGLE_API_KEY) { showToast('Google Sheets API key is not configured', 'error'); return; }
       const range = encodeURIComponent(`${tabName}!A:Z`);
       // Uses API key — no OAuth required for read access on a viewable sheet
       const res = await fetch(`${SHEETS_API}/${sheetId}/values/${range}?key=${GOOGLE_API_KEY}`, { referrerPolicy: "strict-origin-when-cross-origin" });

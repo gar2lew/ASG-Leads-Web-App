@@ -92,8 +92,10 @@ export function AddLeadModal({ onClose, onSave }: AddLeadModalProps) {
     } else {
       const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
       if (!existingScript) {
+        const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY ?? import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) return;
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCoxDjRMuDT6NO661xzrgYvvnjo7P6isS8&libraries=places`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.onload = initAutocomplete;
         document.head.appendChild(script);
