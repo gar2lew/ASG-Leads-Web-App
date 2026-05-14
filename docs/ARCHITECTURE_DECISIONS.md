@@ -9,6 +9,8 @@ This document captures the major architectural and operational decisions behind 
 - **Incremental hardening over destabilizing rewrites.** The CRM is production-operational; security and architecture improvements must preserve daily work.
 - **Governed deployment over ad-hoc release.** Releases need environment intent, target checks, metadata, dry runs, and rollback context.
 - **Operator cognition over visual novelty.** UI changes should reduce hesitation and context loss, not introduce new visual systems.
+- **Workflow confidence over cosmetic responsiveness.** Fast-feeling UI is not enough; operators need visible persistence, recoverable destructive actions, and urgency signals that lead to work.
+- **Silent failure is operationally unsafe.** If a save, queue transition, or destructive recovery path cannot complete, the operator should see a clear state and retain recovery context.
 - **One coherent platform over fragmented regional UX.** Brisbane and Perth need clear identity without separate applications, layouts, or themes.
 - **Compatibility bridges are temporary architecture, not permanent philosophy.** Anonymous auth and rep-profile fallbacks exist to keep production running during migration.
 
@@ -236,11 +238,75 @@ This document captures the major architectural and operational decisions behind 
 
 **Long-Term Direction:** Keep focused architecture guards and add authenticated Playwright flows for core operational journeys.
 
+## 15. Operational Trust Semantics
+
+**Problem Context:** Workflow surfaces could be technically functional while still causing operator doubt: dirty sidebar edits could be lost during navigation, auto-save could skip invalid records without enough feedback, and failed persistence did not always preserve the operator's working context.
+
+**Alternatives Considered:** Keep relying on toast-only feedback; block all navigation behind modal confirmations; make save state a first-class workflow signal.
+
+**Decision Made:** Treat dirty state, save progress, save failure, and successful persistence as explicit operational states that must be visible at the point of work.
+
+**Why This Approach Won:** Operators need confidence while moving quickly. Inline save state reduces hesitation without creating modal friction, and failed saves preserve context for recovery.
+
+**Tradeoffs Accepted:** More UI surfaces must honor the save success/failure contract. Client-side trust semantics are still not a substitute for server authority.
+
+**Risks Remaining:** Some older workflows may still use local save patterns until touched. Authenticated browser tests are needed to prevent regressions across sidebar entry points.
+
+**Long-Term Direction:** Make persistence state and recovery context standard for all high-frequency operational forms.
+
+## 16. Non-Blocking Save Philosophy
+
+**Problem Context:** Blocking overlays during auto-save protected against double actions, but they interrupted operators during routine background persistence and made the app feel less predictable.
+
+**Alternatives Considered:** Keep full-screen blocking overlays; remove save feedback entirely; use non-blocking inline/background indicators with explicit failure handling.
+
+**Decision Made:** Prefer non-blocking save indicators for auto-save and reserve blocking UI for genuinely destructive or irreversible actions.
+
+**Why This Approach Won:** Auto-save should increase confidence, not stop work. The critical requirement is not visual dominance; it is truthful state, actionable failure feedback, and preservation of dirty context.
+
+**Tradeoffs Accepted:** Operators can continue interacting while persistence is pending, so save handlers must be careful about dirty-state transitions and failed-save recovery.
+
+**Risks Remaining:** Complex concurrent edits remain client-side and may need deeper conflict handling in future.
+
+**Long-Term Direction:** Standardize subtle save-state indicators and make failed persistence recoverable before considering heavier synchronization controls.
+
+## 17. Queue Truth Integrity and Actionable Urgency Signals
+
+**Problem Context:** Badges and counts influence operator priorities. If urgency indicators do not resolve into actionable queues, they become anxiety signals rather than workflow tools.
+
+**Alternatives Considered:** Leave badges as passive counters; make badges link to broad pages; route urgency directly into filtered actionable queues with clearer count scope.
+
+**Decision Made:** Urgency signals should navigate to the work they represent, and counts should either reflect the active filter/search context or clearly identify themselves as in-view metrics.
+
+**Why This Approach Won:** Operators trust the platform when signals close the loop: see urgency, click urgency, land on the relevant work. Ambiguous counts and dead-end badges erode confidence even when the underlying data is correct.
+
+**Tradeoffs Accepted:** Some counts are scoped to the current view rather than global authority, so labels and routing must stay honest.
+
+**Risks Remaining:** New dashboards or badges can regress into passive metrics if they bypass shared workflow semantics.
+
+**Long-Term Direction:** Treat every urgency indicator as an entry point into an actionable queue, backed by shared workflow-state definitions.
+
+## 18. Consistent Destructive-Action Recovery
+
+**Problem Context:** Single delete and bulk delete recovery behaved differently. Bulk operations carried higher operational risk but weaker recovery semantics.
+
+**Alternatives Considered:** Require heavy confirmations for every destructive action; keep single-item undo only; capture rollback snapshots for destructive/bulk actions where practical.
+
+**Decision Made:** Destructive actions should follow a consistent undo/recovery model, with bulk delete and practical bulk updates preserving enough state for meaningful rollback.
+
+**Why This Approach Won:** Operators work faster when recovery is predictable. Consistent undo reduces hesitation without adding confirmation fatigue.
+
+**Tradeoffs Accepted:** Undo windows are still time-bound and client-driven. Snapshot recovery adds local state complexity to bulk workflows.
+
+**Risks Remaining:** Recovery is not yet a universal server-side transaction log. Browser loss during an undo window can still limit recovery.
+
+**Long-Term Direction:** Keep client undo for fast operational recovery, and consider server-side recovery/audit trails for higher-risk bulk administration later.
+
 ## Current Architectural State
 
 ASG Leads is a React/Vite/Firebase operational CRM with a client-heavy realtime architecture, Zustand state, Firestore listeners, Firebase Hosting, Cloud Functions for selected privileged flows, custom rep/PIN operational identity, and a migration path toward Firebase UID/custom claims.
 
-Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior.
+Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior. The platform also treats operator trust semantics, including visible save state, failed-save recovery, actionable urgency routing, and destructive-action undo, as part of workflow architecture rather than surface polish.
 
 ## Transitional Systems Still In Progress
 
@@ -252,6 +318,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Local-script release governance before full CI/CD.
 - Build-time release metadata before server-trusted deployment attestation.
 - Partial diagnostics coverage across listeners and non-fatal workflows.
+- Client-side save/undo trust semantics before broader server-side recovery guarantees.
 
 ## Known Long-Term Risks
 
@@ -261,6 +328,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Region identity can fragment if future work introduces separate layouts/themes.
 - Mixed authority can confuse developers unless collection ownership is documented.
 - Lack of authenticated e2e tests leaves some production-only auth/data flows under-verified.
+- Silent or inconsistent save/undo behavior can reappear if new surfaces bypass established trust semantics.
 
 ## Recommended Future Architectural Direction
 
@@ -272,12 +340,14 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 6. Continue consolidating workflow semantics into `workflowState`.
 7. Add an operator-safe diagnostics surface for release metadata, auth state, listener health, and degraded queue behavior.
 8. Review document/template/training writes with Storage rules before server-authority migration.
+9. Add authenticated e2e coverage for dirty-sidebar close, failed auto-save, bulk undo, filtered tab counts, badge-to-queue routing, and touch export.
 
 ## Remaining Documentation Gaps
 
 - Auth migration runbook for UID linking, claims assignment, rollback, and support procedures.
 - Firestore rules intent map by collection.
 - Workflow semantics reference for queues, badges, notifications, Inbox, Dashboard, and next action.
+- Operational trust semantics reference for save state, dirty navigation, failed persistence, undo windows, and bulk rollback expectations.
 - Release and rollback runbook for operators.
 - Regional operations guide for Brisbane/Perth ownership and allowed-region policy.
 - Callable migration ledger showing completed, transitional, and future server-authoritative domains.

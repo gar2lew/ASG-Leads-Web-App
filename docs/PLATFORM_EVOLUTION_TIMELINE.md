@@ -282,9 +282,31 @@ This document records the operational evolution of the ASG Leads platform. It is
 
 **Long-term significance:** Regional separation became part of operator cognition, not just query filtering.
 
+## 15. Operational Trust and Queue Integrity Hardening
+
+**Approximate sequence:** After workflow semantics, queue truth, and regional workspace identity were established.
+
+**Operational problem before:** Several high-frequency workflows were technically functional but not fully trustworthy under interruption, failed persistence, touch use, or rapid queue navigation. Operators could make edits, change tasks, delete records, or respond to urgency signals without always receiving clear confirmation that the system had preserved their intent.
+
+**Symptoms observed:** Dirty sidebar edits could be lost when navigating away. Auto-save could silently skip when required lead identity fields were empty. Save progress used blocking feedback in places where operators expected background persistence. Callback/follow-up badges signaled urgency but did not always resolve directly into the actionable work queue. Bulk delete recovery was inconsistent with single-delete undo behavior. Tab counts could imply global truth while reflecting a filtered or loaded view. Touch/mobile export flows and notification warnings created avoidable hesitation.
+
+**Root cause:** Earlier hardening had made workflow state more correct, but trust semantics were still distributed across UI surfaces. Save state, dirty state, destructive recovery, urgency routing, and filtered-count meaning were treated as local component behavior rather than operational confidence contracts.
+
+**Changes implemented:** Sidebar persistence gained explicit dirty, saving, saved, and failed states. Closing a dirty sidebar now attempts persistence first and preserves operator context on validation or save failure. Empty-name auto-save paths became visible errors rather than silent skips. Auto-save feedback moved from blocking overlays toward inline/non-blocking indicators. Bulk delete now captures recovery state for multiple leads. Bulk update flows gained rollback snapshots where practical. Callback and follow-up urgency badges route into actionable filtered queues. Lead tab counts now respect active search/filter scope and label visible counts as in-view. Export menus received touch-friendly click targets, and unsupported mobile notification states were suppressed.
+
+**Workflow trust improvements:** Operators now receive immediate evidence of whether changes are draft, saving, saved, or failed. Failed saves keep the work surface open, preserving recovery context. Destructive actions follow a more consistent undo model, reducing the mental cost of bulk operations.
+
+**Queue-semantic improvements:** Urgency indicators now behave as navigation into work rather than passive decoration. Counts are less likely to imply more authority than they have, and actionable callback/follow-up routing better aligns shell badges, Leads filters, and queue semantics.
+
+**Remaining risks/tradeoffs:** Save trust is still implemented client-side and depends on each save surface honoring the success/failure contract. Full authenticated browser coverage remains incomplete. Some filter preset and tab-reset behaviors may still need refinement, but were intentionally kept out of this phase to avoid broad UX churn.
+
+**Validation performed:** `npm run build`, `npm run test:auth-boundaries`, `npm run test:observability`, `npm run test:workflow-state`, `git diff --check`, source-path review of save/undo flows, and mobile/touch interaction review for export semantics.
+
+**Long-term significance:** This phase marked a shift from technically functional workflows to cognitively trustworthy workflows. Operator confidence, recovery clarity, and queue/action alignment became platform maturity concerns, not polish.
+
 ## Current Platform State
 
-The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, and visible regional workspace identity.
+The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, visible regional workspace identity, and explicit operator trust semantics around saving, urgency, counts, and destructive recovery.
 
 The architecture remains intentionally incremental: realtime lead and operational workflows are still mostly client/Firebase-driven, while privileged configuration and audit surfaces are moving behind callable authority.
 
@@ -298,6 +320,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - **Governed release path:** build metadata, dry-run deploys, production target checks, rollback tagging.
 - **Operational diagnostics:** user-safe error classification and structured callable/listener logging foundations.
 - **Regional workspace awareness:** Brisbane/Perth identity surfaced as persistent context.
+- **Operational trust semantics:** dirty-state preservation, inline save feedback, actionable urgency routing, and consistent undo recovery.
 
 ## Current Operational Priorities
 
@@ -306,6 +329,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Expand shared workflow-state usage as more surfaces are touched.
 - Keep Dashboard and Inbox truthful without broad Firestore load amplification.
 - Improve operator confidence through visible context, clear errors, and deterministic task lifecycle behavior.
+- Treat save visibility, undo consistency, and actionable queue routing as part of workflow correctness.
 
 ## Remaining Long-Term Risks
 
@@ -315,6 +339,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Anonymous auth and rep-profile fallback remain migration dependencies.
 - Full authenticated e2e coverage is still missing.
 - Some non-fatal operational errors are still local catches or console-only logs.
+- Save/undo trust behavior is improved but still needs browser-level authenticated regression coverage.
 
 ## Recommended Future Evolution Path
 
@@ -325,11 +350,13 @@ The architecture remains intentionally incremental: realtime lead and operationa
 5. Continue migrating duplicated workflow decisions to `workflowState`.
 6. Add an operator-safe diagnostics surface for listener health, release metadata, auth state, and degraded behavior.
 7. Review document/template/training writes with Storage rules before moving them behind server authority.
+8. Add authenticated e2e coverage for dirty-sidebar navigation, failed save recovery, bulk undo, badge-to-queue routing, and mobile export.
 
 ## Documentation Gaps To Close
 
 - A live auth migration runbook covering UID linking, claim setting, rollback, and support procedures.
 - A Firestore rules intent map by collection, including which paths are client-authoritative, callable-authoritative, and migration candidates.
 - A queue semantics reference for Dashboard, Inbox, notifications, badges, and next-action behavior.
+- A save/undo trust reference covering dirty state, failed persistence, recovery windows, and bulk action rollback expectations.
 - A release/runbook page for production deploy, rollback, dry run, and Firebase console checks.
 - A regional operations guide for Brisbane/Perth data ownership, allowed-region policy, and backfill expectations.
