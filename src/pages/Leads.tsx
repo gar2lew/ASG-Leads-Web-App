@@ -13,7 +13,7 @@ import { AddLeadModal } from "../components/AddLeadModal";
 import { reportWriteResult } from "../hooks/useNetworkStatus";
 import { Loader } from "lucide-react";
 import { getNextAction } from "../lib/nextAction";
-import { getWorkflowState, isTerminalLeadStatus } from "../lib/workflowState";
+import { filterOperationalLeads } from "../lib/workflowState";
 import { injectRowFlashStyles } from "../lib/animation";
 
 interface LeadsPageProps {
@@ -105,50 +105,7 @@ export function LeadsPage({
 
   // Apply filter from Dashboard navigation
   const filteredLeads = useMemo(() => {
-    if (!initialFilter) return leads;
-    if (initialFilter === "no-contact") {
-      return leads.filter((l) => !isTerminalLeadStatus(l.status) && (!l.callHistory || l.callHistory.length === 0));
-    }
-    if (initialFilter === "clients-no-fc") {
-      return leads.filter((l) => (l.status === "Booked" || l.status === "booked") && !l.fcAppt?.date);
-    }
-    if (initialFilter === "overdue-callbacks") {
-      return leads
-        .filter((l) => {
-          const state = getWorkflowState(l);
-          return state.queueType === "callback" && state.isOverdue;
-        })
-        .sort((a, b) => (a.callbackDate ?? "").localeCompare(b.callbackDate ?? ""));
-    }
-    if (initialFilter === "overdue-followups") {
-      return leads
-        .filter((l) => {
-          const state = getWorkflowState(l);
-          return state.queueType === "followup" && state.isOverdue && l.nextContactDate;
-        })
-        .sort((a, b) => (a.nextContactDate ?? "").localeCompare(b.nextContactDate ?? ""));
-    }
-    if (initialFilter === "callbacks") {
-      return leads
-        .filter((l) => getWorkflowState(l).queueType === "callback")
-        .sort((a, b) => (a.callbackDate ?? "").localeCompare(b.callbackDate ?? ""));
-    }
-    if (initialFilter === "followups") {
-      return leads
-        .filter((l) => getWorkflowState(l).queueType === "followup")
-        .sort((a, b) => (a.nextContactDate ?? "").localeCompare(b.nextContactDate ?? ""));
-    }
-    if (initialFilter === "actionable-queue") {
-      return leads
-        .filter((l) => getWorkflowState(l).isActionable)
-        .sort((a, b) => {
-          const aState = getWorkflowState(a);
-          const bState = getWorkflowState(b);
-          const priority = { high: 0, medium: 1, low: 2 };
-          return priority[aState.priority] - priority[bState.priority];
-        });
-    }
-    return leads;
+    return filterOperationalLeads(leads, initialFilter);
   }, [leads, initialFilter]);
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);

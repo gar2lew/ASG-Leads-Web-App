@@ -304,9 +304,33 @@ This document records the operational evolution of the ASG Leads platform. It is
 
 **Long-term significance:** This phase marked a shift from technically functional workflows to cognitively trustworthy workflows. Operator confidence, recovery clarity, and queue/action alignment became platform maturity concerns, not polish.
 
+## 16. Operational Semantics Consolidation
+
+**Approximate sequence:** Phase 1 P0 workflow trust fixes, after operational trust hardening exposed live callback, Inbox, autosave, and sync truth issues.
+
+**Operational problem before:** Some workflows still had mismatches between what the UI implied and what the system actually did. Callback scheduling could remain blocked by stale validation state. Inbox Done actions carried wrong-record mutation risk if list state shifted. Sidebar edits showed explicit save/discard semantics while autosave was already active underneath. Delete confirmation could remain armed during unrelated edits. Sync labels could age without refreshing.
+
+**Symptoms observed:** Operators could lose trust in basic action ownership: "Call Back" could not complete after valid input, Done could appear to mutate an adjacent lead, Discard implied a rollback that was no longer semantically true, destructive confirmation stayed live too long, and "Synced Xh ago" did not reflect current save lifecycle.
+
+**Root cause:** Workflow truth, save semantics, and action targeting were not yet treated as one doctrine. Some surfaces still mixed explicit-save language with autosave behavior, used queue/list position too heavily, or allowed validation/destructive state to outlive the interaction that made it relevant.
+
+**Changes implemented:** Callback validation now clears as fields become valid, callback records persist with callback queue-aligned status, and callback dates use shared Perth date semantics. Inbox Done resolves by stable lead identity from the latest queue snapshot and blocks duplicate in-flight Done actions per lead. Sidebar save/discard semantics were consolidated around truthful autosave: dirty, saving, saved, error, Save now, and Retry save. Fake discard for already-autosaving fields was removed. Delete confirmation resets on unrelated edit interactions. Sync lifecycle signals now update from real lead/settings write outcomes and refresh visible elapsed time.
+
+**Workflow truth improvements:** Operators now receive UI states that match actual persistence behavior. Validation state no longer blocks valid callback saves. Done actions are owned by the lead id being completed, not by current row position. Autosave copy and controls describe what the system is truly doing.
+
+**Queue semantic alignment:** Callback actions now persist into the callback queue model instead of becoming generic contacted records. Inbox completion clears callback/follow-up scheduling through shared workflow completion semantics while preserving deterministic target identity.
+
+**Save semantics doctrine:** High-frequency lead editing uses truthful autosave semantics. Explicit Save remains as a flush/retry action, not as the only persistence mechanism. Discard is not shown where changes may already have been saved.
+
+**Remaining risks/tradeoffs:** The doctrine is now documented and partially enforced in core surfaces, but older forms may still contain local save models. Future work must decide explicitly whether each form is true autosave or explicit save, not a hybrid.
+
+**Validation performed:** `npm run build`, `npx tsc --noEmit`, `npm run test:workflow-state`, `npm run test:auth-boundaries`, `npm run test:region-identity`, `npm run test:observability`, `npm run test:release-metadata`, and `git diff --check`.
+
+**Long-term significance:** This phase made operational semantics architectural history. Workflow truth, deterministic action targeting, truthful autosave, and queue semantic alignment are now platform doctrine, not local UI preferences.
+
 ## Current Platform State
 
-The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, visible regional workspace identity, and explicit operator trust semantics around saving, urgency, counts, and destructive recovery.
+The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, visible regional workspace identity, and explicit operator trust semantics around saving, urgency, counts, destructive recovery, autosave truth, and deterministic workflow action ownership.
 
 The architecture remains intentionally incremental: realtime lead and operational workflows are still mostly client/Firebase-driven, while privileged configuration and audit surfaces are moving behind callable authority.
 
@@ -321,6 +345,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - **Operational diagnostics:** user-safe error classification and structured callable/listener logging foundations.
 - **Regional workspace awareness:** Brisbane/Perth identity surfaced as persistent context.
 - **Operational trust semantics:** dirty-state preservation, inline save feedback, actionable urgency routing, and consistent undo recovery.
+- **Operational semantics consolidation:** workflow truth, deterministic action targeting, truthful autosave doctrine, and queue-aligned state transitions.
 
 ## Current Operational Priorities
 
@@ -330,6 +355,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Keep Dashboard and Inbox truthful without broad Firestore load amplification.
 - Improve operator confidence through visible context, clear errors, and deterministic task lifecycle behavior.
 - Treat save visibility, undo consistency, and actionable queue routing as part of workflow correctness.
+- Treat autosave semantics, action ownership, and queue-state alignment as architectural contracts.
 
 ## Remaining Long-Term Risks
 
@@ -340,6 +366,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Full authenticated e2e coverage is still missing.
 - Some non-fatal operational errors are still local catches or console-only logs.
 - Save/undo trust behavior is improved but still needs browser-level authenticated regression coverage.
+- Some older forms may still need explicit classification as true autosave or explicit save.
 
 ## Recommended Future Evolution Path
 
@@ -351,6 +378,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 6. Add an operator-safe diagnostics surface for listener health, release metadata, auth state, and degraded behavior.
 7. Review document/template/training writes with Storage rules before moving them behind server authority.
 8. Add authenticated e2e coverage for dirty-sidebar navigation, failed save recovery, bulk undo, badge-to-queue routing, and mobile export.
+9. Audit remaining form surfaces for save semantics doctrine: true autosave or explicit save, with no hybrid messaging.
 
 ## Documentation Gaps To Close
 
@@ -358,5 +386,6 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - A Firestore rules intent map by collection, including which paths are client-authoritative, callable-authoritative, and migration candidates.
 - A queue semantics reference for Dashboard, Inbox, notifications, badges, and next-action behavior.
 - A save/undo trust reference covering dirty state, failed persistence, recovery windows, and bulk action rollback expectations.
+- An operational semantics doctrine covering workflow truth, autosave truth, deterministic action targeting, and queue semantic alignment.
 - A release/runbook page for production deploy, rollback, dry run, and Firebase console checks.
 - A regional operations guide for Brisbane/Perth data ownership, allowed-region policy, and backfill expectations.

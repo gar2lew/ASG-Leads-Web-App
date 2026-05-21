@@ -1,6 +1,15 @@
-import type { Lead } from "../types";
+import type { Lead, LeadStatus } from "../types";
 
 export type WorkflowQueueType = "call" | "callback" | "followup" | "booked" | "terminal" | "none";
+export type OperationalLeadBucket = "new" | "contacted" | "qualified" | "booked" | "lost";
+export type OperationalLeadFilter =
+  | "no-contact"
+  | "clients-no-fc"
+  | "overdue-callbacks"
+  | "overdue-followups"
+  | "callbacks"
+  | "followups"
+  | "actionable-queue";
 
 export interface WorkflowState {
   queueType: WorkflowQueueType;
@@ -15,6 +24,31 @@ export interface WorkflowState {
 
 export interface WorkflowOptions {
   now?: number | Date;
+}
+
+export interface WorkflowItem {
+  lead: Lead;
+  state: WorkflowState;
+}
+
+export interface OperationalCounters {
+  total: number;
+  active: number;
+  dq: number;
+  new: number;
+  contacted: number;
+  qualified: number;
+  booked: number;
+  lost: number;
+  revisit: number;
+  callbacks: number;
+  overdueCallbacks: number;
+  followups: number;
+  overdueFollowups: number;
+  dueFollowupsToday: number;
+  actionable: number;
+  callNow: number;
+  terminal: number;
 }
 
 const PERTH_TIME_ZONE = "Australia/Perth";
@@ -44,8 +78,25 @@ export function isTerminalLeadStatus(status?: string | null): boolean {
   return ["_deleted", "lost", "Not Interested", "Wrong Number"].includes(status ?? "");
 }
 
+export function isDqLeadStatus(status?: string | null): boolean {
+  return status === "DQ" || status === "new";
+}
+
 export function isBookedLeadStatus(status?: string | null): boolean {
   return status === "booked" || status === "Booked";
+}
+
+export function getOperationalLeadBucket(lead: Lead): OperationalLeadBucket {
+  if (isTerminalLeadStatus(lead.status) || lead.dnqFellOver) return "lost";
+  if (isBookedLeadStatus(lead.status)) return "booked";
+  if (lead.status === "Live" || lead.status === "qualified") return "qualified";
+  if (lead.status === "contacted" || lead.status === "Revisit" || lead.status === "No Answer") return "contacted";
+  return "new";
+}
+
+export function isOperationallyActiveLead(lead: Lead): boolean {
+  const state = getWorkflowState(lead);
+  return state.queueType !== "terminal";
 }
 
 export function hasContactHistory(lead: Lead): boolean {
@@ -143,8 +194,8 @@ export function getWorkflowState(lead: Lead, options: WorkflowOptions = {}): Wor
     return {
       queueType: "call",
       priority: "high",
-      label: "Call now",
-      reason: "No contact made yet",
+      label: isDqLeadStatus(lead.status) ? "DQ call now" : "Call now",
+      reason: isDqLeadStatus(lead.status) ? "DQ lead has no contact made yet" : "No contact made yet",
       isActionable: true,
       isOverdue: false,
     };
@@ -178,6 +229,14 @@ export function isWorkflowQueueLead(lead: Lead, options: WorkflowOptions = {}): 
   return getWorkflowState(lead, options).isActionable;
 }
 
+export function buildWorkflowItems(leads: Lead[], options: WorkflowOptions = {}): WorkflowItem[] {
+  return leads.map((lead) => ({ lead, state: getWorkflowState(lead, options) }));
+}
+
+export function getActionableWorkflowItems(leads: Lead[], options: WorkflowOptions = {}): WorkflowItem[] {
+  return sortWorkflowQueue(buildWorkflowItems(leads, options).filter((item) => item.state.isActionable));
+}
+
 export function sortWorkflowQueue<T extends { lead: Lead; state: WorkflowState }>(items: T[]): T[] {
   const priority = { high: 0, medium: 1, low: 2 };
   const queue = { callback: 0, followup: 1, call: 2, booked: 3, terminal: 4, none: 5 };
@@ -188,6 +247,112 @@ export function sortWorkflowQueue<T extends { lead: Lead; state: WorkflowState }
     if (due !== 0) return due;
     return (queue[a.state.queueType] ?? 9) - (queue[b.state.queueType] ?? 9);
   });
+}
+
+export function filterOperationalLeads(
+  leads: Lead[],
+  filter: OperationalLeadFilter | string | null | undefined,
+  options: WorkflowOptions = {},
+): Lead[] {
+  if (!filter) return leads;
+  const items = buildWorkflowItems(leads, options);
+
+  switch (filter) {
+    case "no-contact":
+      return items
+        .filter(({ state }) => state.queueType === "call")
+        .map(({ lead }) => lead);
+    case "clients-no-fc":
+      return leads.filter((lead) => isBookedLeadStatus(lead.status) && !lead.fcAppt?.date);
+    case "overdue-callbacks":
+      return sortWorkflowQueue(items.filter(({ state }) => state.queueType === "callback" && state.isOverdue)).map(
+        ({ lead }) => lead,
+      );
+    case "overdue-followups":
+      return sortWorkflowQueue(items.filter(({ state }) => state.queueType === "followup" && state.isOverdue)).map(
+        ({ lead }) => lead,
+      );
+    case "callbacks":
+      return sortWorkflowQueue(items.filter(({ state }) => state.queueType === "callback")).map(({ lead }) => lead);
+    case "followups":
+      return sortWorkflowQueue(items.filter(({ state }) => state.queueType === "followup")).map(({ lead }) => lead);
+    case "actionable-queue":
+      return sortWorkflowQueue(items.filter(({ state }) => state.isActionable)).map(({ lead }) => lead);
+    default:
+      return leads;
+  }
+}
+
+export function deriveOperationalCounters(leads: Lead[], options: WorkflowOptions = {}): OperationalCounters {
+  const today = currentPerthDate(options);
+  const counters: OperationalCounters = {
+    total: leads.length,
+    active: 0,
+    dq: 0,
+    new: 0,
+    contacted: 0,
+    qualified: 0,
+    booked: 0,
+    lost: 0,
+    revisit: 0,
+    callbacks: 0,
+    overdueCallbacks: 0,
+    followups: 0,
+    overdueFollowups: 0,
+    dueFollowupsToday: 0,
+    actionable: 0,
+    callNow: 0,
+    terminal: 0,
+  };
+
+  for (const item of buildWorkflowItems(leads, options)) {
+    const { lead, state } = item;
+    const bucket = getOperationalLeadBucket(lead);
+    counters[bucket] += 1;
+    if (isDqLeadStatus(lead.status)) counters.dq += 1;
+    if (lead.status === "Revisit" || state.queueType === "callback") counters.revisit += 1;
+    if (state.queueType === "terminal") {
+      counters.terminal += 1;
+    } else {
+      counters.active += 1;
+    }
+    if (state.isActionable) counters.actionable += 1;
+    if (state.queueType === "call") counters.callNow += 1;
+    if (state.queueType === "callback") {
+      counters.callbacks += 1;
+      if (state.isOverdue) counters.overdueCallbacks += 1;
+    }
+    if (state.queueType === "followup") {
+      counters.followups += 1;
+      if (state.isOverdue) counters.overdueFollowups += 1;
+      if (state.dueDate === today) counters.dueFollowupsToday += 1;
+    }
+  }
+
+  return counters;
+}
+
+export function deriveStatusTabCounts(leads: Lead[]): Record<OperationalLeadBucket | "all", number> {
+  const counts: Record<OperationalLeadBucket | "all", number> = {
+    all: 0,
+    new: 0,
+    contacted: 0,
+    qualified: 0,
+    booked: 0,
+    lost: 0,
+  };
+  leads.forEach((lead) => {
+    if (lead.status === "_deleted") return;
+    counts[getOperationalLeadBucket(lead)] += 1;
+  });
+  counts.all = counts.new + counts.contacted + counts.qualified + counts.booked + counts.lost;
+  return counts;
+}
+
+export function matchesStatusTab(lead: Lead, tab: LeadStatus | "all"): boolean {
+  if (lead.status === "_deleted") return false;
+  if (tab === "all") return true;
+  return getOperationalLeadBucket(lead) === tab;
 }
 
 export function buildInboxDonePatch(lead: Lead, options: WorkflowOptions = {}): Lead {

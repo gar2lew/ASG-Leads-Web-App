@@ -10,6 +10,8 @@ This document captures the major architectural and operational decisions behind 
 - **Governed deployment over ad-hoc release.** Releases need environment intent, target checks, metadata, dry runs, and rollback context.
 - **Operator cognition over visual novelty.** UI changes should reduce hesitation and context loss, not introduce new visual systems.
 - **Workflow confidence over cosmetic responsiveness.** Fast-feeling UI is not enough; operators need visible persistence, recoverable destructive actions, and urgency signals that lead to work.
+- **Truthful autosave over hybrid save theater.** A form must be true autosave or explicit save. If autosave is active, UI controls must describe flush, retry, saved, saving, dirty, or failed states honestly.
+- **Deterministic action targeting over visual position.** Workflow actions must resolve by stable record identity, not row index, stale closure state, or adjacent list position.
 - **Silent failure is operationally unsafe.** If a save, queue transition, or destructive recovery path cannot complete, the operator should see a clear state and retain recovery context.
 - **One coherent platform over fragmented regional UX.** Brisbane and Perth need clear identity without separate applications, layouts, or themes.
 - **Compatibility bridges are temporary architecture, not permanent philosophy.** Anonymous auth and rep-profile fallbacks exist to keep production running during migration.
@@ -302,11 +304,35 @@ This document captures the major architectural and operational decisions behind 
 
 **Long-Term Direction:** Keep client undo for fast operational recovery, and consider server-side recovery/audit trails for higher-risk bulk administration later.
 
+## 19. Operational Semantics Consolidation Doctrine
+
+**Problem Context:** Live exploratory QA showed that operator trust can fail even when underlying data models mostly exist. Callback scheduling, Inbox Done, autosave/discard, delete confirmation, and sync status all touched the same deeper issue: the UI must describe and target operational truth exactly.
+
+**Alternatives Considered:** Patch each defect as a local UI bug; introduce a new workflow system; consolidate the semantics doctrine while keeping implementation scoped to P0 trust surfaces.
+
+**Decision Made:** Treat operational semantics as architecture. Workflow truth, save semantics, deterministic action targeting, truthful autosave, destructive-action lifecycle, and queue semantic alignment are now platform-level constraints.
+
+**Why This Approach Won:** The highest-risk failures were not feature gaps; they were trust gaps. Operators need to know that "Call Back" saves a real callback, "Done" completes the intended lead only, save indicators represent actual persistence state, destructive confirmations expire when context changes, and queue badges/status labels align with real workflow state.
+
+**Save Semantics Doctrine:** Each editable surface must choose one model. In a true autosave model, dirty/saving/saved/error states are shown honestly, explicit controls mean Save now or Retry save, and Discard is not shown if the change may already be persisted. In an explicit save model, changes should not silently persist underneath.
+
+**Deterministic Action Targeting Doctrine:** Workflow actions must bind to stable lead identity and resolve against the latest authoritative queue/list state at execution time. Index-based targeting, stale row closures, and adjacent-record mutation risk are not acceptable for operational actions.
+
+**Queue Semantic Alignment Doctrine:** Callback, follow-up, booked, terminal, and done states must continue to align with `workflowState`. A callback action must persist as callback work. Completing an Inbox task must clear the scheduling fields that made that task actionable while preserving the target lead id.
+
+**Truthful Autosave Philosophy:** Autosave is not just a convenience feature. It is an operator contract: the system must communicate when data is dirty, saving, saved, or failed, and it must not offer rollback language that cannot be guaranteed.
+
+**Tradeoffs Accepted:** The doctrine is stronger than the current implementation coverage. Some older surfaces still need classification and cleanup as they are touched.
+
+**Risks Remaining:** Hybrid save semantics can reappear if future forms copy old patterns. Queue actions can regress if new components resolve actions from visible order rather than stable identity. Authenticated browser/e2e coverage is still needed for callback and Inbox rapid-interaction cases.
+
+**Long-Term Direction:** Keep operational semantics centralized, extend save doctrine to every editable workflow, add regression coverage for callback scheduling and Inbox Done identity, and treat queue alignment as a required architecture review item.
+
 ## Current Architectural State
 
 ASG Leads is a React/Vite/Firebase operational CRM with a client-heavy realtime architecture, Zustand state, Firestore listeners, Firebase Hosting, Cloud Functions for selected privileged flows, custom rep/PIN operational identity, and a migration path toward Firebase UID/custom claims.
 
-Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior. The platform also treats operator trust semantics, including visible save state, failed-save recovery, actionable urgency routing, and destructive-action undo, as part of workflow architecture rather than surface polish.
+Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior. The platform also treats operator trust semantics, including visible save state, failed-save recovery, actionable urgency routing, deterministic action targeting, truthful autosave, queue semantic alignment, and destructive-action undo, as part of workflow architecture rather than surface polish.
 
 ## Transitional Systems Still In Progress
 
@@ -319,6 +345,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Build-time release metadata before server-trusted deployment attestation.
 - Partial diagnostics coverage across listeners and non-fatal workflows.
 - Client-side save/undo trust semantics before broader server-side recovery guarantees.
+- Operational semantics doctrine before full implementation coverage across every legacy form.
 
 ## Known Long-Term Risks
 
@@ -329,6 +356,8 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Mixed authority can confuse developers unless collection ownership is documented.
 - Lack of authenticated e2e tests leaves some production-only auth/data flows under-verified.
 - Silent or inconsistent save/undo behavior can reappear if new surfaces bypass established trust semantics.
+- Hybrid autosave/explicit-save messaging can reappear if new forms are not classified up front.
+- Wrong-record action bugs can reappear if future queue actions resolve from indexes or stale row closures.
 
 ## Recommended Future Architectural Direction
 
@@ -341,6 +370,8 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 7. Add an operator-safe diagnostics surface for release metadata, auth state, listener health, and degraded queue behavior.
 8. Review document/template/training writes with Storage rules before server-authority migration.
 9. Add authenticated e2e coverage for dirty-sidebar close, failed auto-save, bulk undo, filtered tab counts, badge-to-queue routing, and touch export.
+10. Audit remaining editable surfaces for the save semantics doctrine and remove hybrid autosave/discard patterns.
+11. Add regression coverage for callback scheduling, Call Back Today, existing callback edits, and Inbox Done stable identity.
 
 ## Remaining Documentation Gaps
 
@@ -348,6 +379,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Firestore rules intent map by collection.
 - Workflow semantics reference for queues, badges, notifications, Inbox, Dashboard, and next action.
 - Operational trust semantics reference for save state, dirty navigation, failed persistence, undo windows, and bulk rollback expectations.
+- Operational semantics consolidation doctrine for workflow truth, save semantics, deterministic action targeting, truthful autosave, and queue alignment.
 - Release and rollback runbook for operators.
 - Regional operations guide for Brisbane/Perth ownership and allowed-region policy.
 - Callable migration ledger showing completed, transitional, and future server-authoritative domains.

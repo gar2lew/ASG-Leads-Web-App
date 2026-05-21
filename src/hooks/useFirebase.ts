@@ -72,7 +72,7 @@ import {
   DealDocumentType,
 } from "../types";
 import { deleteFile, uploadFile } from "../lib/storage";
-import { reportPendingWrites } from "./useNetworkStatus";
+import { reportPendingWrites, reportWriteResult } from "./useNetworkStatus";
 import { currentPerthDate, getWorkflowState } from "../lib/workflowState";
 
 // Firestore rejects `undefined` field values — strip them before writing (deep: handles nested objects + arrays)
@@ -211,10 +211,12 @@ export function useSaveLead() {
       const { activeRegion } = useAppStore.getState();
       const leadWithRegion: Lead = { ...lead, region: lead.region ?? activeRegion, updatedAt: Date.now() };
       await setDoc(doc(db, "leads", String(lead.id)), stripUndefined(leadWithRegion), { merge: true });
+      reportWriteResult(true);
       return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed";
       setError(message);
+      reportWriteResult(false);
       return false;
     } finally {
       setLoading(false);
@@ -743,9 +745,11 @@ export function useSaveSettings(): { save: (s: Partial<AppSettings>) => Promise<
   const save = async (s: Partial<AppSettings>): Promise<boolean> => {
     try {
       await setDoc(doc(db, "settings", "main"), stripUndefined(s), { merge: true });
+      reportWriteResult(true);
       return true;
     } catch (err) {
       console.error("Save settings error:", err);
+      reportWriteResult(false);
       return false;
     }
   };
@@ -1663,7 +1667,7 @@ export function useOperationalQueueLeads() {
       query(collection(db, "leads"), where("callbackDate", "<=", today), orderBy("callbackDate", "asc"), limit(OPERATIONAL_QUEUE_LIMIT)),
       query(collection(db, "leads"), where("nextContactDate", "<=", today), orderBy("nextContactDate", "asc"), limit(OPERATIONAL_QUEUE_LIMIT)),
       query(collection(db, "leads"), where("lastCall", "<=", staleCutoff), orderBy("lastCall", "asc"), limit(OPERATIONAL_QUEUE_LIMIT)),
-      query(collection(db, "leads"), where("status", "in", ["new", "No Answer"]), orderBy("leadDate", "desc"), limit(OPERATIONAL_QUEUE_LIMIT)),
+      query(collection(db, "leads"), where("status", "in", ["new", "DQ", "No Answer"]), orderBy("leadDate", "desc"), limit(OPERATIONAL_QUEUE_LIMIT)),
     ];
 
     setLoading(true);

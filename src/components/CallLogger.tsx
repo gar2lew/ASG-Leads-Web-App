@@ -3,6 +3,7 @@ import { Lead, CallResult } from "../types";
 import { useAppStore } from "../stores/appStore";
 import { useCreateDeal } from "../hooks/useFirebase";
 import { formatDateTime } from "../lib/utils";
+import { todayInPerth } from "../lib/workflowState";
 import { X, CheckCircle } from "lucide-react";
 
 interface CallLoggerProps {
@@ -34,6 +35,15 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
   const [callingRep, setCallingRep] = useState<number>(currentUser?.id || reps[0]?.id || 1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const clearErrors = useCallback((...fields: string[]) => {
+    setErrors((prev) => {
+      if (fields.length === 0) return {};
+      const next = { ...prev };
+      fields.forEach((field) => delete next[field]);
+      return next;
+    });
+  }, []);
 
   const callResultsMap = useMemo(
     () => ({
@@ -78,6 +88,17 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
     onClose();
   }, [onClose]);
 
+  const handleResultChange = useCallback(
+    (nextResult: CallResult) => {
+      setResult(nextResult);
+      clearErrors();
+      if (nextResult === "callback" && !callbackDate) {
+        setCallbackDate(todayInPerth());
+      }
+    },
+    [callbackDate, clearErrors],
+  );
+
   // Validation
   const validate = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
@@ -121,15 +142,20 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
     setSaving(true);
 
     const now = new Date();
-    const dateStr = now.toISOString().split("T")[0];
-    const timeStr = now.toTimeString().slice(0, 5);
+    const dateStr = todayInPerth(now);
+    const timeStr = new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Perth",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(now);
     const repName = reps.find((r) => r.id === callingRep)?.name || "Unknown";
 
     // Status mapping: CallResult → LeadStatus
     const statusMap: Record<CallResult, string> = {
       connected: "contacted",
       no_answer: "new",
-      callback: "contacted",
+      callback: "Revisit",
       booked: "booked",
       not_interested: "lost",
       wrong_number: "lost",
@@ -248,7 +274,7 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Call Result *</label>
               <select
                 value={result}
-                onChange={(e) => setResult(e.target.value as CallResult)}
+                onChange={(e) => handleResultChange(e.target.value as CallResult)}
                 className={inputCls(false)}
               >
                 {Object.entries(callResultsMap).map(([key, config]) => (
@@ -266,7 +292,10 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
                 <input
                   type="date"
                   value={bookingDate}
-                  onChange={(e) => setBookingDate(e.target.value)}
+                  onChange={(e) => {
+                    setBookingDate(e.target.value);
+                    clearErrors("bookingDate");
+                  }}
                   className={inputCls(!!errors.bookingDate)}
                 />
                 {errors.bookingDate && <p className="text-xs text-red-500 mt-1">{errors.bookingDate}</p>}
@@ -280,7 +309,10 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
                 <input
                   type="time"
                   value={bookingTime}
-                  onChange={(e) => setBookingTime(e.target.value)}
+                  onChange={(e) => {
+                    setBookingTime(e.target.value);
+                    clearErrors("bookingTime");
+                  }}
                   className={inputCls(!!errors.bookingTime)}
                 />
                 {errors.bookingTime && <p className="text-xs text-red-500 mt-1">{errors.bookingTime}</p>}
@@ -296,7 +328,10 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
                 <input
                   type="date"
                   value={callbackDate}
-                  onChange={(e) => setCallbackDate(e.target.value)}
+                  onChange={(e) => {
+                    setCallbackDate(e.target.value);
+                    clearErrors("callbackDate");
+                  }}
                   className={inputCls(!!errors.callbackDate)}
                 />
                 {errors.callbackDate && <p className="text-xs text-red-500 mt-1">{errors.callbackDate}</p>}
@@ -312,7 +347,10 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
                 <input
                   type="time"
                   value={callbackTime}
-                  onChange={(e) => setCallbackTime(e.target.value)}
+                  onChange={(e) => {
+                    setCallbackTime(e.target.value);
+                    clearErrors("callbackTime");
+                  }}
                   className={inputCls(!!errors.callbackTime)}
                 />
                 {errors.callbackTime && <p className="text-xs text-red-500 mt-1">{errors.callbackTime}</p>}
@@ -342,7 +380,10 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Call Notes</label>
               <textarea
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                  clearErrors("notes");
+                }}
                 placeholder="Any extra notes?"
                 rows={4}
                 className={inputCls(!!errors.notes)}
@@ -391,7 +432,7 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
             </button>
             <button
               onClick={handleSave}
-              disabled={Object.keys(errors).length > 0 || saving || dealCreating}
+              disabled={saving || dealCreating}
               className="flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2 text-sm"
             >
               {saving ? (

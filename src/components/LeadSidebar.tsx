@@ -279,12 +279,18 @@ export function LeadSidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lead.id, lead.callHistory?.length ?? 0, leadNotes.length]);
 
+  const dismissDeleteConfirmation = () => {
+    setConfirmDelete(false);
+  };
+
   const update = (field: keyof Lead, value: unknown) => {
+    dismissDeleteConfirmation();
     setForm((prev) => ({ ...prev, [field]: value }));
     setDirty(true);
   };
 
   const updateAddress = (raw: string) => {
+    dismissDeleteConfirmation();
     setAddressStr(raw);
     const parsed = parseAddress(raw);
     setForm((prev) => ({
@@ -768,6 +774,7 @@ export function LeadSidebar({
                     className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
                     value={form.nextContactDate || ""}
                     onChange={(e) => {
+                      dismissDeleteConfirmation();
                       const val = e.target.value || undefined;
                       const updated: Lead = { ...form, nextContactDate: val };
                       setForm(updated);
@@ -778,7 +785,8 @@ export function LeadSidebar({
                   {form.nextContactDate && (
                     <button
                       type="button"
-                      onClick={() => {
+                    onClick={() => {
+                        dismissDeleteConfirmation();
                         const updated: Lead = { ...form, nextContactDate: undefined };
                         setForm(updated);
                         void persistDraft(updated, "manual");
@@ -889,6 +897,7 @@ export function LeadSidebar({
                     <SuburbInput
                       value={form.suburb ?? ""}
                       onChange={(v) => {
+                        dismissDeleteConfirmation();
                         setForm((f) => ({ ...f, suburb: v }));
                         setDirty(true);
                       }}
@@ -1158,6 +1167,7 @@ export function LeadSidebar({
                       placeholder="Add notes about this lead…"
                       value={form.notes || ""}
                       onChange={(e) => {
+                        dismissDeleteConfirmation();
                         setForm((f) => ({ ...f, notes: e.target.value }));
                         setDirty(true);
                       }}
@@ -1166,26 +1176,18 @@ export function LeadSidebar({
                 </div>
               </div>
 
-              {/* Save / Discard footer — only when dirty */}
+              {/* Autosave footer: changes persist automatically; Save now flushes the debounce. */}
               {dirty && (
-                <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-white/[0.06]">
-                  <button
-                    onClick={() => {
-                      setForm(lead);
-                      setAddressStr(buildAddress(lead));
-                      setDirty(false);
-                      setSaveState("idle");
-                      setSaveMessage(null);
-                    }}
-                    className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition"
-                  >
-                    Discard
-                  </button>
+                <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-white/[0.06]">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {saveState === "error" ? "Autosave failed. Retry when ready." : "Autosaving changes..."}
+                  </p>
                   <button
                     onClick={handleSave}
-                    className="flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition flex items-center justify-center gap-2"
+                    disabled={saveState === "saving"}
+                    className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 disabled:opacity-60 transition flex items-center justify-center gap-2"
                   >
-                    <Save size={14} /> Save Changes
+                    <Save size={14} /> {saveState === "error" ? "Retry save" : "Save now"}
                   </button>
                 </div>
               )}
@@ -1441,7 +1443,7 @@ export function LeadSidebar({
                 {templates.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
+                      onClick={() => {
                       setShowFilesPanel(false);
                       handleFillForm();
                     }}

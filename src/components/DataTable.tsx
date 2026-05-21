@@ -6,6 +6,7 @@ import { useToast } from "../context/ToastContext";
 import { Phone, Clock, Eye, ChevronDown, ChevronRight, Columns, Bookmark } from "lucide-react";
 import { formatDateSmart, formatDateRelative, formatDateFull, timeAgo } from "../lib/dates";import { getNextAction, ACTION_COLORS } from "../lib/nextAction";
 import { useNetworkStatus } from "../hooks/useNetworkStatus";
+import { deriveStatusTabCounts, getWorkflowState, matchesStatusTab } from "../lib/workflowState";
 
 interface DataTableProps {
   leads: Lead[];
@@ -543,19 +544,14 @@ export function DataTable({
 
   // Per-tab counts reflect the active search/rep/suburb scope, excluding only the tab itself.
   const tabCounts = useMemo(() => {
-    const base = tabCountBase;
-    const counts: Record<string, number> = { all: base.length };
-    base.forEach((l) => {
-      counts[l.status] = (counts[l.status] || 0) + 1;
-    });
-    return counts;
+    return deriveStatusTabCounts(tabCountBase);
   }, [tabCountBase]);
 
   const filteredLeads = useMemo(() => {
     let result = leads;
     // Always hide soft-deleted leads
     result = result.filter((l) => l.status !== "_deleted");
-    if (currentTab !== "all") result = result.filter((l) => l.status === currentTab);
+    if (currentTab !== "all") result = result.filter((l) => matchesStatusTab(l, currentTab));
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -805,15 +801,16 @@ export function DataTable({
     return timeAgo(lastCall ? new Date(lastCall).getTime() : undefined);
   };
 
-  // Priority tint: red = no contact, amber = follow-up, green = booked
+  // Priority tint follows centralized workflow semantics.
   const getRowPriority = (lead: Lead): { bg: string; border: string } => {
-    if (lead.status === "booked" || lead.status === "Booked") {
+    const state = getWorkflowState(lead);
+    if (state.queueType === "booked") {
       return { bg: "bg-green-50/40 dark:bg-green-900/5", border: "border-l-2 border-l-green-400" };
     }
-    if (lead.status === "qualified" || lead.callbackDate) {
+    if (state.queueType === "callback" || state.queueType === "followup") {
       return { bg: "bg-amber-50/40 dark:bg-amber-900/5", border: "border-l-2 border-l-amber-400" };
     }
-    if (!lead.callHistory || lead.callHistory.length === 0) {
+    if (state.queueType === "call") {
       return { bg: "bg-red-50/40 dark:bg-red-900/5", border: "border-l-2 border-l-red-400" };
     }
     return { bg: "", border: "border-l-2 border-l-transparent" };
@@ -1070,7 +1067,7 @@ export function DataTable({
                 <span
                   className={`${isActive ? "bg-white/20 text-white" : "bg-[var(--border)] text-[var(--text-muted)]"} px-1.5 py-0.5 rounded-full text-[10px] font-semibold`}
                 >
-                  {tabCounts[tab.value] ?? 0}
+                  {tab.value === "all" ? tabCounts.all : tabCounts[tab.value as keyof typeof tabCounts] ?? 0}
                 </span>
               </button>
             );

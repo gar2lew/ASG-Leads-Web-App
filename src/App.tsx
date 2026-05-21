@@ -16,7 +16,7 @@ import {
   useSaveSettings,
   useAddAuditEntry,
 } from "./hooks/useFirebase";
-import { getWorkflowState } from "./lib/workflowState";
+import { deriveOperationalCounters } from "./lib/workflowState";
 import { getRegionIdentity, REGION_IDENTITIES } from "./lib/regionIdentity";
 import {
   LayoutDashboard,
@@ -1265,32 +1265,14 @@ function AppShell() {
       : (((currentUser.permissions ?? []).find((p) => canSee(p)) as Page | undefined) ?? "map")
     : "dashboard"; // fallback, won't be used while logged out
 
-  // ── Callback badge (HOOK must always run) ──────────────────────────────────
-  const callbackBadge = useMemo(() => {
-    if (!currentUser) return 0;
-
-    return operationalQueueLeads.filter((l) => {
-      if (getWorkflowState(l).queueType !== "callback") return false;
-
-      const isMyLead = l.dqRep === currentUser.id;
-      if (!isAdmin && !isMyLead) return false;
-
-      return true;
-    }).length;
+  // ── Operational queue badges (HOOK must always run) ───────────────────────
+  const badgeCounters = useMemo(() => {
+    if (!currentUser) return deriveOperationalCounters([]);
+    const scopedLeads = isAdmin ? operationalQueueLeads : operationalQueueLeads.filter((l) => l.dqRep === currentUser.id);
+    return deriveOperationalCounters(scopedLeads);
   }, [operationalQueueLeads, currentUser, isAdmin]);
-
-  const followUpBadge = useMemo(() => {
-    if (!currentUser) return 0;
-
-    return operationalQueueLeads.filter((l) => {
-      if (getWorkflowState(l).queueType !== "followup") return false;
-
-      const isMyLead = l.dqRep === currentUser.id;
-      if (!isAdmin && !isMyLead) return false;
-
-      return true;
-    }).length;
-  }, [operationalQueueLeads, currentUser, isAdmin]);
+  const callbackBadge = badgeCounters.callbacks;
+  const followUpBadge = badgeCounters.followups;
 
   // ── NOW it's safe to return early ──────────────────────────────────────────
   if (!currentUser) {
@@ -1520,10 +1502,16 @@ function AppShell() {
     </nav>
   );
 
+  const [syncClock, setSyncClock] = useState(Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setSyncClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   const syncSettings = appSettings?.sheets;
   const syncStatusIndicator = syncSettings?.lastSyncAt
     ? (() => {
-        const diff = Date.now() - syncSettings.lastSyncAt;
+        const diff = syncClock - syncSettings.lastSyncAt;
         const label =
           diff < 60000
             ? "Just now"
@@ -1838,7 +1826,7 @@ function AppShell() {
             </button>
           )}
 
-          {/* Follow-ups Today badge */}
+          {/* Actionable follow-ups badge */}
           {followUpBadge > 0 && (
             <button
               onClick={() => {
@@ -1851,9 +1839,9 @@ function AppShell() {
                 color: "var(--region-accent)",
                 border: "1px solid var(--region-accent-border)",
               }}
-              title="Follow-ups due today"
+              title="Actionable follow-ups in the operational queue"
             >
-              {followUpBadge} Follow-up{followUpBadge === 1 ? "" : "s"} Today
+              {followUpBadge} Follow-up{followUpBadge === 1 ? "" : "s"}
             </button>
           )}
 

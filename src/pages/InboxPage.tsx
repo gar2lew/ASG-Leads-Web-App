@@ -1,8 +1,8 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { Lead } from "../types";
 import { useOperationalQueueLeads, useSaveLead } from "../hooks/useFirebase";
 import { getNextAction } from "../lib/nextAction";
-import { buildInboxDonePatch, getWorkflowState, sortWorkflowQueue } from "../lib/workflowState";
+import { buildInboxDonePatch, getActionableWorkflowItems } from "../lib/workflowState";
 import { LeadSidebar } from "../components/LeadSidebar";
 import CallLogger from "../components/CallLogger";
 import { useToast } from "../context/ToastContext";
@@ -16,18 +16,24 @@ export function InboxPage() {
   const [currentLeadId, setCurrentLeadId] = useState<number | null>(null);
   const [callLead, setCallLead] = useState<Lead | null>(null);
   const [pendingIntent, setPendingIntent] = useState<string | null>(null);
+  const [pendingDoneIds, setPendingDoneIds] = useState<Set<number>>(() => new Set());
 
   const tasks = useMemo(() => {
-    return sortWorkflowQueue(
-      leads
-        .map((lead) => ({ lead, action: getNextAction(lead), state: getWorkflowState(lead) }))
-        .filter(({ state }) => state.isActionable),
-    );
+    return getActionableWorkflowItems(leads).map((item) => ({ ...item, action: getNextAction(item.lead) }));
   }, [leads]);
+  const tasksRef = useRef(tasks);
+
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   const selected = tasks.find((t) => t.lead.id === currentLeadId)?.lead ?? null;
 
   const currentIdx = tasks.findIndex((t) => t.lead.id === currentLeadId);
+
+  const resolveQueuedLead = useCallback((leadId: number): Lead | null => {
+    return tasksRef.current.find((task) => task.lead.id === leadId)?.lead ?? null;
+  }, []);
 
   const handleSave = useCallback(
     async (updated: Lead) => {
@@ -56,19 +62,32 @@ export function InboxPage() {
   }, []);
 
   const handleDone = useCallback(
-    async (e: React.MouseEvent, lead: Lead) => {
+    async (e: React.MouseEvent, leadId: number) => {
       e.stopPropagation();
-      const ok = await saveLead(buildInboxDonePatch(lead));
+      const queuedLead = resolveQueuedLead(leadId);
+      if (!queuedLead) {
+        showToast("That task is no longer in the queue.", "info");
+        return;
+      }
+
+      setPendingDoneIds((prev) => new Set(prev).add(leadId));
+      const ok = await saveLead(buildInboxDonePatch(queuedLead));
       if (ok) {
-        showToast("Task completed", "success");
-        const idx = tasks.findIndex((t) => t.lead.id === lead.id);
-        const nextLead = tasks[idx + 1]?.lead;
+        showToast(`${queuedLead.name} completed`, "success");
+        const latestTasks = tasksRef.current;
+        const idx = latestTasks.findIndex((t) => t.lead.id === leadId);
+        const nextLead = latestTasks.find((task, taskIndex) => taskIndex > idx && task.lead.id !== leadId)?.lead;
         setCurrentLeadId(nextLead?.id ?? null);
       } else {
         showToast("❌ Failed to update. Please try again.", "error");
       }
+      setPendingDoneIds((prev) => {
+        const next = new Set(prev);
+        next.delete(leadId);
+        return next;
+      });
     },
-    [saveLead, showToast, tasks],
+    [resolveQueuedLead, saveLead, showToast],
   );
 
   const handleQuickCall = useCallback((e: React.MouseEvent, lead: Lead) => {
@@ -192,12 +211,13 @@ export function InboxPage() {
                     </button>
 
                     <button
-                      onClick={(e) => handleDone(e, lead)}
+                      onClick={(e) => handleDone(e, lead.id)}
+                      disabled={pendingDoneIds.has(lead.id)}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[var(--text-muted)] hover:text-green-400 hover:bg-green-500/10 transition-colors duration-100"
                       title="Mark as contacted"
                     >
                       <Check size={11} />
-                      Done
+                      {pendingDoneIds.has(lead.id) ? "Saving" : "Done"}
                     </button>
                   </div>
                 </li>
