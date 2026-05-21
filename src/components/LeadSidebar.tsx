@@ -523,28 +523,28 @@ export function LeadSidebar({
         className={
             isPanel
               ? "flex flex-col h-full w-full bg-[#141824] text-white"
-            : "fixed inset-0 z-[100] flex items-center justify-center p-0 sm:px-6 sm:py-6"
+            : "fixed inset-0 z-[100] flex items-stretch justify-center p-0 sm:items-center sm:px-6 sm:py-6"
         }
       >
         <div
           className={
             isPanel
               ? "flex flex-col h-full w-full"
-              : `relative w-full max-w-[1100px] h-[100dvh] sm:h-[80vh] rounded-none sm:rounded-2xl border border-[#2a2a2e] shadow-2xl overflow-hidden flex flex-col bg-[#141824] text-white will-change-transform transition-all duration-200 ease-out${isOpen ? " opacity-100 translate-y-0" : " opacity-0 translate-y-2"}`
+              : `relative w-full max-w-[1100px] h-[100dvh] sm:h-[80vh] rounded-none sm:rounded-2xl border border-[#2a2a2e] shadow-2xl overflow-hidden flex flex-col bg-[#141824] text-white overscroll-contain will-change-transform transition-all duration-200 ease-out${isOpen ? " opacity-100 translate-y-0" : " opacity-0 translate-y-2"}`
           }
         >
         {/* ── X close button — modal mode only ─────────────────────────── */}
         {!isPanel && (
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 z-10 p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] border border-[#3a3a3e] text-gray-400 hover:text-white transition-all duration-150 hover:scale-105"
+            className="absolute top-3 right-3 z-10 min-h-11 min-w-11 p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] border border-[#3a3a3e] text-gray-400 hover:text-white transition-all duration-150 hover:scale-105 sm:top-4 sm:right-4 sm:min-h-0 sm:min-w-0"
             aria-label="Close"
           >
             <X size={16} />
           </button>
         )}
           {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div className="flex items-start justify-between px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-white/[0.06] flex-shrink-0">
+          <div className="flex flex-col gap-3 px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-white/[0.06] flex-shrink-0 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
@@ -590,10 +590,10 @@ export function LeadSidebar({
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 ml-2 sm:ml-3 flex-shrink-0">
+            <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:w-auto sm:overflow-visible sm:pb-0 sm:ml-3 sm:flex-shrink-0">
               <button
                 onClick={() => onCall(lead)}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-amber-500 text-white text-xs sm:text-sm font-semibold hover:bg-amber-400 transition flex-shrink-0"
+                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition flex-shrink-0"
               >
                 <Phone size={14} /> <span className="hidden sm:inline">Log Call</span>
                 <span className="sm:hidden">Call</span>
@@ -604,7 +604,7 @@ export function LeadSidebar({
                 <button
                   onClick={handleMarkContacted}
                   title="Mark as Contacted — sets status to Live and logs a quick contact entry"
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-green-600 text-white text-xs sm:text-sm font-semibold hover:bg-green-500 transition flex-shrink-0"
+                  className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-500 transition flex-shrink-0"
                 >
                   <CheckCheck size={14} />
                   <span className="hidden sm:inline">Contacted</span>
@@ -618,7 +618,7 @@ export function LeadSidebar({
                   noteInputRef.current?.focus();
                 }}
                 title="Add a note"
-                className="flex items-center gap-1 px-2 py-1.5 sm:py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] text-xs font-medium transition flex-shrink-0"
+                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] text-sm font-medium transition flex-shrink-0"
               >
                 <StickyNote size={14} />
                 <span className="hidden sm:inline">Note</span>
@@ -626,7 +626,7 @@ export function LeadSidebar({
 
               <button
                 onClick={handleDelete}
-                className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0 ${
+                className={`flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition flex-shrink-0 ${
                   confirmDelete
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : "border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
@@ -637,7 +637,7 @@ export function LeadSidebar({
               </button>
               <button
                 onClick={handleClose}
-                className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded-lg transition text-gray-500 flex-shrink-0"
+                className="min-h-11 min-w-11 p-2 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded-lg transition text-gray-500 flex-shrink-0"
               >
                 <X size={18} />
               </button>
@@ -647,7 +647,7 @@ export function LeadSidebar({
           {/* ── Body: single scrollable column ─────────────────────────────── */}
           <div className="flex-1 overflow-hidden min-h-0">
             {/* Lead detail form */}
-            <div className="h-full overflow-y-auto px-3 sm:px-5 py-3 sm:py-4">
+            <div className="h-full overflow-y-auto overscroll-contain px-3 sm:px-5 py-3 sm:py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {/* ── Next Action Banner ──────────────────────────────────────── */}
               {nextAction.type !== "none" && nextAction.type !== "settled" && nextAction.type !== "lost" && (
                 <div
@@ -695,7 +695,7 @@ export function LeadSidebar({
                   <div className="flex gap-2 p-3 pt-2">
                     <button
                       onClick={() => onCall(lead)}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold transition active:scale-[0.98] shadow-sm ${
+                      className={`min-h-11 flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold transition active:scale-[0.98] shadow-sm ${
                         nextAction.priority === "high"
                           ? "bg-red-500 text-white hover:bg-red-400"
                           : nextAction.priority === "medium"
@@ -716,7 +716,7 @@ export function LeadSidebar({
                         noteEl?.focus();
                         noteEl?.scrollIntoView({ behavior: "smooth", block: "center" });
                       }}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-xs font-medium hover:bg-gray-200 dark:hover:bg-white/10 transition active:scale-[0.98]"
+                      className="min-h-11 flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 text-xs font-medium hover:bg-gray-200 dark:hover:bg-white/10 transition active:scale-[0.98]"
                     >
                       <Edit3 size={13} /> Log Note
                     </button>
@@ -768,10 +768,10 @@ export function LeadSidebar({
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <input
                     type="date"
-                    className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    className="min-h-11 flex-1 px-3 py-2 text-base sm:text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
                     value={form.nextContactDate || ""}
                     onChange={(e) => {
                       dismissDeleteConfirmation();
@@ -791,7 +791,7 @@ export function LeadSidebar({
                         setForm(updated);
                         void persistDraft(updated, "manual");
                       }}
-                      className="flex-shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
+                      className="min-h-11 min-w-11 flex-shrink-0 p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                       title="Clear follow-up date"
                     >
                       <X size={13} />
@@ -800,7 +800,7 @@ export function LeadSidebar({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
                 {/* Date + Status */}
                 <Field label="Date">
                   <input
@@ -880,7 +880,7 @@ export function LeadSidebar({
                 </Field>
 
                 {/* Address — full width */}
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Field label="Address">
                     <input
                       className={inputCls}
@@ -892,7 +892,7 @@ export function LeadSidebar({
                 </div>
 
                 {/* Suburb (with WA autocomplete) — full width */}
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Field label="Suburb">
                     <SuburbInput
                       value={form.suburb ?? ""}
@@ -946,12 +946,12 @@ export function LeadSidebar({
 
                 {/* ── Booked Details — only shown when status is Booked ───── */}
                 {form.status === "Booked" && (
-                  <div className="col-span-2 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 space-y-3">
+                  <div className="col-span-1 sm:col-span-2 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 space-y-3">
                     <div className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide flex items-center gap-1.5 mb-1">
                       📋 Booked Details
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {/* DQ Rep — read-only */}
                       <Field label="DQ Rep">
                         <div className="px-3 py-2 text-sm rounded-lg bg-white/70 dark:bg-[var(--surface)]/70 border border-green-200 dark:border-green-700 text-gray-700 dark:text-gray-300 font-medium">
@@ -1010,7 +1010,7 @@ export function LeadSidebar({
                       </Field>
 
                       {/* PS Rep — full width */}
-                      <div className="col-span-2">
+                      <div className="col-span-1 sm:col-span-2">
                         <Field label="PS Rep (Post-Settlement)">
                           <select
                             className={`${inputCls} border-green-200 dark:border-green-700`}
@@ -1070,7 +1070,7 @@ export function LeadSidebar({
                           Reason / Notes *
                         </label>
                         <textarea
-                          className="w-full px-3 py-2 text-sm rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 resize-none"
+                          className="w-full min-h-11 px-3 py-2 text-base sm:text-sm rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-red-400 resize-none"
                           rows={3}
                           placeholder="Why did this fall over? e.g. Client changed mind, couldn't verify super, no show…"
                           value={form.dnqNotes || ""}
@@ -1083,7 +1083,7 @@ export function LeadSidebar({
 
                 {/* Callback — conditional, full width */}
                 {(form.status === "Revisit" || form.callbackDate) && (
-                  <div className="col-span-2 grid grid-cols-2 gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                  <div className="col-span-1 grid grid-cols-1 gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700 sm:col-span-2 sm:grid-cols-2">
                     <Field label="Callback Date">
                       <input
                         type="date"
@@ -1109,13 +1109,13 @@ export function LeadSidebar({
 
                 {/* Knock Pin Type — only shown when opened from Map page */}
                 {customPinTypes !== undefined && (
-                  <div className="col-span-2">
+                  <div className="col-span-1 sm:col-span-2">
                     <Field label="Knock Pin Type">
                       <div className="flex flex-wrap gap-1.5 mt-0.5">
                         <button
                           type="button"
                           onClick={() => update("knockResult", "")}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium border transition ${
+                          className={`min-h-10 px-3 py-2 rounded-full text-xs font-medium border transition ${
                             !form.knockResult
                               ? "bg-gray-700 text-white border-gray-700 dark:bg-gray-500 dark:border-gray-500"
                               : "border-gray-300 dark:border-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)]"
@@ -1133,7 +1133,7 @@ export function LeadSidebar({
                               key={id}
                               type="button"
                               onClick={() => update("knockResult", id)}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium border transition"
+                              className="min-h-10 px-3 py-2 rounded-full text-xs font-medium border transition"
                               style={
                                 active
                                   ? { backgroundColor: color, borderColor: color, color: "#fff" }
@@ -1158,11 +1158,11 @@ export function LeadSidebar({
                 </Field>
 
                 {/* Notes — editable lead-level notes */}
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <Field label="Notes">
                     <textarea
                       id="lead-note-text"
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
+                      className="w-full min-h-[5.5rem] px-3 py-2 text-base sm:text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
                       rows={3}
                       placeholder="Add notes about this lead…"
                       value={form.notes || ""}
@@ -1178,14 +1178,14 @@ export function LeadSidebar({
 
               {/* Autosave footer: changes persist automatically; Save now flushes the debounce. */}
               {dirty && (
-                <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-white/[0.06]">
+                <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {saveState === "error" ? "Autosave failed. Retry when ready." : "Autosaving changes..."}
                   </p>
                   <button
                     onClick={handleSave}
                     disabled={saveState === "saving"}
-                    className="px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 disabled:opacity-60 transition flex items-center justify-center gap-2"
+                    className="min-h-11 w-full px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 disabled:opacity-60 transition flex items-center justify-center gap-2 sm:w-auto"
                   >
                     <Save size={14} /> {saveState === "error" ? "Retry save" : "Save now"}
                   </button>
@@ -1197,7 +1197,7 @@ export function LeadSidebar({
                 <button
                   type="button"
                   onClick={() => setShowFilesPanel(true)}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition"
+                  className="min-h-11 flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition"
                 >
                   <Paperclip size={14} />
                   Files &amp; Forms
@@ -1223,10 +1223,10 @@ export function LeadSidebar({
                 </div>
 
                 {/* Composer */}
-                <div className="flex gap-2 mb-3">
+                <div className="flex flex-col gap-2 mb-3 sm:flex-row">
                   <textarea
                     ref={noteInputRef}
-                    className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
+                    className="min-h-[4.75rem] flex-1 px-3 py-2 text-base sm:text-sm rounded-lg border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 resize-none"
                     rows={2}
                     placeholder="Add a note… (Ctrl+Enter to save)"
                     value={noteText}
@@ -1241,7 +1241,7 @@ export function LeadSidebar({
                   <button
                     onClick={() => void handleAddNote()}
                     disabled={!noteText.trim() || addingNote || !currentUser}
-                    className="self-end px-3 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-40 flex items-center gap-1 flex-shrink-0"
+                    className="min-h-11 w-full justify-center px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition disabled:opacity-40 flex items-center gap-1 flex-shrink-0 sm:w-auto sm:self-end"
                   >
                     {addingNote ? <Loader size={12} className="animate-spin" /> : <MessageSquare size={12} />}
                     Add
@@ -1275,7 +1275,7 @@ export function LeadSidebar({
                         {(currentUser?.role === "admin" || currentUser?.id === note.createdById) && (
                           <button
                             onClick={() => void deleteLeadNote(String(lead.id), note.id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition flex-shrink-0 self-start mt-0.5"
+                            className="min-h-10 min-w-10 opacity-100 p-2 text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition flex-shrink-0 self-start mt-0.5 sm:opacity-0 sm:group-hover:opacity-100"
                             title="Delete note"
                           >
                             <Trash2 size={11} />
@@ -1415,9 +1415,9 @@ export function LeadSidebar({
         <>
           <div className="fixed inset-0 bg-black/60 z-[60]" onClick={() => setShowFilesPanel(false)} />
           <div className="fixed inset-0 z-[61] flex items-end sm:items-center justify-center p-0 sm:p-4">
-            <div className="bg-white dark:bg-[var(--surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col max-h-[90vh]">
+            <div className="bg-white dark:bg-[var(--surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top))] sm:max-h-[90vh] overscroll-contain">
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.06] flex-shrink-0">
+              <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-gray-200 dark:border-white/[0.06] flex-shrink-0">
                 <div className="flex items-center gap-2">
                   <Paperclip size={15} className="text-amber-500" />
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -1431,14 +1431,14 @@ export function LeadSidebar({
                 </div>
                 <button
                   onClick={() => setShowFilesPanel(false)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[var(--hover)] text-gray-400 transition"
+                  className="min-h-11 min-w-11 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[var(--hover)] text-gray-400 transition"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
                 {/* Fill Form button */}
                 {templates.length > 0 && (
                   <button
@@ -1447,7 +1447,7 @@ export function LeadSidebar({
                       setShowFilesPanel(false);
                       handleFillForm();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition"
+                    className="min-h-11 w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-semibold hover:bg-amber-100 dark:hover:bg-amber-900/30 transition"
                   >
                     <ClipboardList size={14} />
                     Fill a Form
@@ -1462,12 +1462,12 @@ export function LeadSidebar({
                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
                     Attach Files
                   </p>
-                  <div className="flex gap-2 flex-wrap">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                     <button
                       type="button"
                       onClick={() => docInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
+                      className="min-h-11 justify-center flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
                     >
                       <FileText size={13} /> Document
                     </button>
@@ -1475,7 +1475,7 @@ export function LeadSidebar({
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
+                      className="min-h-11 justify-center flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
                     >
                       <Image size={13} /> Photo
                     </button>
@@ -1483,7 +1483,7 @@ export function LeadSidebar({
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
+                      className="min-h-11 justify-center flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50"
                     >
                       <File size={13} /> File
                     </button>
@@ -1491,7 +1491,7 @@ export function LeadSidebar({
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
                       disabled={uploading}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition disabled:opacity-50"
+                      className="min-h-11 justify-center flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border border-amber-400 dark:border-amber-600 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition disabled:opacity-50"
                     >
                       <Camera size={13} /> Camera
                     </button>
@@ -1551,7 +1551,7 @@ export function LeadSidebar({
                         type="button"
                         onClick={() => cameraInputRef.current?.click()}
                         disabled={uploading}
-                        className="text-xs text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50"
+                        className="min-h-10 px-2 text-xs text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50"
                       >
                         + Take Another
                       </button>
@@ -1567,7 +1567,7 @@ export function LeadSidebar({
                           <button
                             type="button"
                             onClick={() => handleRemoveStaged(i)}
-                            className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                            className="absolute top-0.5 right-0.5 min-h-8 min-w-8 bg-black/60 text-white rounded-full p-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100"
                           >
                             <XCircle size={12} />
                           </button>
@@ -1579,7 +1579,7 @@ export function LeadSidebar({
                         type="button"
                         onClick={handleDiscardAllStaged}
                         disabled={uploading}
-                        className="flex-1 py-1.5 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 text-xs font-medium hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50 flex items-center justify-center gap-1"
+                        className="min-h-11 flex-1 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50 flex items-center justify-center gap-1"
                       >
                         <XCircle size={11} /> Discard
                       </button>
@@ -1587,7 +1587,7 @@ export function LeadSidebar({
                         type="button"
                         onClick={handleUploadStaged}
                         disabled={uploading}
-                        className="flex-1 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 flex items-center justify-center gap-1"
+                        className="min-h-11 flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition disabled:opacity-50 flex items-center justify-center gap-1"
                       >
                         <Upload size={11} />
                         {uploading ? "Uploading…" : `Upload ${stagedPhotos.length}`}
@@ -1626,7 +1626,7 @@ export function LeadSidebar({
                               href={lf.downloadUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="p-1 text-gray-400 hover:text-amber-500 transition"
+                              className="min-h-10 min-w-10 p-2 text-gray-400 hover:text-amber-500 transition"
                               title="Download"
                             >
                               <Download size={13} />
@@ -1635,7 +1635,7 @@ export function LeadSidebar({
                               <button
                                 type="button"
                                 onClick={() => deleteLeadFile(String(lead.id), lf)}
-                                className="p-1 text-gray-400 hover:text-red-500 transition"
+                                className="min-h-10 min-w-10 p-2 text-gray-400 hover:text-red-500 transition"
                                 title="Delete"
                               >
                                 <Trash2 size={13} />
@@ -1657,18 +1657,18 @@ export function LeadSidebar({
       {formPickerOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 z-[60]" onClick={() => setFormPickerOpen(false)} />
-          <div className="fixed inset-0 z-[61] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-[var(--surface)] rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[70vh]">
+          <div className="fixed inset-0 z-[61] flex items-end justify-center p-0 sm:items-center sm:p-4">
+            <div className="bg-white dark:bg-[var(--surface)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[calc(100dvh-env(safe-area-inset-top))] sm:max-h-[70vh] overscroll-contain">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.06]">
                 <h3 className="text-base font-semibold text-gray-900 dark:text-white">Select a Form Template</h3>
                 <button
                   onClick={() => setFormPickerOpen(false)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[var(--hover)] text-gray-400"
+                  className="min-h-11 min-w-11 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[var(--hover)] text-gray-400"
                 >
                   <X size={16} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] space-y-2">
                 {templates.map((t) => (
                   <button
                     key={t.id}
@@ -1676,7 +1676,7 @@ export function LeadSidebar({
                       setSelectedTemplate(t);
                       setFormPickerOpen(false);
                     }}
-                    className="w-full text-left p-3 rounded-xl border border-gray-200 dark:border-white/[0.06] hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
+                    className="min-h-11 w-full text-left p-3 rounded-xl border border-gray-200 dark:border-white/[0.06] hover:border-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition"
                   >
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">{t.name}</p>
                     {t.description && <p className="text-xs text-gray-400 mt-0.5">{t.description}</p>}
@@ -1727,10 +1727,10 @@ function timeAgoMs(ms: number): string {
 }
 
 const inputCls =
-  "w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";
+  "w-full min-h-11 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-gray-900 dark:text-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-400";
 
 const readOnlyCls =
-  "w-full px-3 py-2 rounded-lg border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-[var(--surface)]/50 text-gray-700 dark:text-gray-300 text-sm";
+  "w-full min-h-11 px-3 py-2 rounded-lg border border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-[var(--surface)]/50 text-gray-700 dark:text-gray-300 text-base sm:text-sm";
 
 function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (

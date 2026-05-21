@@ -235,7 +235,7 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
   if (!isOpen) return null;
 
   const inputCls = (hasError: boolean) =>
-    `w-full px-3 py-2 rounded-lg border ${hasError ? "border-red-500" : "border-gray-300 dark:border-white/[0.08]"} bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400`;
+    `w-full min-h-11 px-3 py-2 rounded-lg border ${hasError ? "border-red-500" : "border-gray-300 dark:border-white/[0.08]"} bg-white dark:bg-[var(--surface)] text-base sm:text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400`;
 
   return (
     <>
@@ -243,21 +243,22 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
       <div className="fixed inset-0 bg-black/50 z-40" onClick={handleClose} aria-hidden="true" />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-[var(--surface)] rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <div className="bg-white dark:bg-[var(--surface)] rounded-t-xl sm:rounded-xl shadow-xl w-full max-w-md max-h-[calc(100dvh-env(safe-area-inset-top))] sm:max-h-[90vh] overflow-y-auto overscroll-contain">
           {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-[var(--surface)] border-b border-gray-200 dark:border-white/[0.06] px-6 py-4 flex items-center justify-between">
+          <div className="sticky top-0 bg-white dark:bg-[var(--surface)] border-b border-gray-200 dark:border-white/[0.06] px-4 sm:px-6 py-4 flex items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Log Call</h2>
             <button
               onClick={handleClose}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded transition"
+              className="min-h-11 min-w-11 p-2 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded transition"
+              aria-label="Close call logger"
             >
               <X size={20} />
             </button>
           </div>
 
           {/* Lead Info */}
-          <div className="px-6 py-4 bg-gray-50 dark:bg-[var(--surface)] border-b border-gray-200 dark:border-white/[0.06]">
+          <div className="px-4 sm:px-6 py-4 bg-gray-50 dark:bg-[var(--surface)] border-b border-gray-200 dark:border-white/[0.06]">
             <p className="font-semibold text-gray-900 dark:text-white">{lead.name}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">{lead.phone}</p>
             {lead.lastCall && (
@@ -268,7 +269,7 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
           </div>
 
           {/* Form */}
-          <div className="px-6 py-4 space-y-4">
+          <div className="px-4 sm:px-6 py-4 space-y-4">
             {/* Call Result — always shown */}
             <div>
               <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Call Result *</label>
@@ -386,7 +387,7 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
                 }}
                 placeholder="Any extra notes?"
                 rows={4}
-                className={inputCls(!!errors.notes)}
+                className={`${inputCls(!!errors.notes)} min-h-[6.5rem] resize-y`}
               />
               {errors.notes && <p className="text-xs text-red-500 mt-1">{errors.notes}</p>}
             </div>
@@ -423,17 +424,17 @@ export function CallLogger({ lead, isOpen, onClose, onSave }: CallLoggerProps) {
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-gray-50 dark:bg-[var(--surface)] border-t border-gray-200 dark:border-white/[0.06] px-6 py-4 flex gap-3">
+          <div className="sticky bottom-0 bg-gray-50 dark:bg-[var(--surface)] border-t border-gray-200 dark:border-white/[0.06] px-4 sm:px-6 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col gap-3 sm:flex-row">
             <button
               onClick={handleClose}
-              className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[var(--hover)] transition font-medium text-sm"
+              className="min-h-11 flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[var(--hover)] transition font-medium text-sm"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving || dealCreating}
-              className="flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2 text-sm"
+              className="min-h-11 flex-1 px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium flex items-center justify-center gap-2 text-sm"
             >
               {saving ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

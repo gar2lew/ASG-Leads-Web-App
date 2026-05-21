@@ -8,10 +8,12 @@ import {
   getActionableWorkflowItems,
   getOperationalLeadBucket,
   getWorkflowState,
+  type OperationalLeadFilter,
 } from "../lib/workflowState";
 import { getStatusColor } from "../lib/statusConfig";
 import { useLeads, useOperationalQueueLeads } from "../hooks/useFirebase";
-import { useAppStore } from "../stores/appStore";import {
+import { useAppStore } from "../stores/appStore";
+import {
   Phone,
   Users,
   Calendar,
@@ -241,6 +243,10 @@ function repInitial(name?: string) {
   return (name || "?").charAt(0).toUpperCase();
 }
 
+function leadQueueFilter(value: OperationalLeadFilter) {
+  return { type: "leads" as const, value };
+}
+
 // ── Quick action card ─────────────────────────────────────────────────────────
 function QuickAction({
   label,
@@ -350,6 +356,29 @@ export function DashboardPage({
     const overdue = filterOperationalLeads(operationalQueueLeads, "overdue-followups");
     return { dueToday, overdue };
   }, [operationalQueueLeads, today]);
+
+  const queueShortcuts = useMemo(
+    () =>
+      [
+        {
+          label: "Work Queue",
+          icon: <Zap size={16} className="text-amber-400" />,
+          color: "bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/20",
+          badge: stats.actionable,
+          count: stats.actionable,
+          filter: "actionable-queue" as OperationalLeadFilter,
+        },
+        {
+          label: "Follow-Ups",
+          icon: <Clock size={16} className="text-sky-400" />,
+          color: "bg-sky-500/10 border-sky-500/20 text-sky-300 hover:bg-sky-500/20",
+          badge: stats.overdueFollowups,
+          count: stats.followups,
+          filter: (stats.overdueFollowups > 0 ? "overdue-followups" : "followups") as OperationalLeadFilter,
+        },
+      ].filter((shortcut) => shortcut.count > 0),
+    [stats.actionable, stats.followups, stats.overdueFollowups],
+  );
 
   // ── Today's Focus ────────────────────────────────────────────────────────
   const todayFocus = useMemo(() => {
@@ -650,12 +679,22 @@ export function DashboardPage({
             color="bg-gray-500/10 border-gray-500/20 text-gray-300 hover:bg-gray-500/20"
             onClick={() => onNavigate?.("dq-import")}
           />
+          {queueShortcuts.map((shortcut) => (
+            <QuickAction
+              key={shortcut.label}
+              label={shortcut.label}
+              icon={shortcut.icon}
+              color={shortcut.color}
+              badge={shortcut.badge}
+              onClick={() => onNavigate?.("leads", leadQueueFilter(shortcut.filter))}
+            />
+          ))}
           <QuickAction
             label="Callbacks"
             icon={<Phone size={16} className="text-emerald-400" />}
             color="bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20"
             badge={stats.overdueCount}
-            onClick={() => onNavigate?.("leads", { type: "leads", value: stats.overdueCount > 0 ? "overdue-callbacks" : "callbacks" })}
+            onClick={() => onNavigate?.("leads", leadQueueFilter(stats.overdueCount > 0 ? "overdue-callbacks" : "callbacks"))}
           />
           <QuickAction
             label="Map"
@@ -815,6 +854,14 @@ export function DashboardPage({
               </p>
             </div>
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onNavigate?.("leads", leadQueueFilter("actionable-queue"))}
+                className="hidden sm:inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition"
+                title="Open the full actionable queue"
+              >
+                Open queue
+                <ArrowRight size={11} />
+              </button>
               {priorityActions.filter(({ action }) => action.priority === "high").length > 0 && (
                 <span className="text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">
                   {priorityActions.filter(({ action }) => action.priority === "high").length} high
@@ -969,16 +1016,39 @@ export function DashboardPage({
                               <Phone size={12} />
                             </button>
                           )}
-                          {action.type === "call" && !onCallLead && (
+                          {(action.type === "call" || action.type === "followup") && !onCallLead && (
                             <button
-                              onClick={() => onNavigate?.("leads")}
+                              onClick={() =>
+                                onNavigate?.(
+                                  "leads",
+                                  leadQueueFilter(action.type === "followup" ? "followups" : "actionable-queue"),
+                                )
+                              }
                               className="flex-shrink-0 p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 transition active:scale-[0.95]"
-                              title="Go to Leads"
+                              title="Open matching queue"
                             >
                               <Phone size={12} />
                             </button>
                           )}
-                          {(action.type === "callback" || action.type === "confirm") && (
+                          {action.type === "callback" && onCallLead && (
+                            <button
+                              onClick={() => onCallLead(lead)}
+                              className="flex-shrink-0 p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 transition active:scale-[0.95]"
+                              title="Log callback call"
+                            >
+                              <Phone size={12} />
+                            </button>
+                          )}
+                          {action.type === "callback" && !onCallLead && (
+                            <button
+                              onClick={() => onNavigate?.("leads", leadQueueFilter("callbacks"))}
+                              className="flex-shrink-0 p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-400 transition active:scale-[0.95]"
+                              title="Open callback queue"
+                            >
+                              <Phone size={12} />
+                            </button>
+                          )}
+                          {action.type === "confirm" && (
                             <button
                               onClick={() => onNavigate?.("calendar")}
                               className="flex-shrink-0 p-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-400 transition active:scale-[0.95]"
@@ -1011,9 +1081,19 @@ export function DashboardPage({
                 {followUpData.dueToday.length} lead{followUpData.dueToday.length !== 1 ? "s" : ""} to contact today
               </p>
             </div>
-            <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
-              Today
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onNavigate?.("leads", leadQueueFilter("followups"))}
+                className="inline-flex items-center gap-1 rounded-lg border border-amber-200 dark:border-amber-900/50 px-2.5 py-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition"
+                title="Open follow-up queue"
+              >
+                Open
+                <ArrowRight size={11} />
+              </button>
+              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                Today
+              </span>
+            </div>
           </div>
           <div className="space-y-1.5">
             {followUpData.dueToday.map((lead) => {
@@ -1062,9 +1142,19 @@ export function DashboardPage({
                 {followUpData.overdue.length} missed — oldest first
               </p>
             </div>
-            <span className="text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full">
-              {followUpData.overdue.length} overdue
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onNavigate?.("leads", leadQueueFilter("overdue-followups"))}
+                className="inline-flex items-center gap-1 rounded-lg border border-red-200 dark:border-red-900/50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 transition"
+                title="Open overdue follow-up queue"
+              >
+                Open
+                <ArrowRight size={11} />
+              </button>
+              <span className="text-[10px] font-bold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full">
+                {followUpData.overdue.length} overdue
+              </span>
+            </div>
           </div>
           <div className="space-y-1.5 max-h-64 overflow-y-auto pr-0.5">
             {followUpData.overdue.map((lead) => {
@@ -1188,11 +1278,25 @@ export function DashboardPage({
               <h3 className="text-sm font-bold text-[var(--text)]">Callback Queue</h3>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">{stats.callbacks.length} due or overdue</p>
             </div>
-            {stats.overdueCount > 0 && (
-              <span className="text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">
-                {stats.overdueCount} overdue
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+              {stats.callbacks.length > 0 && (
+                <button
+                  onClick={() =>
+                    onNavigate?.("leads", leadQueueFilter(stats.overdueCount > 0 ? "overdue-callbacks" : "callbacks"))
+                  }
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--hover)] transition"
+                  title="Open callback queue"
+                >
+                  Open
+                  <ArrowRight size={11} />
+                </button>
+              )}
+              {stats.overdueCount > 0 && (
+                <span className="text-xs font-semibold bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 px-2 py-0.5 rounded-full">
+                  {stats.overdueCount} overdue
+                </span>
+              )}
+            </div>
           </div>
           {stats.callbacks.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-36 text-gray-300 dark:text-slate-600 gap-2">

@@ -5,21 +5,22 @@ const SSR_DEFAULTS = {
   hasSyncError: false,
   hasPendingWrites: false,
   isSyncing: false,
+  isRetryingWrite: false,
   lastSyncAt: undefined as number | undefined,
   lastWriteFailedAt: undefined as number | undefined,
+  pendingWritesStartedAt: undefined as number | undefined,
   isProbablyOffline: false,
 };
 
-// ── Module-level write-state signals ───────────────────────────────────────
-// Lightweight pub/sub so any write caller (or snapshot listener) can report
-// real Firestore activity without going through Zustand. Surfaces:
-//  - write failures   → reportWriteResult(ok)
-//  - pending writes   → reportPendingWrites(bool)  (from snapshot.metadata)
+// Module-level write-state signals.
+// Lightweight pub/sub so write callers and snapshot listeners can report real
+// Firestore activity without routing through Zustand.
 type WriteListener = () => void;
 const writeListeners = new Set<WriteListener>();
 let lastWriteFailedAtModule: number | undefined = undefined;
 let lastSyncAtModule: number | undefined = undefined;
 let hasPendingWritesModule = false;
+let pendingWritesStartedAtModule: number | undefined = undefined;
 
 function emit() {
   writeListeners.forEach((fn) => fn());
@@ -38,17 +39,21 @@ export function reportWriteResult(ok: boolean): void {
 }
 
 export function clearWriteFailure(): void {
+  if (lastWriteFailedAtModule === undefined) return;
   lastWriteFailedAtModule = undefined;
   emit();
 }
 
 export function reportPendingWrites(hasPending: boolean): void {
   if (hasPendingWritesModule === hasPending) return;
+
   hasPendingWritesModule = hasPending;
-  // When pending clears with no error, treat that as a fresh sync.
+  pendingWritesStartedAtModule = hasPending ? Date.now() : undefined;
+
   if (!hasPending && lastWriteFailedAtModule === undefined) {
     lastSyncAtModule = Date.now();
   }
+
   emit();
 }
 
@@ -57,8 +62,10 @@ export function useNetworkStatus(): {
   hasSyncError: boolean;
   hasPendingWrites: boolean;
   isSyncing: boolean;
+  isRetryingWrite: boolean;
   lastSyncAt?: number;
   lastWriteFailedAt?: number;
+  pendingWritesStartedAt?: number;
   isProbablyOffline: boolean;
 } {
   if (typeof window === "undefined") {
@@ -88,8 +95,10 @@ export function useNetworkStatus(): {
   const lastWriteFailedAt = lastWriteFailedAtModule;
   const lastSyncAt = lastSyncAtModule;
   const hasPendingWrites = hasPendingWritesModule;
+  const pendingWritesStartedAt = pendingWritesStartedAtModule;
   const hasSyncError = lastWriteFailedAt !== undefined;
   const isSyncing = hasPendingWrites;
+  const isRetryingWrite = hasSyncError && hasPendingWrites;
 
   return useMemo(
     () => ({
@@ -97,10 +106,21 @@ export function useNetworkStatus(): {
       hasSyncError,
       hasPendingWrites,
       isSyncing,
+      isRetryingWrite,
       lastSyncAt,
       lastWriteFailedAt,
-      isProbablyOffline: !isOnline || hasSyncError,
+      pendingWritesStartedAt,
+      isProbablyOffline: !isOnline || (hasSyncError && !hasPendingWrites),
     }),
-    [isOnline, hasSyncError, hasPendingWrites, isSyncing, lastSyncAt, lastWriteFailedAt],
+    [
+      isOnline,
+      hasSyncError,
+      hasPendingWrites,
+      isSyncing,
+      isRetryingWrite,
+      lastSyncAt,
+      lastWriteFailedAt,
+      pendingWritesStartedAt,
+    ],
   );
 }

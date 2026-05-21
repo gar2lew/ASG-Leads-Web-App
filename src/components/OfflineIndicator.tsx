@@ -15,48 +15,77 @@ function timeAgo(ms: number): string {
 }
 
 export function OfflineIndicator() {
-  const { isOnline, hasSyncError, hasPendingWrites, lastSyncAt } = useNetworkStatus();
-  // Tick every 30s so "last sync" stays fresh
+  const {
+    isOnline,
+    hasSyncError,
+    hasPendingWrites,
+    isRetryingWrite,
+    lastSyncAt,
+  } = useNetworkStatus();
   const [, setTick] = useState(0);
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 30000);
     return () => clearInterval(id);
   }, []);
 
-  // Briefly show a "Synced ✓" pill after lastSyncAt updates
   const [recentlySynced, setRecentlySynced] = useState(false);
   useEffect(() => {
-    if (!lastSyncAt) return;
+    if (!lastSyncAt || hasPendingWrites || hasSyncError) return;
     setRecentlySynced(true);
     const id = setTimeout(() => setRecentlySynced(false), 2000);
     return () => clearTimeout(id);
-  }, [lastSyncAt]);
+  }, [lastSyncAt, hasPendingWrites, hasSyncError]);
 
-  // Priority: error > offline > syncing > recently-synced > nothing
+  if (isRetryingWrite) {
+    return (
+      <div
+        className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 shadow-sm"
+        title="A failed write is being retried."
+      >
+        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+        Retrying save...
+      </div>
+    );
+  }
+
   if (hasSyncError) {
     return (
-      <div className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 shadow-sm">
+      <div
+        className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 shadow-sm"
+        title="The last save failed. New edits will retry when the connection is healthy."
+      >
         <AlertCircle className="h-3.5 w-3.5" />
-        Sync Error
+        Save failed
       </div>
     );
   }
 
   if (!isOnline) {
     return (
-      <div className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 shadow-sm">
+      <div
+        className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-xs font-medium text-amber-700 shadow-sm"
+        title="Changes made offline will sync when the connection returns."
+      >
         <WifiOff className="h-3.5 w-3.5" />
         Offline
-        {lastSyncAt && <span className="opacity-70 font-normal">· last sync {timeAgo(lastSyncAt)}</span>}
+        {lastSyncAt && (
+          <span className="opacity-70 font-normal">
+            - last sync {timeAgo(lastSyncAt)}
+          </span>
+        )}
       </div>
     );
   }
 
   if (hasPendingWrites) {
     return (
-      <div className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 shadow-sm">
+      <div
+        className="fixed top-4 right-4 z-[1000] flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-2.5 py-1.5 text-xs font-medium text-blue-700 shadow-sm"
+        title="Saving local changes to the cloud."
+      >
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        Syncing…
+        Syncing...
       </div>
     );
   }

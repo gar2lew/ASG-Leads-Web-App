@@ -317,6 +317,9 @@ export function DataTable({
   const [bulkStatus, setBulkStatus] = useState<LeadStatus>("new");
   const [bulkRep, setBulkRep] = useState<number | "">("");
   const [bulkDate, setBulkDate] = useState("");
+  const [bulkCallbackDate, setBulkCallbackDate] = useState("");
+  const [bulkCallbackTime, setBulkCallbackTime] = useState("09:00");
+  const [bulkFollowUpDate, setBulkFollowUpDate] = useState("");
   const [bulkSuburb, setBulkSuburb] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -594,6 +597,30 @@ export function DataTable({
     });
   }, [filteredLeads, sortBy, sortOrder]);
 
+  const selectedVisibleLeads = useMemo(
+    () => sortedLeads.filter((lead) => selectedLeads.has(lead.id)),
+    [selectedLeads, sortedLeads],
+  );
+
+  const selectionSummary = useMemo(() => {
+    if (selectedVisibleLeads.length === 0) return "";
+    const sample = selectedVisibleLeads.slice(0, 3).map((lead) => lead.name).join(", ");
+    const extra = selectedVisibleLeads.length > 3 ? ` +${selectedVisibleLeads.length - 3} more` : "";
+    return `${sample}${extra}`;
+  }, [selectedVisibleLeads]);
+
+  useEffect(() => {
+    const visibleIds = new Set(sortedLeads.map((lead) => lead.id));
+    setSelectedLeads((prev) => {
+      const next = new Set(Array.from(prev).filter((id) => visibleIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [sortedLeads]);
+
+  useEffect(() => {
+    setConfirmingDelete(false);
+  }, [selectedVisibleLeads]);
+
   useEffect(() => {
     if (selectedId === null || sortedLeads.some((lead) => lead.id === selectedId)) return;
     setSelectedId(sortedLeads[0]?.id ?? null);
@@ -700,80 +727,112 @@ export function DataTable({
     else setSelectedLeads(new Set(sortedLeads.map((l) => l.id)));
   }, [sortedLeads, selectedLeads]);
 
+  const scheduleUndo = useCallback(
+    (snapshot: Lead[], label: string) => {
+      setUndoSnapshot(snapshot);
+      setUndoLabel(label);
+      if (undoTimer) clearTimeout(undoTimer);
+      setUndoTimer(setTimeout(() => setUndoSnapshot(null), 5000));
+    },
+    [undoTimer],
+  );
+
   // ── Bulk actions ──────────────────────────────────────────────────────────
 
   // Feature 2: Bulk status update with undo
   const handleBulkStatusUpdate = useCallback(() => {
-    const toUpdate = sortedLeads.filter((l) => selectedLeads.has(l.id));
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
     // Capture snapshot before updating for undo
     const snapshot = toUpdate.map((l) => ({ ...l }));
     toUpdate.forEach((l) => onUpdateLead({ ...l, status: bulkStatus }));
     showToast(`✅ Updated ${toUpdate.length} lead${toUpdate.length !== 1 ? "s" : ""} to ${bulkStatus}`, "success");
     setSelectedLeads(new Set());
-    // Set undo snapshot with 5s timeout
-    setUndoSnapshot(snapshot);
-    setUndoLabel("Status change");
-    if (undoTimer) clearTimeout(undoTimer);
-    const t = setTimeout(() => setUndoSnapshot(null), 5000);
-    setUndoTimer(t);
-  }, [sortedLeads, selectedLeads, bulkStatus, onUpdateLead, showToast, undoTimer]);
+    scheduleUndo(snapshot, "Status change");
+  }, [selectedVisibleLeads, bulkStatus, onUpdateLead, showToast, scheduleUndo]);
 
   const handleBulkRepUpdate = useCallback(() => {
     if (!bulkRep) return;
-    const toUpdate = sortedLeads.filter((l) => selectedLeads.has(l.id));
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
     const snapshot = toUpdate.map((l) => ({ ...l }));
     const repName = reps.find((r) => r.id === bulkRep)?.name ?? "";
     toUpdate.forEach((l) => onUpdateLead({ ...l, dqRep: bulkRep as number }));
     showToast(`✅ Reassigned ${toUpdate.length} lead${toUpdate.length !== 1 ? "s" : ""} to ${repName}`, "success");
     setSelectedLeads(new Set());
     setBulkRep("");
-    setUndoSnapshot(snapshot);
-    setUndoLabel("Rep reassignment");
-    if (undoTimer) clearTimeout(undoTimer);
-    setUndoTimer(setTimeout(() => setUndoSnapshot(null), 5000));
-  }, [sortedLeads, selectedLeads, bulkRep, reps, onUpdateLead, showToast, undoTimer]);
+    scheduleUndo(snapshot, "Rep reassignment");
+  }, [selectedVisibleLeads, bulkRep, reps, onUpdateLead, showToast, scheduleUndo]);
 
   const handleBulkDelete = useCallback(() => {
+    if (selectedVisibleLeads.length === 0) return;
     if (!confirmingDelete) {
       setConfirmingDelete(true);
       return;
     }
-    const toDelete = sortedLeads.filter((l) => selectedLeads.has(l.id));
+    const toDelete = selectedVisibleLeads;
     if (onBulkDeleteLeads && toDelete.length > 1) onBulkDeleteLeads(toDelete);
     else toDelete.forEach((l) => onDeleteLead(l));
     setSelectedLeads(new Set());
     setConfirmingDelete(false);
-  }, [confirmingDelete, sortedLeads, selectedLeads, onDeleteLead, onBulkDeleteLeads]);
+  }, [confirmingDelete, selectedVisibleLeads, onDeleteLead, onBulkDeleteLeads]);
 
   // Feature 5: Bulk date update
   const handleBulkDateUpdate = useCallback(() => {
     if (!bulkDate) return;
-    const toUpdate = sortedLeads.filter((l) => selectedLeads.has(l.id));
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
     const snapshot = toUpdate.map((l) => ({ ...l }));
     toUpdate.forEach((l) => onUpdateLead({ ...l, leadDate: bulkDate }));
     showToast(`✅ Set date for ${toUpdate.length} lead(s)`, "success");
     setSelectedLeads(new Set());
     setBulkDate("");
-    setUndoSnapshot(snapshot);
-    setUndoLabel("Date change");
-    if (undoTimer) clearTimeout(undoTimer);
-    setUndoTimer(setTimeout(() => setUndoSnapshot(null), 5000));
-  }, [sortedLeads, selectedLeads, bulkDate, onUpdateLead, showToast, undoTimer]);
+    scheduleUndo(snapshot, "Date change");
+  }, [selectedVisibleLeads, bulkDate, onUpdateLead, showToast, scheduleUndo]);
+
+  const handleBulkCallbackUpdate = useCallback(() => {
+    if (!bulkCallbackDate) return;
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
+    const snapshot = toUpdate.map((l) => ({ ...l }));
+    toUpdate.forEach((l) =>
+      onUpdateLead({
+        ...l,
+        status: "Revisit",
+        callbackDate: bulkCallbackDate,
+        callbackTime: bulkCallbackTime || "09:00",
+      }),
+    );
+    showToast(`Scheduled callback for ${toUpdate.length} lead${toUpdate.length !== 1 ? "s" : ""}`, "success");
+    setSelectedLeads(new Set());
+    setBulkCallbackDate("");
+    scheduleUndo(snapshot, "Callback schedule");
+  }, [selectedVisibleLeads, bulkCallbackDate, bulkCallbackTime, onUpdateLead, showToast, scheduleUndo]);
+
+  const handleBulkFollowUpUpdate = useCallback(() => {
+    if (!bulkFollowUpDate) return;
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
+    const snapshot = toUpdate.map((l) => ({ ...l }));
+    toUpdate.forEach((l) => onUpdateLead({ ...l, nextContactDate: bulkFollowUpDate }));
+    showToast(`Set follow-up for ${toUpdate.length} lead${toUpdate.length !== 1 ? "s" : ""}`, "success");
+    setSelectedLeads(new Set());
+    setBulkFollowUpDate("");
+    scheduleUndo(snapshot, "Follow-up schedule");
+  }, [selectedVisibleLeads, bulkFollowUpDate, onUpdateLead, showToast, scheduleUndo]);
 
   // Feature 5: Bulk suburb update
   const handleBulkSuburbUpdate = useCallback(() => {
     if (!bulkSuburb) return;
-    const toUpdate = sortedLeads.filter((l) => selectedLeads.has(l.id));
+    const toUpdate = selectedVisibleLeads;
+    if (toUpdate.length === 0) return;
     const snapshot = toUpdate.map((l) => ({ ...l }));
     toUpdate.forEach((l) => onUpdateLead({ ...l, suburb: bulkSuburb }));
     showToast(`✅ Set suburb for ${toUpdate.length} lead(s)`, "success");
     setSelectedLeads(new Set());
     setBulkSuburb("");
-    setUndoSnapshot(snapshot);
-    setUndoLabel("Suburb change");
-    if (undoTimer) clearTimeout(undoTimer);
-    setUndoTimer(setTimeout(() => setUndoSnapshot(null), 5000));
-  }, [sortedLeads, selectedLeads, bulkSuburb, onUpdateLead, showToast, undoTimer]);
+    scheduleUndo(snapshot, "Suburb change");
+  }, [selectedVisibleLeads, bulkSuburb, onUpdateLead, showToast, scheduleUndo]);
 
   // ── Derived field helpers ─────────────────────────────────────────────────
   const getRepName = (repId: number | undefined) => {
@@ -1784,12 +1843,12 @@ export function DataTable({
       <div className="border-t border-[var(--border)] bg-[var(--surface)] px-4 py-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm text-[var(--text-muted)]">
-            {selectedLeads.size > 0
-              ? `${selectedLeads.size} of ${sortedLeads.length} selected`
+            {selectedVisibleLeads.length > 0
+              ? `${selectedVisibleLeads.length} of ${sortedLeads.length} selected${selectionSummary ? `: ${selectionSummary}` : ""}`
               : `Showing ${sortedLeads.length} of ${leads.length} leads in view`}
           </p>
 
-          {selectedLeads.size > 0 && (
+          {selectedVisibleLeads.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               {/* Status */}
               <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wide">
@@ -1863,7 +1922,10 @@ export function DataTable({
               <input
                 type="date"
                 value={bulkDate}
-                onChange={(e) => setBulkDate(e.target.value)}
+                onChange={(e) => {
+                  setBulkDate(e.target.value);
+                  setConfirmingDelete(false);
+                }}
                 className="px-2 py-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] focus:outline-none"
               />
               <button
@@ -1876,6 +1938,59 @@ export function DataTable({
 
               <span className="text-gray-300 dark:text-gray-500 text-sm">|</span>
 
+              <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wide">
+                Callback:
+              </span>
+              <input
+                type="date"
+                value={bulkCallbackDate}
+                onChange={(e) => {
+                  setBulkCallbackDate(e.target.value);
+                  setConfirmingDelete(false);
+                }}
+                className="px-2 py-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] focus:outline-none"
+              />
+              <input
+                type="time"
+                value={bulkCallbackTime}
+                onChange={(e) => {
+                  setBulkCallbackTime(e.target.value);
+                  setConfirmingDelete(false);
+                }}
+                className="px-2 py-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] focus:outline-none w-24"
+              />
+              <button
+                onClick={handleBulkCallbackUpdate}
+                disabled={!bulkCallbackDate}
+                className="px-3 py-1 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-500 disabled:opacity-40 transition font-medium"
+              >
+                Schedule
+              </button>
+
+              <span className="text-gray-300 dark:text-gray-500 text-sm">|</span>
+
+              <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wide">
+                Follow-up:
+              </span>
+              <input
+                type="date"
+                value={bulkFollowUpDate}
+                onChange={(e) => {
+                  setBulkFollowUpDate(e.target.value);
+                  setConfirmingDelete(false);
+                }}
+                className="px-2 py-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] focus:outline-none"
+              />
+              <button
+                onClick={handleBulkFollowUpUpdate}
+                disabled={!bulkFollowUpDate}
+                className="px-3 py-1 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-500 disabled:opacity-40 transition font-medium"
+              >
+                Set Follow-up
+              </button>
+
+              <span className="text-gray-300 dark:text-gray-500 text-sm">|</span>
+
               {/* Feature 5: Bulk Suburb */}
               <span className="text-xs text-[var(--text-muted)] font-medium uppercase tracking-wide">
                 Suburb:
@@ -1884,7 +1999,10 @@ export function DataTable({
                 type="text"
                 placeholder="New suburb…"
                 value={bulkSuburb}
-                onChange={(e) => setBulkSuburb(e.target.value)}
+                onChange={(e) => {
+                  setBulkSuburb(e.target.value);
+                  setConfirmingDelete(false);
+                }}
                 className="px-2 py-1 text-sm rounded-lg border border-[var(--border)] bg-[var(--bg)] text-[var(--text)] focus:outline-none w-28"
               />
               <button
@@ -1901,7 +2019,7 @@ export function DataTable({
               {confirmingDelete ? (
                 <>
                   <span className="text-sm text-red-600 dark:text-red-400 font-medium">
-                    Delete {selectedLeads.size} lead{selectedLeads.size !== 1 ? "s" : ""}?
+                    Delete {selectedVisibleLeads.length} lead{selectedVisibleLeads.length !== 1 ? "s" : ""}?
                   </span>
                   <button
                     onClick={handleBulkDelete}
@@ -1921,7 +2039,7 @@ export function DataTable({
                   onClick={handleBulkDelete}
                   className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium"
                 >
-                  🗑 Delete ({selectedLeads.size})
+                  🗑 Delete ({selectedVisibleLeads.length})
                 </button>
               )}
 
@@ -1946,6 +2064,9 @@ export function DataTable({
                   setConfirmingDelete(false);
                   setBulkRep("");
                   setBulkDate("");
+                  setBulkCallbackDate("");
+                  setBulkCallbackTime("09:00");
+                  setBulkFollowUpDate("");
                   setBulkSuburb("");
                   setUndoSnapshot(null);
                   if (undoTimer) clearTimeout(undoTimer);

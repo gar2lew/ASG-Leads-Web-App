@@ -6,7 +6,7 @@ import { buildInboxDonePatch, getActionableWorkflowItems } from "../lib/workflow
 import { LeadSidebar } from "../components/LeadSidebar";
 import CallLogger from "../components/CallLogger";
 import { useToast } from "../context/ToastContext";
-import { Inbox, Phone, Check } from "lucide-react";
+import { Inbox, Phone, Check, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 
 export function InboxPage() {
   const { leads, loading, truncated } = useOperationalQueueLeads();
@@ -17,6 +17,7 @@ export function InboxPage() {
   const [callLead, setCallLead] = useState<Lead | null>(null);
   const [pendingIntent, setPendingIntent] = useState<string | null>(null);
   const [pendingDoneIds, setPendingDoneIds] = useState<Set<number>>(() => new Set());
+  const pendingDoneIdsRef = useRef(pendingDoneIds);
 
   const tasks = useMemo(() => {
     return getActionableWorkflowItems(leads).map((item) => ({ ...item, action: getNextAction(item.lead) }));
@@ -27,6 +28,10 @@ export function InboxPage() {
     tasksRef.current = tasks;
   }, [tasks]);
 
+  useEffect(() => {
+    pendingDoneIdsRef.current = pendingDoneIds;
+  }, [pendingDoneIds]);
+
   const selected = tasks.find((t) => t.lead.id === currentLeadId)?.lead ?? null;
 
   const currentIdx = tasks.findIndex((t) => t.lead.id === currentLeadId);
@@ -34,6 +39,20 @@ export function InboxPage() {
   const resolveQueuedLead = useCallback((leadId: number): Lead | null => {
     return tasksRef.current.find((task) => task.lead.id === leadId)?.lead ?? null;
   }, []);
+
+  const selectLeadByOffset = useCallback(
+    (offset: number) => {
+      const latestTasks = tasksRef.current;
+      if (latestTasks.length === 0) return;
+
+      const activeIdx = latestTasks.findIndex((task) => task.lead.id === currentLeadId);
+      const baseIdx = activeIdx === -1 ? (offset > 0 ? -1 : 0) : activeIdx;
+      const nextIdx = Math.min(Math.max(baseIdx + offset, 0), latestTasks.length - 1);
+      setCurrentLeadId(latestTasks[nextIdx]?.lead.id ?? null);
+      setPendingIntent(null);
+    },
+    [currentLeadId],
+  );
 
   const handleSave = useCallback(
     async (updated: Lead) => {
@@ -61,15 +80,17 @@ export function InboxPage() {
     setCallLead(_lead);
   }, []);
 
-  const handleDone = useCallback(
-    async (e: React.MouseEvent, leadId: number) => {
-      e.stopPropagation();
+  const markDoneById = useCallback(
+    async (leadId: number) => {
+      if (pendingDoneIdsRef.current.has(leadId)) return;
+
       const queuedLead = resolveQueuedLead(leadId);
       if (!queuedLead) {
         showToast("That task is no longer in the queue.", "info");
         return;
       }
 
+      pendingDoneIdsRef.current = new Set(pendingDoneIdsRef.current).add(leadId);
       setPendingDoneIds((prev) => new Set(prev).add(leadId));
       const ok = await saveLead(buildInboxDonePatch(queuedLead));
       if (ok) {
@@ -84,10 +105,19 @@ export function InboxPage() {
       setPendingDoneIds((prev) => {
         const next = new Set(prev);
         next.delete(leadId);
+        pendingDoneIdsRef.current = next;
         return next;
       });
     },
     [resolveQueuedLead, saveLead, showToast],
+  );
+
+  const handleDone = useCallback(
+    async (e: React.MouseEvent, leadId: number) => {
+      e.stopPropagation();
+      await markDoneById(leadId);
+    },
+    [markDoneById],
   );
 
   const handleQuickCall = useCallback((e: React.MouseEvent, lead: Lead) => {
@@ -101,8 +131,9 @@ export function InboxPage() {
       if (ok) {
         showToast(`Call logged for ${updated.name}`, "success");
         setCallLead(null);
-        const idx = tasks.findIndex((t) => t.lead.id === updated.id);
-        const nextLead = tasks[idx + 1]?.lead;
+        const latestTasks = tasksRef.current;
+        const idx = latestTasks.findIndex((t) => t.lead.id === updated.id);
+        const nextLead = latestTasks[idx + 1]?.lead;
         setCurrentLeadId(nextLead?.id ?? null);
         return true;
       } else {
@@ -110,8 +141,64 @@ export function InboxPage() {
         return false;
       }
     },
-    [saveLead, showToast, tasks],
+    [saveLead, showToast],
   );
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+
+      const tag = target.tagName.toLowerCase();
+      return (
+        target.isContentEditable ||
+        tag === "input" ||
+        tag === "textarea" ||
+        tag === "select" ||
+        Boolean(target.closest('[role="textbox"], [contenteditable="true"]'))
+      );
+    };
+
+    const handleQueueKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (callLead) return;
+
+      if (event.key === "j" || event.key === "ArrowDown") {
+        event.preventDefault();
+        selectLeadByOffset(1);
+        return;
+      }
+
+      if (event.key === "k" || event.key === "ArrowUp") {
+        event.preventDefault();
+        selectLeadByOffset(-1);
+        return;
+      }
+
+      const activeLead = currentLeadId ? resolveQueuedLead(currentLeadId) : tasksRef.current[0]?.lead ?? null;
+      if (!activeLead) return;
+
+      if (event.key === "Enter" || event.key.toLowerCase() === "o") {
+        event.preventDefault();
+        setCurrentLeadId(activeLead.id);
+        return;
+      }
+
+      if (event.key.toLowerCase() === "c") {
+        event.preventDefault();
+        setCallLead(activeLead);
+        return;
+      }
+
+      if (event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        void markDoneById(activeLead.id);
+      }
+    };
+
+    window.addEventListener("keydown", handleQueueKeyDown);
+    return () => window.removeEventListener("keydown", handleQueueKeyDown);
+  }, [callLead, currentLeadId, markDoneById, resolveQueuedLead, selectLeadByOffset]);
 
   return (
     <div className="flex-1 flex flex-col bg-[var(--surface)] overflow-y-auto">
@@ -134,6 +221,20 @@ export function InboxPage() {
         <p className="text-sm text-[var(--text-muted)] mb-8">
           {loading ? "Loading…" : `${tasks.length} action${tasks.length !== 1 ? "s" : ""} need your attention`}
         </p>
+
+        {tasks.length > 0 && !loading && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 text-[11px] text-[var(--text-muted)]">
+            <span className="inline-flex items-center gap-1">
+              <ChevronDown size={12} />
+              <ChevronUp size={12} />
+              Move
+            </span>
+            <span>J/K</span>
+            <span>Enter/O open</span>
+            <span>C call</span>
+            <span>D done</span>
+          </div>
+        )}
 
         {truncated && (
           <p className="text-xs text-amber-600 dark:text-amber-300 mb-4">
@@ -190,7 +291,7 @@ export function InboxPage() {
                   </div>
 
                   {/* Priority badge + quick actions */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex flex-wrap items-center justify-end gap-2 flex-shrink-0">
                     <span
                       className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
                         action.priority === "high"
@@ -204,17 +305,26 @@ export function InboxPage() {
                     <button
                       onClick={(e) => handleQuickCall(e, lead)}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] transition-colors duration-100"
-                      title="Open sidebar to log call"
+                      title="Call (C)"
                     >
                       <Phone size={11} />
                       Call
                     </button>
 
                     <button
+                      onClick={(e) => { e.stopPropagation(); setCurrentLeadId(lead.id); }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--border)] transition-colors duration-100"
+                      title="Open details (Enter or O)"
+                    >
+                      <ExternalLink size={11} />
+                      Open
+                    </button>
+
+                    <button
                       onClick={(e) => handleDone(e, lead.id)}
                       disabled={pendingDoneIds.has(lead.id)}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[var(--text-muted)] hover:text-green-400 hover:bg-green-500/10 transition-colors duration-100"
-                      title="Mark as contacted"
+                      title="Done (D)"
                     >
                       <Check size={11} />
                       {pendingDoneIds.has(lead.id) ? "Saving" : "Done"}
