@@ -18,6 +18,7 @@ export function InboxPage() {
   const [pendingIntent, setPendingIntent] = useState<string | null>(null);
   const [pendingDoneIds, setPendingDoneIds] = useState<Set<number>>(() => new Set());
   const pendingDoneIdsRef = useRef(pendingDoneIds);
+  const currentLeadIdRef = useRef(currentLeadId);
 
   const tasks = useMemo(() => {
     return getActionableWorkflowItems(leads).map((item) => ({ ...item, action: getNextAction(item.lead) }));
@@ -31,6 +32,10 @@ export function InboxPage() {
   useEffect(() => {
     pendingDoneIdsRef.current = pendingDoneIds;
   }, [pendingDoneIds]);
+
+  useEffect(() => {
+    currentLeadIdRef.current = currentLeadId;
+  }, [currentLeadId]);
 
   const selected = tasks.find((t) => t.lead.id === currentLeadId)?.lead ?? null;
 
@@ -98,7 +103,9 @@ export function InboxPage() {
         const latestTasks = tasksRef.current;
         const idx = latestTasks.findIndex((t) => t.lead.id === leadId);
         const nextLead = latestTasks.find((task, taskIndex) => taskIndex > idx && task.lead.id !== leadId)?.lead;
-        setCurrentLeadId(nextLead?.id ?? null);
+        if (currentLeadIdRef.current === leadId) {
+          setCurrentLeadId(nextLead?.id ?? null);
+        }
       } else {
         showToast("❌ Failed to update. Please try again.", "error");
       }

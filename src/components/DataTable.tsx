@@ -435,7 +435,15 @@ export function DataTable({
   // ── Feature 2: Undo state ──────────────────────────────────────────────────
   const [undoSnapshot, setUndoSnapshot] = useState<Lead[] | null>(null);
   const [undoLabel, setUndoLabel] = useState("Bulk change");
-  const [undoTimer, setUndoTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearUndoTimer = useCallback(() => {
+    if (!undoTimerRef.current) return;
+    clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = null;
+  }, []);
+
+  useEffect(() => clearUndoTimer, [clearUndoTimer]);
 
   // ── Feature 4: Filter presets ──────────────────────────────────────────────
   const [presets, setPresets] = useState<FilterPreset[]>(() => {
@@ -609,6 +617,11 @@ export function DataTable({
     return `${sample}${extra}`;
   }, [selectedVisibleLeads]);
 
+  const selectedVisibleIdsKey = useMemo(
+    () => selectedVisibleLeads.map((lead) => lead.id).join(","),
+    [selectedVisibleLeads],
+  );
+
   useEffect(() => {
     const visibleIds = new Set(sortedLeads.map((lead) => lead.id));
     setSelectedLeads((prev) => {
@@ -619,7 +632,7 @@ export function DataTable({
 
   useEffect(() => {
     setConfirmingDelete(false);
-  }, [selectedVisibleLeads]);
+  }, [selectedVisibleIdsKey]);
 
   useEffect(() => {
     if (selectedId === null || sortedLeads.some((lead) => lead.id === selectedId)) return;
@@ -731,10 +744,14 @@ export function DataTable({
     (snapshot: Lead[], label: string) => {
       setUndoSnapshot(snapshot);
       setUndoLabel(label);
-      if (undoTimer) clearTimeout(undoTimer);
-      setUndoTimer(setTimeout(() => setUndoSnapshot(null), 5000));
+      clearUndoTimer();
+      undoTimerRef.current = setTimeout(() => {
+        setUndoSnapshot(null);
+        setUndoLabel("Bulk change");
+        undoTimerRef.current = null;
+      }, 5000);
     },
-    [undoTimer],
+    [clearUndoTimer],
   );
 
   // ── Bulk actions ──────────────────────────────────────────────────────────
@@ -2049,7 +2066,8 @@ export function DataTable({
                   onClick={() => {
                     undoSnapshot.forEach((l) => onUpdateLead(l));
                     setUndoSnapshot(null);
-                    if (undoTimer) clearTimeout(undoTimer);
+                    setUndoLabel("Bulk change");
+                    clearUndoTimer();
                     showToast(`${undoLabel} undone`, "success");
                   }}
                   className="px-3 py-1 text-sm bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition font-medium flex items-center gap-1"
@@ -2069,7 +2087,8 @@ export function DataTable({
                   setBulkFollowUpDate("");
                   setBulkSuburb("");
                   setUndoSnapshot(null);
-                  if (undoTimer) clearTimeout(undoTimer);
+                  setUndoLabel("Bulk change");
+                  clearUndoTimer();
                 }}
                 className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition px-2"
               >

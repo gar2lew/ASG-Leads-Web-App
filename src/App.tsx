@@ -1274,6 +1274,12 @@ function AppShell() {
   const callbackBadge = badgeCounters.callbacks;
   const followUpBadge = badgeCounters.followups;
 
+  const [syncClock, setSyncClock] = useState(Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setSyncClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   // ── NOW it's safe to return early ──────────────────────────────────────────
   if (!currentUser) {
     return <LoginScreen onLoginRep={handleLoginRep} onAdminBypass={handleAdminBypass} />;
@@ -1501,12 +1507,6 @@ function AppShell() {
       </SidebarSection>
     </nav>
   );
-
-  const [syncClock, setSyncClock] = useState(Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setSyncClock(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const syncSettings = appSettings?.sheets;
   const syncStatusIndicator = syncSettings?.lastSyncAt

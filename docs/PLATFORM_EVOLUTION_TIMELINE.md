@@ -328,9 +328,35 @@ This document records the operational evolution of the ASG Leads platform. It is
 
 **Long-term significance:** This phase made operational semantics architectural history. Workflow truth, deterministic action targeting, truthful autosave, and queue semantic alignment are now platform doctrine, not local UI preferences.
 
+## 17. Operator Workflow Acceleration
+
+**Approximate sequence:** After Operational Semantics Consolidation established centralized workflow truth and queue semantics as foundational architecture.
+
+**Operational problem before:** The platform had become more semantically trustworthy, but high-frequency operator work still carried avoidable friction. Dashboard urgency signals took too many clicks to become queue work. Inbox traversal required pointer-heavy interaction. Bulk workflows were slower than the real batching patterns operators use, and bulk mutation safety needed to respect visible selection boundaries. Mobile and touch workflows could still feel cramped around modals, sidebars, and call logging. Save/sync visibility had improved, but retry and degraded states needed clearer, truthful language during fast work.
+
+**Symptoms observed:** Operators could trust the semantics more than before, but not yet move through the CRM as quickly as the workflow model allowed. Dashboard cards could still feel like summaries rather than launch points. Bulk selection state was not always cognitively obvious. Queue traversal depended on repeated clicks. Mobile work surfaces required extra care around scrolling and control reachability. Sync feedback could be technically present without giving enough confidence during retry or pending-write states.
+
+**Root cause:** Earlier phases correctly prioritized truth, action ownership, and queue consistency. Throughput ergonomics had not yet been layered on top of that doctrine. The next risk was not a wrong workflow definition; it was operators spending extra attention and time to execute already-defined work.
+
+**Changes implemented:** Dashboard urgency sections gained direct queue actions and faster callback/follow-up entry points while continuing to consume centralized workflow counters and filters. Inbox gained deterministic keyboard traversal and lead-id-based action resolution from the latest queue snapshot. Bulk workflows now act on selected visible records, show clearer selection summaries, support callback/follow-up batching, and preserve undo/recovery behavior. Mobile sidebar and call logger surfaces gained safer touch targets, viewport behavior, scroll containment, and sticky action affordances. Save/sync indicators now distinguish retrying save, failed save, syncing, offline, and synced states more truthfully.
+
+**Workflow acceleration improvements:** Urgency now resolves into action with fewer clicks. Queue traversal is faster for keyboard operators. Callback and follow-up work can be batched without bypassing established workflow semantics. Dashboard, Inbox, and bulk actions became workflow accelerators rather than alternate interpretations of work.
+
+**Deterministic batching doctrine:** Bulk actions must resolve the exact record set being shown and selected at execution time. Visible-only bulk mutation is now an operational safety rule: filtered-out or hidden records must not be silently mutated by a bulk command that appears scoped to the current view.
+
+**Queue traversal ergonomics:** Rapid queue work should preserve deterministic targeting while reducing pointer dependency. Keyboard acceleration and next-item flow are acceptable only when they resolve by stable lead identity and current queue state.
+
+**Truthful sync semantics:** Sync and retry indicators must describe real lifecycle state. "Synced" must not appear while writes are pending or failed; retry/degraded states should be visible without blocking operator flow or spamming notifications.
+
+**Remaining risks/tradeoffs:** These acceleration affordances are client-side and still need authenticated browser regression coverage with real data. Keyboard shortcuts, mobile modal behavior, and bulk batching should be monitored as more queues are added. Future workflow-speed work must continue consuming `workflowState.ts` and centralized counter derivation.
+
+**Validation performed:** `npm run build`, `npx tsc --noEmit`, `npm run test:workflow-state`, `npm run test:auth-boundaries`, `npm run test:observability`, `npm run test:region-identity`, `npm run test:release-metadata`, `git diff --check`, local runtime root check, and source review for centralized workflow helper usage.
+
+**Long-term significance:** This phase turned operational throughput into architecture history. Workflow acceleration, deterministic batching, visible-only bulk mutation, queue traversal ergonomics, truthful sync semantics, and operational throughput optimization are now expected to build on the semantics layer rather than compete with it.
+
 ## Current Platform State
 
-The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, visible regional workspace identity, and explicit operator trust semantics around saving, urgency, counts, destructive recovery, autosave truth, and deterministic workflow action ownership.
+The ASG Leads platform is a production Firebase/React operational CRM with stabilized deployment flow, hardened privileged settings/audit paths, compatibility-aware auth migration foundations, shared workflow-state semantics, authoritative operational queue direction, visible regional workspace identity, and explicit operator trust semantics around saving, urgency, counts, destructive recovery, autosave truth, deterministic workflow action ownership, workflow acceleration, deterministic batching, visible-only bulk mutation, queue traversal ergonomics, and truthful sync semantics.
 
 The architecture remains intentionally incremental: realtime lead and operational workflows are still mostly client/Firebase-driven, while privileged configuration and audit surfaces are moving behind callable authority.
 
@@ -346,6 +372,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - **Regional workspace awareness:** Brisbane/Perth identity surfaced as persistent context.
 - **Operational trust semantics:** dirty-state preservation, inline save feedback, actionable urgency routing, and consistent undo recovery.
 - **Operational semantics consolidation:** workflow truth, deterministic action targeting, truthful autosave doctrine, and queue-aligned state transitions.
+- **Operator workflow acceleration:** deterministic batching, visible-only bulk mutation, queue traversal ergonomics, truthful sync semantics, and throughput optimization built on centralized workflow semantics.
 
 ## Current Operational Priorities
 
@@ -356,6 +383,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Improve operator confidence through visible context, clear errors, and deterministic task lifecycle behavior.
 - Treat save visibility, undo consistency, and actionable queue routing as part of workflow correctness.
 - Treat autosave semantics, action ownership, and queue-state alignment as architectural contracts.
+- Treat workflow acceleration as a semantics-preserving layer: faster queue traversal, batching, and mobile ergonomics must not redefine queue truth.
 
 ## Remaining Long-Term Risks
 
@@ -367,6 +395,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - Some non-fatal operational errors are still local catches or console-only logs.
 - Save/undo trust behavior is improved but still needs browser-level authenticated regression coverage.
 - Some older forms may still need explicit classification as true autosave or explicit save.
+- Workflow acceleration affordances need authenticated regression coverage for keyboard traversal, visible-only bulk mutation, callback/follow-up batching, and mobile modals.
 
 ## Recommended Future Evolution Path
 
@@ -379,6 +408,7 @@ The architecture remains intentionally incremental: realtime lead and operationa
 7. Review document/template/training writes with Storage rules before moving them behind server authority.
 8. Add authenticated e2e coverage for dirty-sidebar navigation, failed save recovery, bulk undo, badge-to-queue routing, and mobile export.
 9. Audit remaining form surfaces for save semantics doctrine: true autosave or explicit save, with no hybrid messaging.
+10. Add authenticated e2e coverage for dashboard-to-queue acceleration, visible-only bulk mutation, Inbox keyboard traversal, callback/follow-up batching, and truthful sync/retry states.
 
 ## Documentation Gaps To Close
 
@@ -387,5 +417,6 @@ The architecture remains intentionally incremental: realtime lead and operationa
 - A queue semantics reference for Dashboard, Inbox, notifications, badges, and next-action behavior.
 - A save/undo trust reference covering dirty state, failed persistence, recovery windows, and bulk action rollback expectations.
 - An operational semantics doctrine covering workflow truth, autosave truth, deterministic action targeting, and queue semantic alignment.
+- A workflow acceleration doctrine covering deterministic batching, visible-only bulk mutation, queue traversal ergonomics, truthful sync semantics, and throughput optimization boundaries.
 - A release/runbook page for production deploy, rollback, dry run, and Firebase console checks.
 - A regional operations guide for Brisbane/Perth data ownership, allowed-region policy, and backfill expectations.

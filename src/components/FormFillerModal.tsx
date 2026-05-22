@@ -10,10 +10,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import jsPDF from "jspdf";
-import { FormTemplate, FormTemplateField, FormFieldAutoFill, Lead, Rep } from "../types";
+import { FormTemplate, Lead, Rep } from "../types";
 import { useLeads } from "../hooks/useFirebase";
 import { useToast } from "../context/ToastContext";
 import { uploadFile, deleteFile } from "../lib/storage";
+import { resolveField } from "../lib/documentResolver";
+import { normalizeDocumentSchema } from "../lib/documentSchema";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { X, Loader, FileText, Search } from "lucide-react";
@@ -148,33 +150,6 @@ function SignatureCanvas({ onSign }: SignatureCanvasProps) {
 
 // ── Auto-fill resolver ────────────────────────────────────────────────────────
 
-function autoFillValue(field: FormTemplateField, lead: Lead, repName: string): string {
-  if (!field.autoFill) return "";
-  const key = field.autoFill as FormFieldAutoFill;
-  switch (key) {
-    case "leadName":
-      return lead.name ?? "";
-    case "leadPhone":
-      return lead.phone ?? "";
-    case "leadEmail":
-      return lead.email ?? "";
-    case "leadAddress":
-      return [lead.houseNum, lead.street, lead.suburb, lead.postcode].filter(Boolean).join(" ");
-    case "leadSuburb":
-      return lead.suburb ?? "";
-    case "leadPostcode":
-      return lead.postcode ?? "";
-    case "leadOwnership":
-      return lead.ownership ?? "";
-    case "repName":
-      return repName;
-    case "today":
-      return new Date().toLocaleDateString("en-AU");
-    default:
-      return "";
-  }
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 interface FormFillerModalProps {
@@ -204,9 +179,13 @@ export function FormFillerModal({ template, lead: initialLead, currentUser, onCl
   const buildInitialValues = useCallback(
     (lead: Lead) => {
       const vals: Record<string, string | boolean> = {};
+      const schema = normalizeDocumentSchema(template);
       template.fields.forEach((f) => {
         if (f.type === "signature" || f.type === "checkbox") return;
-        vals[f.id] = autoFillValue(f, lead, currentUser.name);
+        const schemaField = schema.fields.find((field) => field.legacyFieldId === f.id || field.key === f.autoFill);
+        vals[f.id] = f.autoFill
+          ? resolveField(f.autoFill, { lead, rep: currentUser }, schemaField).rendered
+          : "";
       });
       return vals;
     },

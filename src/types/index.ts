@@ -637,6 +637,8 @@ export interface FormTemplate {
   /** 'builder' = custom field-builder form (default/legacy), 'pdf' = uploaded AcroForm PDF */
   type?: "builder" | "pdf";
   fields: FormTemplateField[];
+  /** Optional structured-document schema. Legacy templates continue to use fields as the compatibility source. */
+  schema?: import("../lib/documentSchema").DocumentTemplateSchema;
   /** Firebase Storage download URL — only set when type === 'pdf' */
   pdfUrl?: string;
   /** Firebase Storage path — only set when type === 'pdf', used for deletion */

@@ -199,16 +199,17 @@ export function SaveStateToast({ state, message }: SaveStateToastProps) {
   const [opacity, setOpacity] = useState<boolean>(false);
 
   useEffect(() => {
+    let unmount: ReturnType<typeof setTimeout> | undefined;
     const fadeIn = requestAnimationFrame(() => setOpacity(true));
     const dismiss = setTimeout(() => {
       setOpacity(false);
-      const unmount = setTimeout(() => setMounted(false), 500);
-      return () => clearTimeout(unmount);
+      unmount = setTimeout(() => setMounted(false), 500);
     }, TOAST_CONFIG[state].durationMs);
 
     return () => {
       cancelAnimationFrame(fadeIn);
       clearTimeout(dismiss);
+      if (unmount) clearTimeout(unmount);
     };
   }, [state]);
 

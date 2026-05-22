@@ -74,6 +74,7 @@ import {
 import { deleteFile, uploadFile } from "../lib/storage";
 import { reportPendingWrites, reportWriteResult } from "./useNetworkStatus";
 import { currentPerthDate, getWorkflowState } from "../lib/workflowState";
+import { normalizeDocumentSchema } from "../lib/documentSchema";
 
 // Firestore rejects `undefined` field values — strip them before writing (deep: handles nested objects + arrays)
 function stripUndefined<T extends object>(obj: T): Partial<T> {
@@ -1184,7 +1185,10 @@ export function useFormTemplates(): { templates: FormTemplate[]; loading: boolea
     const unsub = onSnapshot(
       queryRef,
       (snap) => {
-        const raw = snap.docs.map((d) => ({ ...d.data(), id: d.id }) as FormTemplate);
+        const raw = snap.docs.map((d) => {
+          const template = { ...d.data(), id: d.id } as FormTemplate;
+          return { ...template, schema: normalizeDocumentSchema(template) };
+        });
         // Respect explicit sortOrder when any item has it set; otherwise keep createdAt desc
         const hasSortOrder = raw.some((t) => t.sortOrder !== undefined);
         if (hasSortOrder) {
@@ -1211,7 +1215,8 @@ export function useFormTemplates(): { templates: FormTemplate[]; loading: boolea
 export function useSaveFormTemplate(): { save: (t: FormTemplate) => Promise<boolean> } {
   const save = async (t: FormTemplate): Promise<boolean> => {
     try {
-      await setDoc(doc(db, "formTemplates", t.id), stripUndefined(t), { merge: true });
+      const template = { ...t, schema: normalizeDocumentSchema(t) };
+      await setDoc(doc(db, "formTemplates", template.id), stripUndefined(template), { merge: true });
       return true;
     } catch {
       return false;

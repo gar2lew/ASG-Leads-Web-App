@@ -12,6 +12,9 @@ This document captures the major architectural and operational decisions behind 
 - **Workflow confidence over cosmetic responsiveness.** Fast-feeling UI is not enough; operators need visible persistence, recoverable destructive actions, and urgency signals that lead to work.
 - **Truthful autosave over hybrid save theater.** A form must be true autosave or explicit save. If autosave is active, UI controls must describe flush, retry, saved, saving, dirty, or failed states honestly.
 - **Deterministic action targeting over visual position.** Workflow actions must resolve by stable record identity, not row index, stale closure state, or adjacent list position.
+- **Workflow acceleration must preserve workflow truth.** Faster queue traversal, dashboard shortcuts, batching, and mobile ergonomics must consume centralized semantics rather than redefine urgency or queue inclusion.
+- **Visible-only bulk mutation over hidden selection side effects.** Bulk actions that appear scoped to the current view must mutate only the visible selected records the operator can inspect.
+- **Truthful sync semantics over reassuring labels.** Sync, retry, offline, failed, and synced indicators must reflect actual persistence lifecycle state, not merely optimistic hope.
 - **Silent failure is operationally unsafe.** If a save, queue transition, or destructive recovery path cannot complete, the operator should see a clear state and retain recovery context.
 - **One coherent platform over fragmented regional UX.** Brisbane and Perth need clear identity without separate applications, layouts, or themes.
 - **Compatibility bridges are temporary architecture, not permanent philosophy.** Anonymous auth and rep-profile fallbacks exist to keep production running during migration.
@@ -328,11 +331,37 @@ This document captures the major architectural and operational decisions behind 
 
 **Long-Term Direction:** Keep operational semantics centralized, extend save doctrine to every editable workflow, add regression coverage for callback scheduling and Inbox Done identity, and treat queue alignment as a required architecture review item.
 
+## 20. Operator Workflow Acceleration Doctrine
+
+**Problem Context:** Once workflow semantics, counter derivation, queue truth, autosave truth, and deterministic action targeting were consolidated, the next operational constraint became speed. Operators needed fewer clicks, faster queue traversal, better touch ergonomics, and safer batching without weakening the newly centralized semantics layer.
+
+**Alternatives Considered:** Add local dashboard shortcuts and bulk tools per component; redesign the shell around productivity; treat acceleration as a thin layer over centralized workflow semantics.
+
+**Decision Made:** Treat workflow acceleration as architecture, but only as a semantics-preserving layer. Dashboard actions, Inbox traversal, mobile affordances, bulk callback/follow-up tools, and sync feedback must consume `workflowState.ts`, centralized counters, deterministic lead identity, and truthful autosave/sync lifecycle ownership.
+
+**Why This Approach Won:** Operator throughput improves only if speed does not reintroduce ambiguity. Faster actions that mutate the wrong lead, batch hidden records, imply false sync success, or bypass queue semantics are operational regressions, even if they feel efficient.
+
+**Workflow Acceleration Doctrine:** Acceleration features should reduce click count and pointer dependency while preserving the same queue truth. Dashboard cards should open the work they represent. Keyboard traversal should act on the current lead identity, not the current visual index alone. Mobile improvements should keep operational controls reachable without changing workflow meaning.
+
+**Deterministic Batching Doctrine:** Bulk operations must resolve an explicit, inspectable record set at execution time. Selected visible leads are the safe default for table-scoped bulk mutation. Hidden, filtered-out, or stale selected records must not be silently changed by actions that appear view-scoped.
+
+**Queue Traversal Ergonomics Doctrine:** Rapid queue movement is allowed when action ownership remains deterministic. Shortcuts and next-item flows must resolve against latest queue state and stable lead ids, and must guard against duplicate in-flight actions.
+
+**Truthful Sync Semantics Doctrine:** Persistence indicators must distinguish dirty, saving, retrying, failed, offline, syncing, synced, and degraded states where relevant. "Synced" is a claim about lifecycle truth and must not be shown while writes are pending or failed.
+
+**Operational Throughput Optimization Doctrine:** Throughput work should target high-frequency operator loops: dashboard-to-queue, queue-to-next-item, callback/follow-up batching, mobile call logging, and visible save/retry feedback. It must not become analytics expansion, visual redesign, or a second workflow engine.
+
+**Tradeoffs Accepted:** The acceleration layer remains client-side and therefore depends on disciplined state resolution, auth/data availability, and browser-level validation. Some speed features add keyboard and touch behavior that will need regression coverage as queues grow.
+
+**Risks Remaining:** Future convenience features can accidentally create competing queue calculations, hidden bulk side effects, or misleading sync messages if they bypass the doctrine. Authenticated e2e coverage is still needed for fast traversal, batching, and mobile modal workflows.
+
+**Long-Term Direction:** Continue optimizing operator throughput only through centralized semantics. Add regression tests for visible-only bulk mutation, dashboard-to-queue navigation, Inbox keyboard traversal, callback/follow-up batching, mobile call logging, and truthful sync/retry state.
+
 ## Current Architectural State
 
 ASG Leads is a React/Vite/Firebase operational CRM with a client-heavy realtime architecture, Zustand state, Firestore listeners, Firebase Hosting, Cloud Functions for selected privileged flows, custom rep/PIN operational identity, and a migration path toward Firebase UID/custom claims.
 
-Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior. The platform also treats operator trust semantics, including visible save state, failed-save recovery, actionable urgency routing, deterministic action targeting, truthful autosave, queue semantic alignment, and destructive-action undo, as part of workflow architecture rather than surface polish.
+Privileged settings/audit flows are callable-authoritative. Core realtime operational workflows remain mostly client-authoritative for compatibility and speed. Workflow semantics and operational queue truth are now centralized enough to support consistent Dashboard/Inbox behavior. The platform also treats operator trust semantics, including visible save state, failed-save recovery, actionable urgency routing, deterministic action targeting, truthful autosave, queue semantic alignment, destructive-action undo, workflow acceleration, deterministic batching, visible-only bulk mutation, queue traversal ergonomics, truthful sync semantics, and operational throughput optimization, as part of workflow architecture rather than surface polish.
 
 ## Transitional Systems Still In Progress
 
@@ -346,6 +375,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Partial diagnostics coverage across listeners and non-fatal workflows.
 - Client-side save/undo trust semantics before broader server-side recovery guarantees.
 - Operational semantics doctrine before full implementation coverage across every legacy form.
+- Client-side workflow acceleration affordances before full authenticated regression coverage for traversal, batching, and mobile operator loops.
 
 ## Known Long-Term Risks
 
@@ -358,6 +388,9 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Silent or inconsistent save/undo behavior can reappear if new surfaces bypass established trust semantics.
 - Hybrid autosave/explicit-save messaging can reappear if new forms are not classified up front.
 - Wrong-record action bugs can reappear if future queue actions resolve from indexes or stale row closures.
+- Hidden-record bulk mutation can reappear if selection state is not reconciled against visible records at action time.
+- Sync trust can regress if indicators favor reassuring copy over real pending, retrying, failed, or offline state.
+- Workflow acceleration can become semantic drift if new shortcuts bypass `workflowState.ts` or centralized counter derivation.
 
 ## Recommended Future Architectural Direction
 
@@ -372,6 +405,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 9. Add authenticated e2e coverage for dirty-sidebar close, failed auto-save, bulk undo, filtered tab counts, badge-to-queue routing, and touch export.
 10. Audit remaining editable surfaces for the save semantics doctrine and remove hybrid autosave/discard patterns.
 11. Add regression coverage for callback scheduling, Call Back Today, existing callback edits, and Inbox Done stable identity.
+12. Add regression coverage for visible-only bulk mutation, bulk callback/follow-up batching, dashboard-to-queue actions, Inbox keyboard traversal, and truthful sync/retry indicators.
 
 ## Remaining Documentation Gaps
 
@@ -380,6 +414,7 @@ Privileged settings/audit flows are callable-authoritative. Core realtime operat
 - Workflow semantics reference for queues, badges, notifications, Inbox, Dashboard, and next action.
 - Operational trust semantics reference for save state, dirty navigation, failed persistence, undo windows, and bulk rollback expectations.
 - Operational semantics consolidation doctrine for workflow truth, save semantics, deterministic action targeting, truthful autosave, and queue alignment.
+- Workflow acceleration doctrine for deterministic batching, visible-only bulk mutation, queue traversal ergonomics, truthful sync semantics, and throughput optimization.
 - Release and rollback runbook for operators.
 - Regional operations guide for Brisbane/Perth ownership and allowed-region policy.
 - Callable migration ledger showing completed, transitional, and future server-authoritative domains.

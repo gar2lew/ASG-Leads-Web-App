@@ -35,6 +35,7 @@ import {
 } from "../hooks/useFirebase";
 import { useToast } from "../context/ToastContext";
 import { uploadFile, deleteFile, formatFileSize, fileTypeIcon } from "../lib/storage";
+import { buildLegacyFormTemplateSchema } from "../lib/documentSchema";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import {
@@ -754,15 +755,17 @@ function FormBuilderModal({
     if (!name.trim()) return;
     setSaving(true);
     const now = Date.now();
+    const nextFields = fields.filter((f) => f.label.trim() || f.type === "signature");
     const t: FormTemplate = {
       id: template?.id ?? `form_${now}_${Math.floor(Math.random() * 9999)}`,
       name: name.trim(),
       description: description.trim(),
-      fields: fields.filter((f) => f.label.trim() || f.type === "signature"),
+      fields: nextFields,
       createdBy: template?.createdBy ?? currentUser?.name ?? "",
       createdAt: template?.createdAt ?? now,
       updatedAt: now,
     };
+    t.schema = buildLegacyFormTemplateSchema(t);
     const ok = await save(t);
     setSaving(false);
     if (ok) {
@@ -1006,7 +1009,7 @@ function PdfTemplateUploadModal({
       }
 
       const id = existing?.id ?? `pdfform_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const ok = await save({
+      const nextTemplate: FormTemplate = {
         id,
         name: name.trim(),
         description: description.trim(),
@@ -1017,7 +1020,9 @@ function PdfTemplateUploadModal({
         createdBy: existing?.createdBy ?? currentUser.name,
         createdAt: existing?.createdAt ?? Date.now(),
         updatedAt: Date.now(),
-      });
+      };
+      nextTemplate.schema = buildLegacyFormTemplateSchema(nextTemplate);
+      const ok = await save(nextTemplate);
 
       if (ok) {
         showToast(existing ? "✅ Template updated" : "✅ PDF template uploaded", "success");
