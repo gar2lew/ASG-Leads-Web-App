@@ -30,3 +30,9 @@ assert.match(functionsAudit, /buildAuditEvent/);
 
 const functionsSettings = read("functions/src/settingsAdmin.ts");
 assert.match(functionsSettings, /buildSettingsAuditEntry/);
+
+const offlineQueue = read("src/hooks/useOfflineQueue.ts");
+assert.match(offlineQueue, /const isOnlineRef = useRef<boolean>\(isOnline\)/);
+assert.match(offlineQueue, /isOnlineRef\.current = true/);
+assert.match(offlineQueue, /const latestQueue = loadQueue\(\)/);
+assert.match(offlineQueue, /processedItems\.get\(item\.id\) \?\? item/);

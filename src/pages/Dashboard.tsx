@@ -4,8 +4,8 @@ import { getNextAction } from "../lib/nextAction";
 import {
   currentPerthDate,
   deriveOperationalCounters,
+  deriveOperationalQueueSnapshot,
   filterOperationalLeads,
-  getActionableWorkflowItems,
   getOperationalLeadBucket,
   getWorkflowState,
   type OperationalLeadFilter,
@@ -307,55 +307,56 @@ export function DashboardPage({
     [leads],
   );
 
+  const leadCounters = useMemo(() => deriveOperationalCounters(leads), [leads]);
+  const queueSnapshot = useMemo(() => deriveOperationalQueueSnapshot(operationalQueueLeads), [operationalQueueLeads]);
+
   // ── Stats ────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const counters = deriveOperationalCounters(leads);
-    const queueCounters = deriveOperationalCounters(operationalQueueLeads);
+    const queueCounters = queueSnapshot.counters;
     const callsToday = allCalls.filter((c) => normCallDate(c.date) === today).length;
     const callsThisWeek = allCalls.filter((c) => normCallDate(c.date) >= weekStart).length;
     const newToday = leads.filter((l) => l.leadDate === today).length;
     const newThisWeek = leads.filter((l) => (l.leadDate ?? "") >= weekStart).length;
-    const callbacks = filterOperationalLeads(operationalQueueLeads, "callbacks");
+    const callbacks = queueSnapshot.callbackItems.map(({ lead }) => lead);
     const overdueCount = queueCounters.overdueCallbacks;
-    const convRate = counters.total > 0 ? ((counters.booked / counters.total) * 100).toFixed(1) : "0.0";
+    const convRate = leadCounters.total > 0 ? ((leadCounters.booked / leadCounters.total) * 100).toFixed(1) : "0.0";
 
     return {
       callsToday,
       callsThisWeek,
-      booked: counters.booked,
-      live: counters.qualified,
-      dq: counters.dq,
+      booked: leadCounters.booked,
+      live: leadCounters.qualified,
+      dq: leadCounters.dq,
       newToday,
       newThisWeek,
       callbacks,
       overdueCount,
-      total: counters.total,
+      total: leadCounters.total,
       actionable: queueCounters.actionable,
       followups: queueCounters.followups,
       overdueFollowups: queueCounters.overdueFollowups,
       convRate,
     };
-  }, [leads, operationalQueueLeads, allCalls, today, weekStart]);
+  }, [leads, leadCounters, queueSnapshot, allCalls, today, weekStart]);
 
   // ── Priority Work Queue (Next Action Engine) ─────────────────────────────
   // No extra Firestore queries — uses call history + lead fields only.
   // Calendar appointments and subcollection notes are not loaded here;
   // the engine gracefully handles empty arrays / undefined for those inputs.
   const priorityActions = useMemo(() => {
-    return getActionableWorkflowItems(operationalQueueLeads)
+    return queueSnapshot.actionableItems
       .map((item) => ({ ...item, action: getNextAction(item.lead, []) }))
       .slice(0, 15);
-  }, [operationalQueueLeads]);
+  }, [queueSnapshot]);
 
   // ── Follow-Up Engine ─────────────────────────────────────────────────────
   // Surfaces leads whose nextContactDate is due today or overdue.
   // Uses string comparison on ISO dates — no library needed.
   const followUpData = useMemo(() => {
-    const activeLeads = filterOperationalLeads(operationalQueueLeads, "followups");
-    const dueToday = activeLeads.filter((lead) => getWorkflowState(lead).dueDate === today);
-    const overdue = filterOperationalLeads(operationalQueueLeads, "overdue-followups");
+    const dueToday = queueSnapshot.dueFollowupTodayItems.map(({ lead }) => lead);
+    const overdue = queueSnapshot.overdueFollowupItems.map(({ lead }) => lead);
     return { dueToday, overdue };
-  }, [operationalQueueLeads, today]);
+  }, [queueSnapshot]);
 
   const queueShortcuts = useMemo(
     () =>
@@ -397,7 +398,7 @@ export function DashboardPage({
     }> = [];
 
     // ── Overdue callbacks ──
-    const overdueCallbackLeads = filterOperationalLeads(operationalQueueLeads, "overdue-callbacks");
+    const overdueCallbackLeads = queueSnapshot.overdueCallbackItems.map(({ lead }) => lead);
     if (overdueCallbackLeads.length > 0)
       items.push({
         id: "overdue-callbacks",
@@ -469,7 +470,7 @@ export function DashboardPage({
       });
 
     return items.sort((a, b) => b.count - a.count).slice(0, 3);
-  }, [leads, operationalQueueLeads, followUpData, today]);
+  }, [leads, queueSnapshot, followUpData, today]);
 
   // ── Calls per day (last 7 days) ───────────────────────────────────────────
   const callsByDay = useMemo(() => {

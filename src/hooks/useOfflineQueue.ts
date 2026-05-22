@@ -149,6 +149,11 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
   const [queue, setQueue] = useState<QueueItem[]>(() => loadQueue());
   // Prevent concurrent processQueue calls (e.g. rapid reconnect events)
   const processingRef = useRef<boolean>(false);
+  const isOnlineRef = useRef<boolean>(isOnline);
+
+  useEffect(() => {
+    isOnlineRef.current = isOnline;
+  }, [isOnline]);
 
   // -------------------------------------------------------------------------
   // processQueue — replay pending items against Firestore one by one
@@ -156,62 +161,67 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
 
   const processQueue = useCallback(async (): Promise<void> => {
     // Guard against concurrent invocations (e.g. rapid online events)
-    if (!isOnline || processingRef.current) return;
+    if (!isOnlineRef.current || processingRef.current) return;
 
     processingRef.current = true;
     setIsSyncing(true);
 
-    // Fresh read from localStorage so we always work with the latest state,
-    // even if another tab or a rapid enqueue happened since last render.
-    const currentQueue = loadQueue();
+    try {
+      // Fresh read from localStorage so we always work with the latest state,
+      // even if another tab or a rapid enqueue happened since last render.
+      const currentQueue = loadQueue();
 
-    const pending = currentQueue.filter((i) => i.attempts < MAX_ATTEMPTS);
-    const permanentlyFailed = currentQueue.filter(
-      (i) => i.attempts >= MAX_ATTEMPTS
-    );
+      const pending = currentQueue.filter((i) => i.attempts < MAX_ATTEMPTS);
 
-    const successIds = new Set<string>();
+      const successIds = new Set<string>();
+      const processedItems = new Map<string, QueueItem>();
 
-    for (const item of pending) {
-      // Skip items still in their backoff window
-      if (isBackingOff(item)) continue;
+      for (const item of pending) {
+        // Skip items still in their backoff window
+        if (isBackingOff(item)) continue;
 
-      try {
-        const segments = item.docPath.split("/");
-        const ref = doc(db, segments[0], ...segments.slice(1));
+        try {
+          const segments = item.docPath.split("/");
+          const ref = doc(db, segments[0], ...segments.slice(1));
 
-        if (item.operation === "delete") {
-          await deleteDoc(ref);
-        } else if (item.operation === "set_full") {
-          await setDoc(ref, item.data ?? {});
-        } else {
-          // Default: set_merge
-          await setDoc(ref, item.data ?? {}, { merge: true });
+          if (item.operation === "delete") {
+            await deleteDoc(ref);
+          } else if (item.operation === "set_full") {
+            await setDoc(ref, item.data ?? {});
+          } else {
+            // Default: set_merge
+            await setDoc(ref, item.data ?? {}, { merge: true });
+          }
+
+          successIds.add(item.id);
+        } catch (err) {
+          item.attempts += 1;
+          item.lastAttemptAt = Date.now();
+          item.lastError =
+            err instanceof Error ? err.message : "Unknown error";
+
+          // Log to our error handler (non-fatal)
+          handleError(err, `useOfflineQueue.replay(${item.docPath})`);
+        } finally {
+          processedItems.set(item.id, item);
         }
-
-        successIds.add(item.id);
-      } catch (err) {
-        item.attempts += 1;
-        item.lastAttemptAt = Date.now();
-        item.lastError =
-          err instanceof Error ? err.message : "Unknown error";
-
-        // Log to our error handler (non-fatal)
-        handleError(err, `useOfflineQueue.replay(${item.docPath})`);
       }
+
+      // Rebuild from the freshest persisted queue so writes enqueued during replay
+      // are preserved, while attempted items keep their latest retry metadata.
+      const latestQueue = loadQueue();
+      const remaining = latestQueue.flatMap((item) => {
+        if (successIds.has(item.id)) return [];
+        return [processedItems.get(item.id) ?? item];
+      });
+
+      saveQueue(remaining);
+      setQueue(remaining);
+    } finally {
+      setIsSyncing(false);
+      processingRef.current = false;
     }
-
-    // Rebuild queue: remove successes, keep failures (updated) + permanently failed
-    const remaining = [
-      ...pending.filter((i) => !successIds.has(i.id)),
-      ...permanentlyFailed,
-    ];
-
-    saveQueue(remaining);
-    setQueue(remaining);
-    setIsSyncing(false);
-    processingRef.current = false;
-  }, [isOnline]);
+  }, []);
 
   // -------------------------------------------------------------------------
   // Online / offline listeners
@@ -219,6 +229,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
 
   useEffect(() => {
     const handleOnline = (): void => {
+      isOnlineRef.current = true;
       setIsOnline(true);
       // Give Firestore 1.5 s to re-establish its WebSocket before we replay
       setTimeout(() => {
@@ -227,6 +238,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
     };
 
     const handleOffline = (): void => {
+      isOnlineRef.current = false;
       setIsOnline(false);
     };
 

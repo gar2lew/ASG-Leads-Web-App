@@ -116,6 +116,11 @@ assert.deepEqual(
   workflow.filterOperationalLeads(mixedSet, "actionable-queue", { now }).map((l) => l.id),
   [2, 3, 1],
 );
+const queueSnapshot = workflow.deriveOperationalQueueSnapshot(mixedSet, { now });
+assert.deepEqual(queueSnapshot.actionableItems.map((item) => item.lead.id), [2, 3, 1]);
+assert.deepEqual(queueSnapshot.overdueCallbackItems.map((item) => item.lead.id), [2]);
+assert.deepEqual(queueSnapshot.overdueFollowupItems.map((item) => item.lead.id), [3]);
+assert.deepEqual(queueSnapshot.counters, counters);
 
 const sourceForDone = lead({
   callbackDate: "2026-05-09",

@@ -31,6 +31,17 @@ export interface WorkflowItem {
   state: WorkflowState;
 }
 
+export interface OperationalQueueSnapshot {
+  items: WorkflowItem[];
+  actionableItems: WorkflowItem[];
+  callbackItems: WorkflowItem[];
+  overdueCallbackItems: WorkflowItem[];
+  followupItems: WorkflowItem[];
+  overdueFollowupItems: WorkflowItem[];
+  dueFollowupTodayItems: WorkflowItem[];
+  counters: OperationalCounters;
+}
+
 export interface OperationalCounters {
   total: number;
   active: number;
@@ -235,6 +246,89 @@ export function buildWorkflowItems(leads: Lead[], options: WorkflowOptions = {})
 
 export function getActionableWorkflowItems(leads: Lead[], options: WorkflowOptions = {}): WorkflowItem[] {
   return sortWorkflowQueue(buildWorkflowItems(leads, options).filter((item) => item.state.isActionable));
+}
+
+export function deriveOperationalQueueSnapshot(
+  leads: Lead[],
+  options: WorkflowOptions = {},
+): OperationalQueueSnapshot {
+  const today = currentPerthDate(options);
+  const counters: OperationalCounters = {
+    total: leads.length,
+    active: 0,
+    dq: 0,
+    new: 0,
+    contacted: 0,
+    qualified: 0,
+    booked: 0,
+    lost: 0,
+    revisit: 0,
+    callbacks: 0,
+    overdueCallbacks: 0,
+    followups: 0,
+    overdueFollowups: 0,
+    dueFollowupsToday: 0,
+    actionable: 0,
+    callNow: 0,
+    terminal: 0,
+  };
+  const items: WorkflowItem[] = [];
+  const actionableItems: WorkflowItem[] = [];
+  const callbackItems: WorkflowItem[] = [];
+  const overdueCallbackItems: WorkflowItem[] = [];
+  const followupItems: WorkflowItem[] = [];
+  const overdueFollowupItems: WorkflowItem[] = [];
+  const dueFollowupTodayItems: WorkflowItem[] = [];
+
+  for (const lead of leads) {
+    const state = getWorkflowState(lead, options);
+    const item = { lead, state };
+    items.push(item);
+
+    const bucket = getOperationalLeadBucket(lead);
+    counters[bucket] += 1;
+    if (isDqLeadStatus(lead.status)) counters.dq += 1;
+    if (lead.status === "Revisit" || state.queueType === "callback") counters.revisit += 1;
+    if (state.queueType === "terminal") counters.terminal += 1;
+    else counters.active += 1;
+
+    if (state.isActionable) {
+      counters.actionable += 1;
+      actionableItems.push(item);
+    }
+    if (state.queueType === "call") counters.callNow += 1;
+    if (state.queueType === "callback") {
+      counters.callbacks += 1;
+      callbackItems.push(item);
+      if (state.isOverdue) {
+        counters.overdueCallbacks += 1;
+        overdueCallbackItems.push(item);
+      }
+    }
+    if (state.queueType === "followup") {
+      counters.followups += 1;
+      followupItems.push(item);
+      if (state.isOverdue) {
+        counters.overdueFollowups += 1;
+        overdueFollowupItems.push(item);
+      }
+      if (state.dueDate === today) {
+        counters.dueFollowupsToday += 1;
+        dueFollowupTodayItems.push(item);
+      }
+    }
+  }
+
+  return {
+    items,
+    actionableItems: sortWorkflowQueue(actionableItems),
+    callbackItems: sortWorkflowQueue(callbackItems),
+    overdueCallbackItems: sortWorkflowQueue(overdueCallbackItems),
+    followupItems: sortWorkflowQueue(followupItems),
+    overdueFollowupItems: sortWorkflowQueue(overdueFollowupItems),
+    dueFollowupTodayItems: sortWorkflowQueue(dueFollowupTodayItems),
+    counters,
+  };
 }
 
 export function sortWorkflowQueue<T extends { lead: Lead; state: WorkflowState }>(items: T[]): T[] {
