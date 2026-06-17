@@ -1171,7 +1171,7 @@ function AppShell() {
           const newLead: import("./types").Lead = {
             id: Date.now() + Math.random(),
             name: name || "Unknown",
-            phone: rawPhone,
+            phone,
             suburb,
             houseNum: houseIdx >= 0 ? get(row, houseIdx) || undefined : undefined,
             street: streetIdx >= 0 ? get(row, streetIdx) || undefined : undefined,

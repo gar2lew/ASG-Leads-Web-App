@@ -18,6 +18,7 @@ import { MarkerClusterer as GMClusterer } from "@googlemaps/markerclusterer";
 import { Lead, LeadStatus, KnockResult, KnockZone, CustomPinType } from "../types";
 import { useAppStore } from "../stores/appStore";
 import { generateLeadId } from "../lib/idGenerator";
+import { normalizeAUPhone } from "../lib/utils";
 import { getStatusColor } from "../lib/statusConfig";
 import {
   useLeads,
@@ -1214,7 +1215,7 @@ export function MapPage() {
       const lead: Lead = {
         id: generateLeadId(),
         name: form.name || "Unknown Resident",
-        phone: form.phone,
+        phone: normalizeAUPhone(form.phone),
         houseNum: form.houseNum,
         street: form.street,
         suburb: form.suburb,

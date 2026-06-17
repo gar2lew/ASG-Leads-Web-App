@@ -130,6 +130,7 @@ export interface Lead {
   name: string;
   phone: string;
   email?: string;
+  phoneRaw?: string; // original phone before normalization (migration safety field)
 
   // Address
   houseNum?: string;

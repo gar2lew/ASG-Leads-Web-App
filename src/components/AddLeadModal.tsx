@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Lead } from "../types";
 import { useAppStore } from "../stores/appStore";
 import { useLeads } from "../hooks/useFirebase";
-import { sanitizePhone } from "../lib/utils";
+import { normalizeAUPhone, sanitizePhone } from "../lib/utils";
 import { generateLeadId } from "../lib/idGenerator";
 import { SuburbInput } from "./SuburbInput";
 import { X, UserPlus } from "lucide-react";
@@ -190,7 +190,7 @@ export function AddLeadModal({ onClose, onSave }: AddLeadModalProps) {
     const newLead: Lead = {
       id: generateLeadId(),
       name: form.name!.trim(),
-      phone: form.phone!.trim(),
+      phone: normalizeAUPhone(form.phone!),
       email: form.email?.trim() || undefined,
       houseNum: form.houseNum?.trim() || undefined,
       street: form.street?.trim() || undefined,

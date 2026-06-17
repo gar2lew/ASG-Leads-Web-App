@@ -27,6 +27,10 @@ import {
   Loader,
   Info,
   ShieldAlert,
+  Phone,
+  Play,
+  Database,
+  Shield,
 } from "lucide-react";
 import { useAppSettings, DEFAULT_APP_CONFIG } from "../hooks/useAppSettings";
 import type { AppConfig } from "../hooks/useAppSettings";
@@ -34,6 +38,8 @@ import { updateAppSettings } from "../lib/settingsService";
 import { getActionableErrorMessage } from "../lib/operationalDiagnostics";
 import { getEnvironmentLabel, getReleaseMetadata, isProductionEnvironment } from "../lib/releaseMetadata";
 import { useAppStore } from "../stores/appStore";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../lib/firebase";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-component: Section wrapper
@@ -154,6 +160,7 @@ export function SystemSettingsPanel() {
   const release = getReleaseMetadata();
   const environmentLabel = getEnvironmentLabel(release.environment);
   const productionEnvironment = isProductionEnvironment(release);
+  const isAdmin = currentUser?.role === "admin";
 
   // Local draft — initialised from live Firestore settings
   const [draft, setDraft] = useState<AppConfig>(DEFAULT_APP_CONFIG);
@@ -162,6 +169,15 @@ export function SystemSettingsPanel() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
   const [remoteChanged, setRemoteChanged] = useState(false);
+
+  // TODO: Remove after phone normalization migration is complete.
+  const [dryRunLoading, setDryRunLoading] = useState(false);
+  const [dryRunResult, setDryRunResult] = useState<Record<string, unknown> | null>(null);
+  const [dryRunError, setDryRunError] = useState<string | null>(null);
+  const [liveRunLoading, setLiveRunLoading] = useState(false);
+  const [liveRunResult, setLiveRunResult] = useState<Record<string, unknown> | null>(null);
+  const [liveRunError, setLiveRunError] = useState<string | null>(null);
+  const [showLiveConfirm, setShowLiveConfirm] = useState(false);
 
   // Sync draft from Firestore config (first load + external changes)
   useEffect(() => {
@@ -194,6 +210,41 @@ export function SystemSettingsPanel() {
   function setFlag<K extends keyof AppConfig["featureFlags"]>(key: K, val: AppConfig["featureFlags"][K]) {
     setDraft((d) => ({ ...d, featureFlags: { ...d.featureFlags, [key]: val } }));
     setDirty(true);
+  }
+
+  // TODO: Remove after phone normalization migration is complete.
+  const backfillCallable = React.useMemo(
+    () => httpsCallable(functions, "backfillPhoneNormalization"),
+    [],
+  );
+
+  async function handleDryRun() {
+    setDryRunLoading(true);
+    setDryRunResult(null);
+    setDryRunError(null);
+    try {
+      const response = await backfillCallable({ dryRun: true });
+      setDryRunResult(response.data as Record<string, unknown>);
+    } catch (err) {
+      setDryRunError(getActionableErrorMessage(err));
+    } finally {
+      setDryRunLoading(false);
+    }
+  }
+
+  async function handleLiveRun() {
+    setLiveRunLoading(true);
+    setLiveRunResult(null);
+    setLiveRunError(null);
+    setShowLiveConfirm(false);
+    try {
+      const response = await backfillCallable({ dryRun: false });
+      setLiveRunResult(response.data as Record<string, unknown>);
+    } catch (err) {
+      setLiveRunError(getActionableErrorMessage(err));
+    } finally {
+      setLiveRunLoading(false);
+    }
   }
 
   // Save handler
@@ -486,6 +537,164 @@ export function SystemSettingsPanel() {
           </div>
         </div>
       </Section>
+
+      {/* ── Phone Normalisation Migration (TODO: remove after migration complete) ── */}
+      {isAdmin && (
+        <Section
+          icon={<Phone size={14} />}
+          title="Phone Normalization Migration"
+          description="Required before Salestrail call matching. Run a dry-run first to preview changes, then execute the live migration to normalize all lead phone numbers."
+        >
+          <div className="space-y-3">
+            {/* ── Dry Run ── */}
+            <div className="border-b border-gray-100 dark:border-white/[0.06] pb-3">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Step 1: Dry Run</p>
+              <div className="flex items-center gap-2 mb-1">
+                <button
+                  onClick={handleDryRun}
+                  disabled={dryRunLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {dryRunLoading ? (
+                    <><Loader size={12} className="animate-spin" /> Scanning…</>
+                  ) : (
+                    <><Play size={12} /> Run Dry Run</>
+                  )}
+                </button>
+              </div>
+
+              {dryRunError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 mt-2">
+                  <AlertCircle size={12} />
+                  {dryRunError}
+                </div>
+              )}
+
+              {dryRunResult && (
+                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-3 space-y-1.5 text-xs mt-2">
+                  <p className="font-semibold text-gray-700 dark:text-gray-200">
+                    Dry Run Results {dryRunResult.success === false ? "(with errors)" : ""}
+                  </p>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 dark:text-gray-400">
+                    <span>Scanned:</span>
+                    <span className="font-mono text-right">{String(dryRunResult.totalScanned ?? "-")}</span>
+                    <span>Would update:</span>
+                    <span className="font-mono text-right font-semibold text-amber-600 dark:text-amber-400">{String(dryRunResult.updated ?? "-")}</span>
+                    <span>Already normalized:</span>
+                    <span className="font-mono text-right">{String(dryRunResult.skippedAlreadyNormalized ?? "-")}</span>
+                    <span>Empty phone:</span>
+                    <span className="font-mono text-right">{String(dryRunResult.skippedEmptyPhone ?? "-")}</span>
+                    <span>Invalid:</span>
+                    <span className="font-mono text-right">{String(dryRunResult.skippedInvalidFormat ?? "-")}</span>
+                    {dryRunResult.errors !== undefined && Number(dryRunResult.errors) > 0 && (
+                      <>
+                        <span>Errors:</span>
+                        <span className="font-mono text-right text-red-500">{String(dryRunResult.errors)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Live Migration ── */}
+            <div>
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Step 2: Live Migration</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-2">
+                This will update lead phone records in Firestore. A dry run must complete successfully first.
+              </p>
+
+              {!dryRunResult && (
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 italic">
+                  Complete Step 1 (Dry Run) to enable live migration.
+                </p>
+              )}
+
+              {dryRunResult && !showLiveConfirm && (
+                <button
+                  onClick={() => setShowLiveConfirm(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-500 transition"
+                >
+                  <Database size={12} /> Run Live Migration
+                </button>
+              )}
+
+              {showLiveConfirm && (
+                <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3 space-y-3 mt-2">
+                  <div className="flex items-start gap-2">
+                    <Shield size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-red-700 dark:text-red-300">Confirm Live Migration</p>
+                      <p className="text-[10px] text-red-600 dark:text-red-400">
+                        This will permanently update lead phone records in Firestore. The dry run
+                        scanned <strong>{String(dryRunResult?.totalScanned)}</strong> leads and would update{" "}
+                        <strong>{String(dryRunResult?.updated)}</strong>. This action cannot be undone. The original
+                        phone value is preserved in the <code className="font-mono">phoneRaw</code> field.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleLiveRun}
+                      disabled={liveRunLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {liveRunLoading ? (
+                        <><Loader size={12} className="animate-spin" /> Running…</>
+                      ) : (
+                        <>Yes, Run Live Migration</>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowLiveConfirm(false)}
+                      disabled={liveRunLoading}
+                      className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {liveRunError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 mt-2">
+                  <AlertCircle size={12} />
+                  {liveRunError}
+                </div>
+              )}
+
+              {liveRunResult && (
+                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-3 space-y-1.5 text-xs mt-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={14} className="text-green-500" />
+                    <p className="font-semibold text-green-700 dark:text-green-300">
+                      Migration Complete
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 dark:text-gray-400">
+                    <span>Scanned:</span>
+                    <span className="font-mono text-right">{String(liveRunResult.totalScanned ?? "-")}</span>
+                    <span>Updated:</span>
+                    <span className="font-mono text-right font-semibold text-green-600 dark:text-green-400">{String(liveRunResult.updated ?? "-")}</span>
+                    <span>Already normalized:</span>
+                    <span className="font-mono text-right">{String(liveRunResult.skippedAlreadyNormalized ?? "-")}</span>
+                    <span>Empty phone:</span>
+                    <span className="font-mono text-right">{String(liveRunResult.skippedEmptyPhone ?? "-")}</span>
+                    <span>Invalid:</span>
+                    <span className="font-mono text-right">{String(liveRunResult.skippedInvalidFormat ?? "-")}</span>
+                    {liveRunResult.errors !== undefined && Number(liveRunResult.errors) > 0 && (
+                      <>
+                        <span>Errors:</span>
+                        <span className="font-mono text-right text-red-500">{String(liveRunResult.errors)}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* Info footer */}
       <div className="space-y-3 px-1">
