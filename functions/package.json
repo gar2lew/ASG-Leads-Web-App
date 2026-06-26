@@ -19,5 +19,8 @@
     "@types/jsonwebtoken": "^9.0.6",
     "typescript": "^5.0.0"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "protobufjs": "7.6.4"
+  }
 }
