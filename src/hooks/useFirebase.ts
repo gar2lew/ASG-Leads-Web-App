@@ -37,11 +37,13 @@ import {
   updateDoc,
   increment,
   getDocs,
+  getCountFromServer,
   writeBatch,
   getDoc,
   where,
+  documentId,
 } from "firebase/firestore";
-import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+import type { Query, QueryDocumentSnapshot, QuerySnapshot, DocumentData } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import { useAppStore } from "../stores/appStore";
 import { useFirebaseAuthUser } from "./useFirebaseAuthUser";
@@ -75,6 +77,13 @@ import { deleteFile, uploadFile } from "../lib/storage";
 import { reportPendingWrites, reportWriteResult } from "./useNetworkStatus";
 import { currentPerthDate, getWorkflowState } from "../lib/workflowState";
 import { normalizeDocumentSchema } from "../lib/documentSchema";
+import {
+  collectPagedSyncIndex,
+  isPartialSyncIndex,
+  pickSyncLeadIndexFields,
+  SYNC_INDEX_BATCH_SIZE,
+} from "../lib/sheetsSyncIndex";
+import type { SyncLeadIndexEntry } from "../lib/sheetsSyncIndex";
 
 // Firestore rejects `undefined` field values — strip them before writing (deep: handles nested objects + arrays)
 function stripUndefined<T extends object>(obj: T): Partial<T> {
@@ -199,6 +208,93 @@ export function useLeads() {
   }, [loadingMore, hasMore, lastDoc, activeRegion, setStoreLeads]);
 
   return { leads, loading, error, hasPendingWrites, loadMore, hasMore, loadingMore };
+}
+
+export function useFullCrmLeadSyncIndex() {
+  const { currentUser, authLoading } = useFirebaseAuthUser();
+  const [leads, setLeads] = useState<SyncLeadIndexEntry[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadIndex = useCallback(async () => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
+    if (!currentUser) {
+      setLoading(false);
+      setLeads([]);
+      setLoadedCount(0);
+      setTotalCount(0);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setLeads([]);
+    setLoadedCount(0);
+    try {
+      const base = collection(db, "leads");
+      const countSnap = await getCountFromServer(base);
+      const count = countSnap.data().count;
+      setTotalCount(count);
+
+      const all = await collectPagedSyncIndex<SyncLeadIndexEntry>(
+        count,
+        async (cursor) => {
+          const pageQuery: Query<DocumentData> = cursor
+            ? query(
+                base,
+                orderBy(documentId()),
+                startAfter(cursor as QueryDocumentSnapshot<DocumentData>),
+                limit(SYNC_INDEX_BATCH_SIZE),
+              )
+            : query(base, orderBy(documentId()), limit(SYNC_INDEX_BATCH_SIZE));
+          const snap: QuerySnapshot<DocumentData> = await getDocs(pageQuery);
+          return {
+            entries: snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => pickSyncLeadIndexFields(d.id, d.data())),
+            nextCursor: snap.docs[snap.docs.length - 1] ?? null,
+            done: snap.empty || snap.size < SYNC_INDEX_BATCH_SIZE,
+          };
+        },
+        (nextLoadedCount, entries) => {
+          setLeads(entries);
+          setLoadedCount(nextLoadedCount);
+        },
+      );
+
+      setLeads(all);
+      setLoadedCount(all.length);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load CRM sync index";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, currentUser]);
+
+  useEffect(() => {
+    void loadIndex();
+  }, [loadIndex]);
+
+  return {
+    leads,
+    totalCount,
+    loadedCount,
+    loading,
+    error,
+    isPartial: isPartialSyncIndex(loadedCount, totalCount),
+    progressLabel:
+      loading && totalCount > 0 && loadedCount >= totalCount
+        ? "Loading CRM sync index complete"
+        : totalCount > 0
+          ? `Loading CRM sync index ${Math.min(loadedCount, totalCount)}/${totalCount}`
+          : "Loading CRM sync index",
+    reload: loadIndex,
+  };
 }
 
 export function useSaveLead() {
