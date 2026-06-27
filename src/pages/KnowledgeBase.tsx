@@ -167,7 +167,6 @@ const DEFAULT_ARTICLES: Omit<KBArticle, "id" | "createdAt" | "updatedAt" | "view
 <h3>Status Types</h3>
 <ul>
 <li><strong>DQ</strong> — Uncontacted/new DQ lead</li>
-<li><strong>Live</strong> — Being actively worked</li>
 <li><strong>Booked</strong> — Appointment set</li>
 <li><strong>Revisit</strong> — Needs a follow-up call</li>
 <li><strong>Not Interested</strong> — Declined</li>

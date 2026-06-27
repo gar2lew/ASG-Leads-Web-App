@@ -36,6 +36,7 @@ import { generateClientBrief, enhanceNoteContent, type ClientBrief } from "../li
 import { getNextAction, deriveLastActivityAt } from "../lib/nextAction";
 import { timeAgo } from "../lib/dates";
 import { Lead, Rep, ClientNote, Appointment } from "../types";
+import { normalizeLeadStatus } from "../lib/statusConfig";
 import {
   User,
   Phone,
@@ -130,7 +131,6 @@ const STATUS_BADGES: Record<string, { label: string; color: string; bg: string }
   booked: { label: "Booked", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
   lost: { label: "Lost", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
   DQ: { label: "DQ", color: "#6b7280", bg: "rgba(107,114,128,0.12)" },
-  Live: { label: "Live", color: "#22c55e", bg: "rgba(34,197,94,0.12)" },
   Booked: { label: "Booked", color: "#f97316", bg: "rgba(249,115,22,0.12)" },
   Revisit: { label: "Revisit", color: "#b8933a", bg: "rgba(184,147,58,0.12)" },
   "Not Interested": { label: "Not Interested", color: "#ef4444", bg: "rgba(239,68,68,0.12)" },
@@ -688,8 +688,9 @@ export function ClientProfilePage({ clientId, onClose, onNavigate }: ClientProfi
 
   const nextAppt = upcomingAppts[0] ?? null;
 
-  const statusBadge = client
-    ? (STATUS_BADGES[client.status] ?? { label: client.status, color: "#6b7280", bg: "rgba(107,114,128,0.12)" })
+  const displayStatus = client ? normalizeLeadStatus(client.status) : null;
+  const statusBadge = displayStatus
+    ? (STATUS_BADGES[displayStatus] ?? { label: displayStatus, color: "#6b7280", bg: "rgba(107,114,128,0.12)" })
     : null;
 
   const dqRepName = client ? (repMap.get(client.dqRep)?.name ?? "—") : "—";
@@ -1157,7 +1158,7 @@ export function ClientProfilePage({ clientId, onClose, onNavigate }: ClientProfi
 
             {/* Quick stats grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatTile label="Status" value={String(client.status) || "—"} />
+              <StatTile label="Status" value={displayStatus || "—"} />
               <StatTile label="Deal Stage" value={client.dealStage || "—"} />
               <StatTile label="DQ Rep" value={dqRepName} />
               {fcRepName && <StatTile label="FC Rep" value={fcRepName} />}
@@ -1648,7 +1649,7 @@ export function ClientProfilePage({ clientId, onClose, onNavigate }: ClientProfi
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {client.dealStage && <StatTile label="Deal Stage" value={client.dealStage} />}
-                    {client.status && <StatTile label="Status" value={String(client.status)} />}
+                    {client.status && <StatTile label="Status" value={displayStatus || "—"} />}
                     {client.fcAppt?.date && <StatTile label="FC Date" value={client.fcAppt.date} />}
                     {client.frAppt?.date && <StatTile label="FR Date" value={client.frAppt.date} />}
                     {client.psAppt?.date && <StatTile label="PS Date" value={client.psAppt.date} />}

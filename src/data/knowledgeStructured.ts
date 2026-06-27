@@ -138,8 +138,7 @@ export const STRUCTURED_KB: KBItem[] = [
     content:
       "The journey from a DQ lead to a settled deal follows a defined pipeline. Understanding each stage helps reps guide clients effectively.",
     examples: [
-      "DQ → Live: First contact made, lead qualified and engaged",
-      "Live → Booked: Appointment (FC) scheduled with the client",
+      "DQ → Booked: Appointment (FC) scheduled with the client",
       "Booked → FC Complete: First consult delivered, strategy presented",
       "FC → FR: Finance run booked and completed",
       "FR → Settlement: Application submitted, approved, settlement in progress",

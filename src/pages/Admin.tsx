@@ -12,7 +12,7 @@
 
 import React, { useState, useMemo, useRef } from "react";
 import { Rep, Lead, AppSettings, RepTarget, DEFAULT_STATUS_COLORS, ServiceType, SyncConfig } from "../types";
-import { getStatusColor } from "../lib/statusConfig";
+import { LEAD_STATUS_OPTIONS, getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
 import { useAppStore } from "../stores/appStore";
 import {
   useAuditLog,
@@ -122,7 +122,7 @@ function RepAvatar({
   );
 }
 
-const ALL_STATUSES = ["DQ", "Booked", "Revisit", "Not Interested", "Wrong Number", "No Answer"];
+const ALL_STATUSES = [...LEAD_STATUS_OPTIONS];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function todayStr(): string {
@@ -200,13 +200,14 @@ function SummaryCard({
 // ── StatusBadge (shared) ───────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const { statusColors } = useAppStore();
-  const hex = getStatusColor(status, statusColors);
+  const displayStatus = normalizeLeadStatus(status);
+  const hex = getStatusColor(displayStatus, statusColors);
   return (
     <span
       className="px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
       style={{ backgroundColor: hex + "26", color: hex, border: `1px solid ${hex}55` }}
     >
-      {status}
+      {displayStatus}
     </span>
   );
 }
@@ -745,7 +746,7 @@ function OperationsSection({
 
   // 1C — Stale leads (grouped by rep)
   const staleLeads = useMemo(() => {
-    const activeStatuses = new Set(["DQ", "Live", "Revisit"]);
+    const activeStatuses = new Set(["DQ", "Booked", "Revisit"]);
     const stale: { lead: Lead; lastContact: string | null; daysSince: number }[] = [];
     leads.forEach((l) => {
       if (!activeStatuses.has(l.status)) return;
@@ -1353,7 +1354,7 @@ function RepDrillDownModal({ rep, leads, onClose }: { rep: Rep; leads: Lead[]; o
   const totalCalls = leads.reduce((n, l) => n + (l.callHistory?.filter((c) => c.rep === rep.name).length || 0), 0);
 
   const filteredLeads = useMemo(
-    () => (statusFilter === "all" ? repLeads : repLeads.filter((l) => l.status === statusFilter)),
+    () => (statusFilter === "all" ? repLeads : repLeads.filter((l) => normalizeLeadStatus(l.status) === statusFilter)),
     [repLeads, statusFilter],
   );
 
@@ -1374,7 +1375,7 @@ function RepDrillDownModal({ rep, leads, onClose }: { rep: Rep; leads: Lead[]; o
       .slice(0, 50);
   }, [leads, rep.name]);
 
-  const statusChips = ["all", ...ALL_STATUSES.filter((s) => repLeads.some((l) => l.status === s))];
+  const statusChips = ["all", ...ALL_STATUSES.filter((s) => repLeads.some((l) => normalizeLeadStatus(l.status) === s))];
 
   return (
     <div
@@ -2997,7 +2998,7 @@ function DataToolsSection({
   const statusCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     leads.forEach((l) => {
-      const s = String(l.status);
+      const s = normalizeLeadStatus(l.status);
       counts[s] = (counts[s] ?? 0) + 1;
     });
     return counts;
@@ -3005,7 +3006,6 @@ function DataToolsSection({
 
   const STATUS_COLORS: Record<string, string> = {
     DQ: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    Live: "bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-300",
     Booked: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
     Revisit: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
     "Not Interested": "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
@@ -3013,7 +3013,7 @@ function DataToolsSection({
     "No Answer": "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
   };
 
-  const bulkCount = bulkFrom ? leads.filter((l) => String(l.status) === bulkFrom).length : 0;
+  const bulkCount = bulkFrom ? leads.filter((l) => normalizeLeadStatus(l.status) === bulkFrom).length : 0;
   const assignCount = assignFrom ? leads.filter((l) => l.dqRep === assignFrom).length : 0;
 
   const staleForArchive = React.useMemo(() => {
@@ -3029,7 +3029,7 @@ function DataToolsSection({
 
   const handleBulkStatus = async () => {
     if (!bulkFrom || !bulkTo || bulkFrom === bulkTo) return;
-    const toUpdate = leads.filter((l) => String(l.status) === bulkFrom);
+    const toUpdate = leads.filter((l) => normalizeLeadStatus(l.status) === bulkFrom);
     let done = 0;
     for (const lead of toUpdate) {
       await saveLead({ ...lead, status: bulkTo as import("../types").LeadStatus });
@@ -3065,7 +3065,7 @@ function DataToolsSection({
     setConfirmArchive(false);
   };
 
-  const ALL_STATUSES_DT = ["DQ", "Live", "Booked", "Revisit", "Not Interested", "Wrong Number", "No Answer"];
+  const ALL_STATUSES_DT = [...LEAD_STATUS_OPTIONS];
   const activeReps = reps.filter((r) => r.active);
 
   return (
@@ -3449,7 +3449,7 @@ function StatusConfigSection() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const statuses = ["DQ", "Live", "Booked", "Revisit", "Not Interested", "Wrong Number", "No Answer"];
+  const statuses = [...LEAD_STATUS_OPTIONS];
 
   const handleColorChange = (status: string, color: string) => {
     setLocalColors((prev) => ({ ...prev, [status]: color }));

@@ -14,6 +14,7 @@ import { useAppStore } from "../stores/appStore";
 import { useSaveLead, useLeads, useAppSettings, useSaveSettings } from "../hooks/useFirebase";
 import { useToast } from "../context/ToastContext";
 import { normalizeAUPhone } from "../lib/utils";
+import { LEAD_STATUS_OPTIONS, normalizeLeadStatus } from "../lib/statusConfig";
 import { generateLeadId } from "../lib/idGenerator";
 import {
   X,
@@ -142,47 +143,12 @@ function normalizeDateToISO(dateStr: string): string {
   return new Date().toISOString().split("T")[0];
 }
 
-const IMPORT_STATUSES: LeadStatus[] = [
-  "DQ",
-  "Live",
-  "Booked",
-  "Revisit",
-  "Not Interested",
-  "Wrong Number",
-  "No Answer",
-];
+const IMPORT_STATUSES: LeadStatus[] = [...LEAD_STATUS_OPTIONS] as LeadStatus[];
 
 // ── Normalise raw status string from sheet to a valid LeadStatus ──────────────
 // Handles case differences, abbreviations and common aliases from external sheets.
 function normalizeStatus(raw: string, fallback: LeadStatus): LeadStatus {
-  const s = raw.trim().toLowerCase().replace(/[-_]/g, " ");
-  // DQ / new leads
-  if (s === "dq" || s === "leads" || s === "new leads" || s === "new" || s === "fresh") return "DQ";
-  // Live
-  if (s === "live" || s === "active") return "Live";
-  // Booked
-  if (s === "booked" || s === "appointment" || s === "appt" || s === "booking") return "Booked";
-  // Revisit / Callback
-  if (
-    s === "revisit" ||
-    s === "callback" ||
-    s === "call back" ||
-    s === "cb" ||
-    s === "follow up" ||
-    s === "followup" ||
-    s === "fu"
-  )
-    return "Revisit";
-  // Not Interested
-  if (s === "not interested" || s === "ni" || s === "not int" || s === "n/i") return "Not Interested";
-  // Wrong Number
-  if (s === "wrong number" || s === "wn" || s === "wrong no" || s === "wrong num") return "Wrong Number";
-  // No Answer
-  if (s === "no answer" || s === "na" || s === "no ans" || s === "not answered" || s === "no reply") return "No Answer";
-  // Exact case-insensitive match against valid values
-  const match = IMPORT_STATUSES.find((st) => st.toLowerCase() === s);
-  if (match) return match;
-  return fallback;
+  return normalizeLeadStatus(raw, normalizeLeadStatus(fallback)) as LeadStatus;
 }
 
 // ── Extract spreadsheetId from URL ────────────────────────────────────────────

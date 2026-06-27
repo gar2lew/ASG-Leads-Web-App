@@ -1,4 +1,5 @@
 import type { Lead, LeadStatus } from "../types";
+import { normalizeLeadStatus } from "./statusConfig";
 
 export type WorkflowQueueType = "call" | "callback" | "followup" | "booked" | "terminal" | "none";
 export type OperationalLeadBucket = "new" | "contacted" | "qualified" | "booked" | "lost";
@@ -86,22 +87,23 @@ export function isValidIsoDate(date?: string | null): date is string {
 }
 
 export function isTerminalLeadStatus(status?: string | null): boolean {
-  return ["_deleted", "lost", "Not Interested", "Wrong Number"].includes(status ?? "");
+  const normalized = normalizeLeadStatus(status);
+  return ["_deleted", "lost"].includes(status ?? "") || normalized === "Not Interested" || normalized === "Wrong Number";
 }
 
 export function isDqLeadStatus(status?: string | null): boolean {
-  return status === "DQ" || status === "new";
+  return normalizeLeadStatus(status) === "DQ";
 }
 
 export function isBookedLeadStatus(status?: string | null): boolean {
-  return status === "booked" || status === "Booked";
+  return normalizeLeadStatus(status) === "Booked";
 }
 
 export function getOperationalLeadBucket(lead: Lead): OperationalLeadBucket {
   if (isTerminalLeadStatus(lead.status) || lead.dnqFellOver) return "lost";
   if (isBookedLeadStatus(lead.status)) return "booked";
-  if (lead.status === "Live" || lead.status === "qualified") return "qualified";
-  if (lead.status === "contacted" || lead.status === "Revisit" || lead.status === "No Answer") return "contacted";
+  const normalized = normalizeLeadStatus(lead.status);
+  if (normalized === "Revisit" || normalized === "No Answer") return "contacted";
   return "new";
 }
 
@@ -446,7 +448,7 @@ export function deriveStatusTabCounts(leads: Lead[]): Record<OperationalLeadBuck
 export function matchesStatusTab(lead: Lead, tab: LeadStatus | "all"): boolean {
   if (lead.status === "_deleted") return false;
   if (tab === "all") return true;
-  return getOperationalLeadBucket(lead) === tab;
+  return normalizeLeadStatus(lead.status) === normalizeLeadStatus(tab);
 }
 
 export function buildInboxDonePatch(lead: Lead, options: WorkflowOptions = {}): Lead {

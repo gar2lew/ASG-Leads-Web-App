@@ -173,7 +173,7 @@ export const ADMIN_GUIDE_SECTIONS: KBSection[] = [
   Lead statuses are defined as a TypeScript union type in <code>src/types/index.ts</code>:
 </p>
 <ul>
-  <li>DQ, Live, Booked, Revisit, Not Interested, Wrong Number, No Answer</li>
+  <li>DQ, No Answer, Revisit, Booked, Not Interested, Wrong Number</li>
 </ul>
 
 <h3>Where colours are controlled</h3>
@@ -244,7 +244,7 @@ export const ADMIN_GUIDE_SECTIONS: KBSection[] = [
   </thead>
   <tbody>
     <tr><td>1</td><td>No notes AND no call history AND no appointments</td><td>call</td><td>high</td></tr>
-    <tr><td>2</td><td>Status is Live AND no linked appointments</td><td>book</td><td>high</td></tr>
+    <tr><td>2</td><td>Status is Booked AND no linked appointments</td><td>book</td><td>high</td></tr>
     <tr><td>3</td><td>Any appointment has status <em>cancelled</em> or <em>no-show</em></td><td>reschedule</td><td>high</td></tr>
     <tr><td>4</td><td>Last activity was more than 3 days ago</td><td>follow-up</td><td>medium</td></tr>
     <tr><td>5</td><td>None of the above</td><td>none</td><td>low</td></tr>
@@ -286,7 +286,7 @@ export const ADMIN_GUIDE_SECTIONS: KBSection[] = [
 </p>
 <ul>
   <li><strong>Calls Today / This Week</strong> — count of call history entries where the normalised date matches today or this week's start</li>
-  <li><strong>Live / Booked / DQ</strong> — simple status filters over the leads array</li>
+  <li><strong>Booked / DQ / callback statuses</strong> — simple status filters over the leads array</li>
   <li><strong>Callbacks Due</strong> — leads where <code>callbackDate</code> is set, sorted by date; overdue = date is in the past</li>
   <li><strong>Conversion Rate</strong> — <code>(booked / total) * 100</code></li>
   <li><strong>Call Volume Chart</strong> — for each of the last 7 days, count calls from <code>callHistory</code> where the date matches</li>
@@ -308,7 +308,7 @@ export const ADMIN_GUIDE_SECTIONS: KBSection[] = [
 </p>
 <p>
   <strong>Trade-off:</strong> Because the Dashboard does not load subcollection notes or calendar appointments
-  to avoid extra Firestore reads, a "Live" lead that has appointments booked may still show as "Book Appt"
+  to avoid extra Firestore reads, a Booked lead that has appointments booked may still show as "Book Appt"
   in the Queue. The Lead Sidebar shows the accurate action when you open the lead.
   The Queue is intended as a daily starting-point, not a pixel-perfect accuracy report.
 </p>
@@ -377,7 +377,7 @@ check the browser console for Firestore errors and verify the Firebase project's
 
 <h3>Priority Work Queue showing unexpected leads</h3>
 <p><strong>Cause:</strong> The Dashboard version of the Next Action Engine runs without notes or calendar
-appointment data (only call history). A "Live" lead with calendar appointments but no call history will
+appointment data (only call history). A Booked lead with calendar appointments but no call history will
 show as "book" because the Dashboard cannot see those appointments without an extra query.</p>
 <p><strong>Fix:</strong> This is a deliberate trade-off to avoid extra Firestore reads on the Dashboard.
 The Lead Sidebar shows the accurate action (with full notes + appointments loaded).</p>

@@ -10,7 +10,7 @@ import {
   getWorkflowState,
   type OperationalLeadFilter,
 } from "../lib/workflowState";
-import { getStatusColor } from "../lib/statusConfig";
+import { getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
 import { useLeads, useOperationalQueueLeads } from "../hooks/useFirebase";
 import { useAppStore } from "../stores/appStore";
 import {
@@ -325,7 +325,6 @@ export function DashboardPage({
       callsToday,
       callsThisWeek,
       booked: leadCounters.booked,
-      live: leadCounters.qualified,
       dq: leadCounters.dq,
       newToday,
       newThisWeek,
@@ -534,8 +533,8 @@ export function DashboardPage({
         const callsToday = repCalls.filter((c) => normCallDate(c.date) === today).length;
         const callsWeek = repCalls.filter((c) => normCallDate(c.date) >= weekStart).length;
         const leadsOwned = leads.filter((l) => l.dqRep === rep.id).length;
-        const bookedCount = leads.filter((l) => l.dqRep === rep.id && l.status === "Booked").length;
-        const liveCount = leads.filter((l) => l.dqRep === rep.id && l.status === "Live").length;
+        const bookedCount = leads.filter((l) => l.dqRep === rep.id && normalizeLeadStatus(l.status) === "Booked").length;
+        const liveCount = 0;
         const convRate = leadsOwned > 0 ? Math.round((bookedCount / leadsOwned) * 100) : 0;
         return { rep, total: repCalls.length, callsToday, callsWeek, leadsOwned, bookedCount, liveCount, convRate };
       })
@@ -738,9 +737,9 @@ export function DashboardPage({
           trend={stats.callsToday > 0 ? { dir: "up", label: `${stats.callsToday} today` } : undefined}
         />
         <StatCard
-          label="Live Leads"
-          value={stats.live}
-          sub="actively working"
+          label="DQ Leads"
+          value={stats.dq}
+          sub="new/fresh leads"
           icon={<Activity size={20} className="text-[var(--text-muted)]" />}
           gradient="bg-[var(--hover)] dark:bg-gray-800/30"
           border="border-[var(--border)]"
@@ -1108,7 +1107,7 @@ export function DashboardPage({
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[var(--text)] truncate">{lead.name}</p>
                     <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                      {rep} · {lead.status}
+                      {rep} · {normalizeLeadStatus(lead.status)}
                     </p>
                   </div>
                   <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex-shrink-0 whitespace-nowrap">
@@ -1230,16 +1229,6 @@ export function DashboardPage({
               total={funnelTotal}
               color="bg-[var(--hover)]"
               icon={<Users size={14} className="text-slate-500 dark:text-slate-400" />}
-            />
-            <div className="flex justify-center">
-              <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 rotate-90" />
-            </div>
-            <FunnelStep
-              label="Live"
-              count={stats.live}
-              total={funnelTotal}
-              color="bg-[var(--hover)] dark:bg-gray-800/40"
-              icon={<Activity size={14} className="text-[var(--text-muted)]" />}
             />
             <div className="flex justify-center">
               <ArrowRight size={14} className="text-gray-300 dark:text-slate-600 rotate-90" />

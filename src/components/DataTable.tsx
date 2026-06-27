@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Lead, FilterOptions, LeadStatus } from "../types";
-import { LEAD_STATUS_OPTIONS, getStatusColor } from "../lib/statusConfig";
+import { LEAD_STATUS_OPTIONS, getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
 import { useAppStore } from "../stores/appStore";
 import { useToast } from "../context/ToastContext";
 import { Phone, Clock, Eye, ChevronDown, ChevronRight, Columns, Bookmark } from "lucide-react";
@@ -87,11 +87,12 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 const STATUS_TABS: { label: string; value: LeadStatus | "all" }[] = [
   { label: "All Leads", value: "all" },
-  { label: "New", value: "new" },
-  { label: "Contacted", value: "contacted" },
-  { label: "Qualified", value: "qualified" },
-  { label: "Booked", value: "booked" },
-  { label: "Lost", value: "lost" },
+  { label: "DQ", value: "DQ" },
+  { label: "No Answer", value: "No Answer" },
+  { label: "Revisit", value: "Revisit" },
+  { label: "Booked", value: "Booked" },
+  { label: "Not Interested", value: "Not Interested" },
+  { label: "Wrong Number", value: "Wrong Number" },
 ];
 
 // Columns that can be toggled (Name and Action always visible)
@@ -312,9 +313,9 @@ export function DataTable({
   const [filters, setFilters] = useState<FilterOptions>(() => loadSavedFilters());
   const [currentTab, setCurrentTab] = useState<LeadStatus | "all">(() => {
     const stored = localStorage.getItem("asgActiveTab");
-    return (stored as LeadStatus | "all") ?? "new";
+    return stored === "all" ? "all" : (normalizeLeadStatus(stored) as LeadStatus);
   });
-  const [bulkStatus, setBulkStatus] = useState<LeadStatus>("new");
+  const [bulkStatus, setBulkStatus] = useState<LeadStatus>("DQ");
   const [bulkRep, setBulkRep] = useState<number | "">("");
   const [bulkDate, setBulkDate] = useState("");
   const [bulkCallbackDate, setBulkCallbackDate] = useState("");
@@ -1123,6 +1124,7 @@ export function DataTable({
                 ? getStatusColor(tab.value, statusColors)
                 : "#9ca3af";
             const isActive = currentTab === tab.value;
+            const count = tab.value === "all" ? tabCounts.all : tabCountBase.filter((lead) => matchesStatusTab(lead, tab.value)).length;
             return (
               <button
                 key={tab.value}
@@ -1143,7 +1145,7 @@ export function DataTable({
                 <span
                   className={`${isActive ? "bg-white/20 text-white" : "bg-[var(--border)] text-[var(--text-muted)]"} px-1.5 py-0.5 rounded-full text-[10px] font-semibold`}
                 >
-                  {tab.value === "all" ? tabCounts.all : tabCounts[tab.value as keyof typeof tabCounts] ?? 0}
+                  {count}
                 </span>
               </button>
             );
@@ -1410,14 +1412,21 @@ export function DataTable({
                                   {isColVisible("status") && (
                                     <td className="px-3 py-3.5 whitespace-nowrap">
                                       <div className="flex items-center gap-1.5">
+                                        {(() => {
+                                          const displayStatus = normalizeLeadStatus(
+                                            optimisticStatuses[lead.id] ?? lead.status,
+                                          );
+                                          return (
                                         <span
                                           className={`inline-flex items-center justify-center min-w-[76px] px-2.5 py-1 rounded-full text-xs font-semibold ${conflictStatuses[lead.id] ? "ring-1 ring-offset-1 ring-yellow-400" : ""}`}
                                           style={statusBadgeStyle(
-                                            getStatusColor(optimisticStatuses[lead.id] ?? lead.status, statusColors),
+                                            getStatusColor(displayStatus, statusColors),
                                           )}
                                         >
-                                          {optimisticStatuses[lead.id] ?? lead.status}
+                                          {displayStatus}
                                         </span>
+                                          );
+                                        })()}
                                         {hasAISignal && (
                                           <span
                                             role="button"
@@ -1483,11 +1492,11 @@ export function DataTable({
                                         title="Quick: No Answer"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "new" }));
+                                          setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "No Answer" }));
                                           const now = new Date();
                                           onUpdateLead({
                                             ...lead,
-                                            status: "new",
+                                            status: "No Answer",
                                             result: "no_answer",
                                             lastCall: now.toISOString(),
                                             callHistory: [
@@ -1513,11 +1522,11 @@ export function DataTable({
                                         title="Quick: Wrong Number"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "lost" }));
+                                          setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "Wrong Number" }));
                                           const now = new Date();
                                           onUpdateLead({
                                             ...lead,
-                                            status: "lost",
+                                            status: "Wrong Number",
                                             result: "wrong_number",
                                             lastCall: now.toISOString(),
                                             callHistory: [
@@ -1686,10 +1695,10 @@ export function DataTable({
                                     <span
                                       className={`flex-shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${conflictStatuses[lead.id] ? "ring-1 ring-offset-1 ring-yellow-400" : ""}`}
                                       style={statusBadgeStyle(
-                                        getStatusColor(optimisticStatuses[lead.id] ?? lead.status, statusColors),
+                                        getStatusColor(normalizeLeadStatus(optimisticStatuses[lead.id] ?? lead.status), statusColors),
                                       )}
                                     >
-                                      {optimisticStatuses[lead.id] ?? lead.status}
+                                      {normalizeLeadStatus(optimisticStatuses[lead.id] ?? lead.status)}
                                     </span>
                                   </div>
                                   {/* Next Action */}
@@ -1747,11 +1756,11 @@ export function DataTable({
                                     aria-label={`Mark ${lead.name} as no answer`}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "new" }));
+                                      setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "No Answer" }));
                                       const now = new Date();
                                       onUpdateLead({
                                         ...lead,
-                                        status: "new",
+                                        status: "No Answer",
                                         result: "no_answer",
                                         lastCall: now.toISOString(),
                                         callHistory: [
@@ -1777,11 +1786,11 @@ export function DataTable({
                                     aria-label={`Mark ${lead.name} as wrong number`}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "lost" }));
+                                      setOptimisticStatuses((prev) => ({ ...prev, [lead.id]: "Wrong Number" }));
                                       const now = new Date();
                                       onUpdateLead({
                                         ...lead,
-                                        status: "lost",
+                                        status: "Wrong Number",
                                         result: "wrong_number",
                                         lastCall: now.toISOString(),
                                         callHistory: [

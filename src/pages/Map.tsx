@@ -19,7 +19,7 @@ import { Lead, LeadStatus, KnockResult, KnockZone, CustomPinType } from "../type
 import { useAppStore } from "../stores/appStore";
 import { generateLeadId } from "../lib/idGenerator";
 import { normalizeAUPhone } from "../lib/utils";
-import { getStatusColor } from "../lib/statusConfig";
+import { getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
 import {
   useLeads,
   useSaveLead,
@@ -1044,7 +1044,7 @@ export function MapPage() {
         if (!l.knockResult) return false; // Knock view: only show knock pins
       } else {
         if (l.knockResult) return false; // Default view: hide knock pins
-        if (!activeStatuses.has(l.status as LeadStatus)) return false;
+        if (!activeStatuses.has(normalizeLeadStatus(l.status) as LeadStatus)) return false;
       }
       if (filterRep && l.dqRep !== filterRep) return false;
       if (filterSuburb && l.suburb !== filterSuburb) return false;
@@ -1060,7 +1060,8 @@ export function MapPage() {
     if (all.length === 0) return null;
     const counts: Record<string, number> = {};
     all.forEach((l) => {
-      counts[l.status] = (counts[l.status] || 0) + 1;
+      const status = normalizeLeadStatus(l.status);
+      counts[status] = (counts[status] || 0) + 1;
     });
     return { total: all.length, counts };
   }, [leads, filterSuburb]);
@@ -1071,7 +1072,7 @@ export function MapPage() {
   // Leads in the selected suburb + status that have coordinates (for snap-to)
   const drillLeads = useMemo(() => {
     if (!statDrillStatus || !filterSuburb) return [];
-    return leads.filter((l) => l.status === statDrillStatus && l.suburb === filterSuburb);
+    return leads.filter((l) => normalizeLeadStatus(l.status) === statDrillStatus && l.suburb === filterSuburb);
   }, [statDrillStatus, filterSuburb, leads]);
 
   // Reset drill when suburb filter changes
@@ -1123,7 +1124,7 @@ export function MapPage() {
   const geocodeAllLeads = useCallback(async () => {
     if (!geocoderRef.current) return;
     const allUnmapped = leads.filter((l) => !l.lat || !l.lng);
-    const unmapped = geoFilterStatus ? allUnmapped.filter((l) => l.status === geoFilterStatus) : allUnmapped;
+    const unmapped = geoFilterStatus ? allUnmapped.filter((l) => normalizeLeadStatus(l.status) === geoFilterStatus) : allUnmapped;
     if (unmapped.length === 0) return;
     showToast(`Geocoding ${unmapped.length} leads…`, "success");
     for (const lead of unmapped) {
@@ -1299,7 +1300,7 @@ export function MapPage() {
     const newMarkers = visibleLeads.map((lead) => {
       const color = lead.knockResult
         ? resolveKnockColor(lead.knockResult, customPinTypes)
-        : getStatusColor(lead.status, statusColors);
+        : getStatusColor(normalizeLeadStatus(lead.status), statusColors);
 
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: { lat: lead.lat!, lng: lead.lng! },
@@ -1533,7 +1534,7 @@ export function MapPage() {
     return <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">Loading Maps…</div>;
 
   const allUnmapped = leads.filter((l) => !l.lat || !l.lng);
-  const filteredUnmapped = geoFilterStatus ? allUnmapped.filter((l) => l.status === geoFilterStatus) : allUnmapped;
+  const filteredUnmapped = geoFilterStatus ? allUnmapped.filter((l) => normalizeLeadStatus(l.status) === geoFilterStatus) : allUnmapped;
   const unmappedCount = allUnmapped.length;
 
   return (
@@ -2204,7 +2205,7 @@ export function MapPage() {
                 All ({unmappedCount})
               </button>
               {(["DQ", "Booked", "Revisit", "Not Interested", "Wrong Number", "No Answer"] as LeadStatus[]).map((s) => {
-                const cnt = allUnmapped.filter((l) => l.status === s).length;
+                const cnt = allUnmapped.filter((l) => normalizeLeadStatus(l.status) === s).length;
                 if (cnt === 0) return null;
                 return (
                   <button

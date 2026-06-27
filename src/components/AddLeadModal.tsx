@@ -4,6 +4,7 @@ import { useAppStore } from "../stores/appStore";
 import { useLeads } from "../hooks/useFirebase";
 import { normalizeAUPhone, sanitizePhone } from "../lib/utils";
 import { generateLeadId } from "../lib/idGenerator";
+import { LEAD_STATUS_OPTIONS } from "../lib/statusConfig";
 import { SuburbInput } from "./SuburbInput";
 import { X, UserPlus } from "lucide-react";
 
@@ -25,7 +26,7 @@ const EMPTY: Partial<Lead> = {
   postcode: "",
   ownership: "",
   superannuation: "",
-  status: "new",
+  status: "DQ",
   leadDate: new Date().toISOString().split("T")[0],
 };
 
@@ -199,7 +200,7 @@ export function AddLeadModal({ onClose, onSave }: AddLeadModalProps) {
       ownership: form.ownership || undefined,
       superannuation: form.superannuation || undefined,
       dqRep: form.dqRep!,
-      status: form.status || "new",
+      status: form.status || "DQ",
       leadDate: form.leadDate,
       createdAt: Date.now(),
       callHistory: [],
@@ -374,7 +375,7 @@ export function AddLeadModal({ onClose, onSave }: AddLeadModalProps) {
                   value={form.status}
                   onChange={(e) => update("status", e.target.value)}
                 >
-                  {["new", "contacted", "qualified", "booked", "lost"].map((s) => (
+                  {LEAD_STATUS_OPTIONS.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
