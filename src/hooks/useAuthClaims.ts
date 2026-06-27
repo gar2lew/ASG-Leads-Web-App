@@ -18,7 +18,7 @@ export function useAuthClaims(): UseAuthClaimsReturn {
   useEffect(() => {
     let cancelled = false;
 
-    if (authLoading || !firebaseUser || firebaseUser.isAnonymous) {
+    if (authLoading || !firebaseUser) {
       setClaims({});
       setClaimsLoading(false);
       return;
