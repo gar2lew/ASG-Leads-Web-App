@@ -60,11 +60,26 @@ export interface FeatureFlags {
   readOnlyMode: boolean;
 }
 
+export interface SalestrailConfig {
+  enabled: boolean;
+  lastSyncAt: number | null;
+  lastSyncStatus: "success" | "error" | "in_progress" | null;
+  lastSyncError: string | null;
+  lastSyncCallCount: number | null;
+  syncInProgress: boolean;
+  syncStartedAt: number | null;
+}
+
+export interface IntegrationSettings {
+  salestrail: SalestrailConfig;
+}
+
 export interface AppConfig {
   dealSettings: DealSettings;
   trainingSettings: TrainingSettings;
   aiSettings: AISettings;
   featureFlags: FeatureFlags;
+  integrations: IntegrationSettings;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -93,6 +108,17 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     disableTraining: false,
     disableVoice: false,
     readOnlyMode: false,
+  },
+  integrations: {
+    salestrail: {
+      enabled: false,
+      lastSyncAt: null,
+      lastSyncStatus: null,
+      lastSyncError: null,
+      lastSyncCallCount: null,
+      syncInProgress: false,
+      syncStartedAt: null,
+    },
   },
 };
 
@@ -138,6 +164,7 @@ export function useAppSettings(): UseAppSettingsReturn {
             trainingSettings: { ...DEFAULT_APP_CONFIG.trainingSettings, ...(d.trainingSettings ?? {}) },
             aiSettings:       { ...DEFAULT_APP_CONFIG.aiSettings,       ...(d.aiSettings ?? {}) },
             featureFlags:     { ...DEFAULT_APP_CONFIG.featureFlags,     ...(d.featureFlags ?? {}) },
+            integrations:     { ...DEFAULT_APP_CONFIG.integrations,     ...(d.integrations ?? {}) },
           });
         } else {
           // First run — seed Firestore with defaults (merge = idempotent)

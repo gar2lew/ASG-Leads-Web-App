@@ -170,6 +170,11 @@ export function SystemSettingsPanel() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [remoteChanged, setRemoteChanged] = useState(false);
 
+  // Salestrail sync state
+  const [salestrailSyncing, setSalestrailSyncing] = useState(false);
+  const [salestrailSyncResult, setSalestrailSyncResult] = useState<Record<string, unknown> | null>(null);
+  const [salestrailSyncError, setSalestrailSyncError] = useState<string | null>(null);
+
   // TODO: Remove after phone normalization migration is complete.
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<Record<string, unknown> | null>(null);
@@ -210,6 +215,43 @@ export function SystemSettingsPanel() {
   function setFlag<K extends keyof AppConfig["featureFlags"]>(key: K, val: AppConfig["featureFlags"][K]) {
     setDraft((d) => ({ ...d, featureFlags: { ...d.featureFlags, [key]: val } }));
     setDirty(true);
+  }
+
+  // Salestrail sync handler
+  const syncSalestrailCallable = React.useMemo(
+    () => httpsCallable(functions, "syncSalestrailCallsCallable"),
+    [],
+  );
+
+  // Salestrail debug dry-run state
+  const [debugDryRunLoading, setDebugDryRunLoading] = useState(false);
+
+  async function handleSalestrailSync() {
+    setSalestrailSyncing(true);
+    setSalestrailSyncResult(null);
+    setSalestrailSyncError(null);
+    try {
+      const response = await syncSalestrailCallable({ dryRun: false });
+      setSalestrailSyncResult(response.data as Record<string, unknown>);
+    } catch (err) {
+      setSalestrailSyncError(getActionableErrorMessage(err));
+    } finally {
+      setSalestrailSyncing(false);
+    }
+  }
+
+  async function handleSalestrailDebugDryRun() {
+    setDebugDryRunLoading(true);
+    setSalestrailSyncResult(null);
+    setSalestrailSyncError(null);
+    try {
+      const response = await syncSalestrailCallable({ dryRun: true, debugWindowDays: 7 });
+      setSalestrailSyncResult(response.data as Record<string, unknown>);
+    } catch (err) {
+      setSalestrailSyncError(getActionableErrorMessage(err));
+    } finally {
+      setDebugDryRunLoading(false);
+    }
   }
 
   // TODO: Remove after phone normalization migration is complete.
@@ -537,6 +579,114 @@ export function SystemSettingsPanel() {
           </div>
         </div>
       </Section>
+
+      {/* ── Salestrail Integration (Epic 1) ── */}
+      {isAdmin && (
+        <Section
+          icon={<Database size={14} />}
+          title="Salestrail Call Sync"
+          description="Import call records from Salestrail. Synced calls are matched to leads by phone number and stored for future reporting."
+        >
+          <div className="space-y-3">
+            {salestrailSyncError && (
+              <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
+                <AlertCircle size={12} />
+                {salestrailSyncError}
+              </div>
+            )}
+
+            {salestrailSyncResult && (
+              <div
+                className={`rounded-lg border p-3 space-y-1.5 text-xs ${
+                  salestrailSyncResult.success
+                    ? salestrailSyncResult.dryRun
+                      ? "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20"
+                      : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20"
+                    : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20"
+                }`}
+              >
+                <p
+                  className={`font-semibold ${
+                    salestrailSyncResult.success
+                      ? salestrailSyncResult.dryRun
+                        ? "text-blue-700 dark:text-blue-300"
+                        : "text-green-700 dark:text-green-300"
+                      : "text-red-700 dark:text-red-300"
+                  }`}
+                >
+                  {salestrailSyncResult.success
+                    ? salestrailSyncResult.dryRun
+                      ? "Dry Run Complete"
+                      : "Sync Complete"
+                    : salestrailSyncResult.dryRun
+                      ? "Dry Run Failed"
+                      : "Sync Failed"}
+                </p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-gray-600 dark:text-gray-400">
+                  <span>Fetched:</span>
+                  <span className="font-mono text-right">{String(salestrailSyncResult.fetchedCount ?? "-")}</span>
+                  <span>{salestrailSyncResult.dryRun ? "Would import:" : "Imported:"}</span>
+                  <span
+                    className={`font-mono text-right font-semibold ${
+                      salestrailSyncResult.dryRun
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-green-600 dark:text-green-400"
+                    }`}
+                  >
+                    {String(
+                      salestrailSyncResult.dryRun
+                        ? salestrailSyncResult.wouldImportCount ?? "-"
+                        : salestrailSyncResult.importedCount ?? "-",
+                    )}
+                  </span>
+                  <span>Updated:</span>
+                  <span className="font-mono text-right">{String(salestrailSyncResult.updatedCount ?? "-")}</span>
+                  <span>Skipped:</span>
+                  <span className="font-mono text-right">{String(salestrailSyncResult.skippedCount ?? "-")}</span>
+                  {salestrailSyncResult.errorCount !== undefined && Number(salestrailSyncResult.errorCount) > 0 && (
+                    <>
+                      <span>Errors:</span>
+                      <span className="font-mono text-right text-red-500">{String(salestrailSyncResult.errorCount)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSalestrailSync}
+                disabled={salestrailSyncing}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {salestrailSyncing ? (
+                  <>
+                    <Loader size={12} className="animate-spin" /> Syncing…
+                  </>
+                ) : (
+                  <>
+                    <Play size={12} /> Sync Now
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleSalestrailDebugDryRun}
+                disabled={debugDryRunLoading || salestrailSyncing}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Dry-run sync for last 7 days — does not write to Firestore"
+              >
+                {debugDryRunLoading ? (
+                  <>
+                    <Loader size={12} className="animate-spin" /> Debug…
+                  </>
+                ) : (
+                  "7d Dry Run"
+                )}
+              </button>
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* ── Phone Normalisation Migration (TODO: remove after migration complete) ── */}
       {isAdmin && (
