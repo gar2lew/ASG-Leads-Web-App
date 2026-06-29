@@ -11,6 +11,8 @@ import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 const LEADS_COLLECTION = "leads";
 const DEFAULT_TAB = "LEADS";
 const LEAD_TABS = ["LEADS", "DQ", "LIVE", "NO ANSWER", "REVISIT", "BOOKED", "NOT INTERESTED", "WRONG NUMBER"];
+const EXCLUDED_TAB_TITLES = ["DEDUP AUDIT LOG", "DATE FIX LOG"];
+const EXCLUDED_TAB_KEYWORDS = ["audit", "log", "fix"];
 const BACKUP_DIR = "migration-backups/leads";
 const REPORT_DIR = "migration-reports/leads";
 const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets.readonly";
@@ -18,9 +20,8 @@ const SHEETS_READ_TIMEOUT_MS = 30_000;
 const FIRESTORE_READ_TIMEOUT_MS = 60_000;
 const RELATED_SCAN_TIMEOUT_MS = 60_000;
 
-const LEGACY_STATUSES = ["DQ", "Live", "Booked", "Revisit", "Not Interested", "Wrong Number", "No Answer"];
-const CANONICAL_STATUSES = ["new", "contacted", "qualified", "booked", "lost"];
-const ACCEPTED_STATUSES = [...LEGACY_STATUSES, ...CANONICAL_STATUSES];
+const CANONICAL_STATUSES = ["DQ", "No Answer", "Revisit", "Booked", "Not Interested", "Wrong Number"];
+const ACCEPTED_STATUSES = [...CANONICAL_STATUSES, "Live", "LIVE", "booked", "appointment booked", "Back to DQ", "new", "fresh", "contacted", "qualified", "lost"];
 const DEFAULT_STATUS = "DQ";
 const DEFAULT_REGION = "brisbane";
 
@@ -210,6 +211,7 @@ function parseArgs(argv) {
     relatedScan: true,
     allTabs: false,
     confirmSingleTabReplace: false,
+    confirmNormalizeStatuses: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -220,7 +222,10 @@ function parseArgs(argv) {
     else if (arg === "--backup-only") args.mode = "backup-only";
     else if (arg === "--import") args.mode = "import";
     else if (arg === "--full-replace") args.mode = "full-replace";
+    else if (arg === "--normalize-live-to-booked-dry-run") args.mode = "normalize-live-to-booked-dry-run";
+    else if (arg === "--normalize-live-to-booked") args.mode = "normalize-live-to-booked";
     else if (arg === "--confirm-full-replace") args.confirmFullReplace = true;
+    else if (arg === "--confirm-normalize-statuses") args.confirmNormalizeStatuses = true;
     else if (arg === "--confirm-single-tab-replace") args.confirmSingleTabReplace = true;
     else if (arg === "--all-tabs") args.allTabs = true;
     else if (arg === "--skip-related-scan") args.relatedScan = false;
@@ -239,7 +244,9 @@ function parseArgs(argv) {
   args.sheetId = args.sheetId || extractSheetId(args.sheetUrl || process.env.GOOGLE_SHEET_URL || "") || process.env.GOOGLE_SHEET_ID;
   args.backupDir = args.backupDir || process.env.LEADS_MIGRATION_BACKUP_DIR || BACKUP_DIR;
   args.reportDir = args.reportDir || process.env.LEADS_MIGRATION_REPORT_DIR || REPORT_DIR;
-  if (!ACCEPTED_STATUSES.includes(args.fallbackStatus)) args.fallbackStatus = DEFAULT_STATUS;
+  args.fallbackStatus = ACCEPTED_STATUSES.some((status) => status.toLowerCase() === String(args.fallbackStatus).toLowerCase())
+    ? normalizeStatus(args.fallbackStatus, DEFAULT_STATUS)
+    : DEFAULT_STATUS;
   return args;
 }
 
@@ -259,10 +266,17 @@ Modes:
   --backup-only            Backup existing leads and exit
   --import                 Backup existing leads, then create/update leads without deleting current leads
   --full-replace           Backup existing leads, delete top-level lead docs, then import sheet leads
+  --normalize-live-to-booked-dry-run
+                           Report existing Firebase leads whose status is Live
+  --normalize-live-to-booked
+                           Convert existing Firebase leads with status Live to Booked
 
 Required for full replace:
   --confirm-full-replace
   --all-tabs               Required for normal full-replace runs so every lead status tab is imported
+
+Required for status normalization writes:
+  --confirm-normalize-statuses
 
 Single-tab full replace guard:
   --confirm-single-tab-replace
@@ -291,6 +305,21 @@ function extractSheetId(url) {
 
 function timestamp() {
   return new Date().toISOString().replace(/[:.]/g, "-");
+}
+
+function loadDotEnvIfPresent(filePath = ".env") {
+  if (!existsSync(filePath)) return;
+  const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const match = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (!match) continue;
+    const [, key, rawValue] = match;
+    if (process.env[key] !== undefined) continue;
+    const value = rawValue.trim().replace(/^['"]|['"]$/g, "");
+    process.env[key] = value;
+  }
 }
 
 function ensureDir(dir) {
@@ -368,19 +397,28 @@ function normalizeTime(raw) {
 function normalizeStatus(raw, fallback = DEFAULT_STATUS) {
   const s = String(raw || "").trim().toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ");
   if (!s) return fallback;
-  if (s === "dq" || s === "leads" || s === "new leads" || s === "new" || s === "fresh") return "DQ";
-  if (s === "live" || s === "active" || s === "contacted") return "Live";
-  if (s === "qualified") return "Live";
-  if (s === "booked" || s === "appointment" || s === "appt" || s === "booking") return "Booked";
+  if (s === "dq" || s === "leads" || s === "new leads" || s === "new" || s === "fresh" || s === "back to dq") return "DQ";
+  if (s === "live" || s === "active" || s === "contacted" || s === "qualified") return "Booked";
+  if (s === "booked" || s === "appointment" || s === "appt" || s === "booking" || s === "appointment booked") return "Booked";
   if (["revisit", "callback", "call back", "cb", "follow up", "followup", "fu"].includes(s)) return "Revisit";
   if (["not interested", "ni", "not int", "n/i", "lost"].includes(s)) return "Not Interested";
   if (["wrong number", "wn", "wrong no", "wrong num"].includes(s)) return "Wrong Number";
   if (["no answer", "na", "no ans", "not answered", "no reply"].includes(s)) return "No Answer";
-  const legacyMatch = LEGACY_STATUSES.find((status) => status.toLowerCase() === s);
-  if (legacyMatch) return legacyMatch;
   const canonicalMatch = CANONICAL_STATUSES.find((status) => status.toLowerCase() === s);
   if (canonicalMatch) return canonicalMatch;
   return fallback;
+}
+
+function statusDetails(raw, fallback = DEFAULT_STATUS) {
+  const originalStatus = String(raw || "").trim();
+  const finalStatus = normalizeStatus(originalStatus, fallback);
+  let statusSource = originalStatus ? "lead-status-column" : "fallback";
+  const conflictWarnings = [];
+  if (/^live$/i.test(originalStatus)) {
+    statusSource = "legacy-live-alias";
+    conflictWarnings.push("Live normalized to Booked.");
+  }
+  return { originalStatus, finalStatus, statusSource, conflictWarnings };
 }
 
 function parseAddress(rawAddr, rawSuburb, explicit = {}) {
@@ -545,7 +583,14 @@ function mapSheetRows(rows, existingIndexes, repsByName, options) {
     const phone = normalizeAUPhone(rawPhone);
     const email = normalizeEmail(getCell(row, colIdx, "email"));
     const rawStatus = getCell(row, colIdx, "status");
-    const status = rawStatus ? normalizeStatus(rawStatus, options.fallbackStatus) : blankStatusFallback;
+    const statusMeta = rawStatus
+      ? statusDetails(rawStatus, options.fallbackStatus)
+      : {
+          ...statusDetails(sourceTab, options.fallbackStatus),
+          originalStatus: "",
+          statusSource: "source-tab-fallback",
+        };
+    const status = rawStatus ? statusMeta.finalStatus : blankStatusFallback;
     if (rawStatus && status === options.fallbackStatus && !ACCEPTED_STATUSES.some((s) => s.toLowerCase() === rawStatus.toLowerCase())) {
       unmappedStatuses[rawStatus] = (unmappedStatuses[rawStatus] ?? 0) + 1;
     }
@@ -584,6 +629,9 @@ function mapSheetRows(rows, existingIndexes, repsByName, options) {
       dqRep,
       status,
       sourceTab,
+      originalStatus: statusMeta.originalStatus || undefined,
+      finalStatus: status,
+      statusSource: statusMeta.statusSource,
       result: getCell(row, colIdx, "result") || undefined,
       notes: getCell(row, colIdx, "notes") || undefined,
       leadDate: normalizeDateToISO(getCell(row, colIdx, "leadDate")),
@@ -661,6 +709,11 @@ function mapSheetRows(rows, existingIndexes, repsByName, options) {
       sourceTab,
       rowNumber,
       lead,
+      strongKeys: rowKeys,
+      originalStatus: statusMeta.originalStatus,
+      finalStatus: status,
+      statusSource: statusMeta.statusSource,
+      conflictWarnings: statusMeta.conflictWarnings,
       existingDocId: existing?.__docId,
       match: existingMatch.match,
       duplicateKeyType: existingMatch.duplicateKeyType,
@@ -699,6 +752,11 @@ function mapSheetTabs(sheetTabs, existingIndexes, repsByName, options) {
   const issues = [];
   const mappedColumns = {};
   const rowsPerTab = {};
+  const perTabRowsIncludingHeader = {};
+  const perTabDataRows = {};
+  const perTabValidImports = {};
+  const perTabSkippedRows = {};
+  const perTabStatusBreakdown = {};
   let totalSheetRows = 0;
   let nameOnlySimilarities = [];
 
@@ -723,11 +781,18 @@ function mapSheetTabs(sheetTabs, existingIndexes, repsByName, options) {
     for (const [status, count] of Object.entries(analysis.unmappedStatuses)) {
       unmappedStatuses[status] = (unmappedStatuses[status] ?? 0) + count;
     }
+    perTabRowsIncludingHeader[tabName] = tabRows.rows.length;
+    perTabDataRows[tabName] = analysis.totalSheetRows;
+    perTabValidImports[tabName] = analysis.importLeads.length;
+    perTabSkippedRows[tabName] = analysis.skippedRows.length;
+    perTabStatusBreakdown[tabName] = analysis.statusBreakdown;
     rowsPerTab[tabName] = {
+      rowsIncludingHeader: tabRows.rows.length,
       sheetRowCount: analysis.totalSheetRows,
       validImportCount: analysis.importLeads.length,
       skippedRowCount: analysis.skippedRows.length,
       duplicateCount: analysis.duplicates.length,
+      statusBreakdown: analysis.statusBreakdown,
     };
     nameOnlySimilarities = analysis.nameOnlySimilarities;
   }
@@ -737,6 +802,11 @@ function mapSheetTabs(sheetTabs, existingIndexes, repsByName, options) {
     colIdx: {},
     mappedColumns,
     rowsPerTab,
+    perTabRowsIncludingHeader,
+    perTabDataRows,
+    perTabValidImports,
+    perTabSkippedRows,
+    perTabStatusBreakdown,
     tabDiscovery: sheetTabs.discovery ?? null,
     totalSheetRows,
     importLeads,
@@ -862,6 +932,20 @@ function writeJson(dir, name, payload) {
   return filePath;
 }
 
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function writeCsv(dir, name, rows, columns) {
+  ensureDir(dir);
+  const filePath = path.resolve(dir, name);
+  const header = columns.map((column) => csvEscape(column.label)).join(",");
+  const body = rows.map((row) => columns.map((column) => csvEscape(row[column.key])).join(",")).join("\n");
+  writeFileSync(filePath, body ? `${header}\n${body}\n` : `${header}\n`);
+  return filePath;
+}
+
 function backupLeads(leads, args, ts) {
   return writeJson(args.backupDir, `leads-backup-${ts}.json`, {
     createdAt: new Date().toISOString(),
@@ -883,13 +967,22 @@ function normalizeTabTitle(title) {
   return String(title || "").trim().toUpperCase().replace(/\s+/g, " ");
 }
 
+function excludedTabReason(title) {
+  const normalized = normalizeTabTitle(title);
+  if (EXCLUDED_TAB_TITLES.includes(normalized)) return "explicit excluded tab";
+  const lower = normalized.toLowerCase();
+  const keyword = EXCLUDED_TAB_KEYWORDS.find((item) => lower.includes(item));
+  return keyword ? `contains "${keyword}"` : "";
+}
+
 function leadHeaderScore(headers) {
   const mapped = new Set(headers.map(autoMatch).filter(Boolean));
-  const strong = ["leadId", "name", "phone", "status", "result"].filter((key) => mapped.has(key));
+  const required = ["name", "phone"].filter((key) => mapped.has(key));
+  const supporting = ["status", "result", "dqRepName", "notes", "address", "leadId"].filter((key) => mapped.has(key));
   return {
-    score: strong.length,
+    score: required.length + supporting.length,
     mapped: Array.from(mapped),
-    isLeadLike: mapped.has("phone") && (mapped.has("name") || mapped.has("leadId") || mapped.has("status") || mapped.has("result")),
+    isLeadLike: mapped.has("name") && mapped.has("phone") && supporting.length > 0,
   };
 }
 
@@ -946,8 +1039,14 @@ async function readAllLeadTabs(args, serviceAccount) {
   if (!args.sheetId) throw new Error("Provide --sheet-id, --sheet-url, GOOGLE_SHEET_ID, or GOOGLE_SHEET_URL.");
   const sheets = await createSheetsClient(args, serviceAccount);
   const availableSheetTitles = await listSheetTitles(sheets, args);
+  const excludedTabs = [];
   const actualByNormalizedTitle = new Map();
   for (const title of availableSheetTitles) {
+    const excludedReason = excludedTabReason(title);
+    if (excludedReason) {
+      excludedTabs.push({ tab: title, reason: excludedReason });
+      continue;
+    }
     const normalized = normalizeTabTitle(title);
     if (!actualByNormalizedTitle.has(normalized)) actualByNormalizedTitle.set(normalized, title);
   }
@@ -968,6 +1067,8 @@ async function readAllLeadTabs(args, serviceAccount) {
 
   const skippedNonLeadTabs = [];
   for (const title of availableSheetTitles) {
+    const excludedReason = excludedTabReason(title);
+    if (excludedReason) continue;
     if (candidateTitleSet.has(title)) continue;
     console.log(`Checking header for possible lead tab ${title}...`);
     const headerRes = await withTimeout(
@@ -991,9 +1092,11 @@ async function readAllLeadTabs(args, serviceAccount) {
 
   console.log(`Matched lead tabs: ${candidateTabs.map((item) => item.tab).join(", ") || "(none)"}`);
   console.log(`Missing expected tabs: ${missingExpectedTabs.join(", ") || "(none)"}`);
+  console.log(`Excluded tabs: ${excludedTabs.map((item) => `${item.tab} (${item.reason})`).join(", ") || "(none)"}`);
   console.log(`Skipped non-lead tabs: ${skippedNonLeadTabs.map((item) => item.tab).join(", ") || "(none)"}`);
 
   const tabResults = [];
+  const skippedEmptyTabs = [];
   for (const candidate of candidateTabs) {
     console.log(`Reading Google Sheet ${candidate.tab} range...`);
     const res = await withTimeout(
@@ -1006,12 +1109,22 @@ async function readAllLeadTabs(args, serviceAccount) {
     );
     const rows = res.data.values ?? [];
     console.log(`Google Sheet ${candidate.tab} read complete: ${rows.length} rows`);
+    if (rows.length < 2) {
+      console.warn(`Warning: lead tab "${candidate.tab}" has only a header row or no data rows; skipping.`);
+      skippedEmptyTabs.push({ tab: candidate.tab, rowsIncludingHeader: rows.length, discovery: candidate.discovery });
+      continue;
+    }
     tabResults.push({ ...candidate, rows });
   }
   tabResults.discovery = {
     availableSheetTitles,
     matchedLeadTabs: candidateTabs.map(({ tab, expectedTab, discovery }) => ({ tab, expectedTab, discovery })),
+    discoveredLeadTabs: candidateTabs
+      .filter((item) => item.discovery === "header")
+      .map(({ tab, headerMatch }) => ({ tab, mappedHeaders: headerMatch?.mapped ?? [] })),
     missingExpectedTabs,
+    excludedTabs,
+    skippedEmptyTabs,
     skippedNonLeadTabs,
   };
   return tabResults;
@@ -1066,13 +1179,269 @@ async function scanRelatedReferences(db, leads) {
   return { topLevel: results, subcollections: subcollectionResults };
 }
 
-function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedReferences, writeSummary, verification }) {
+function summarizeExistingLead(lead) {
+  return {
+    docId: lead.__docId ?? "",
+    id: lead.id ?? "",
+    leadId: lead.leadId ?? "",
+    name: lead.name ?? "",
+    phone: normalizeAUPhone(lead.phone ?? lead.phoneRaw ?? ""),
+    phoneRaw: lead.phoneRaw ?? "",
+    email: normalizeEmail(lead.email),
+    houseNum: lead.houseNum ?? "",
+    street: lead.street ?? "",
+    suburb: lead.suburb ?? "",
+    postcode: lead.postcode ?? "",
+    status: lead.status ?? "",
+    dqRep: lead.dqRep ?? "",
+    region: lead.region ?? "",
+    updatedAt: lead.updatedAt ?? "",
+    strongKeys: strongDuplicateKeys(lead).map((item) => item.key).join(";"),
+  };
+}
+
+function buildUnmatchedExistingReport(existingLeads, sheetAnalysis, args, ts) {
+  const incomingKeys = new Set();
+  for (const item of sheetAnalysis.importLeads) {
+    const keys = item.strongKeys?.length ? item.strongKeys : strongDuplicateKeys(item.lead);
+    keys.forEach((keyItem) => incomingKeys.add(keyItem.key));
+  }
+
+  const unmatched = [];
+  const statusBreakdown = {};
+  for (const lead of existingLeads) {
+    const existingKeys = strongDuplicateKeys(lead);
+    const matched = existingKeys.some((item) => incomingKeys.has(item.key));
+    if (matched) continue;
+    const summary = summarizeExistingLead(lead);
+    unmatched.push(summary);
+    const status = String(summary.status || "(missing)");
+    statusBreakdown[status] = (statusBreakdown[status] ?? 0) + 1;
+  }
+
+  const jsonPath = writeJson(args.reportDir, `unmatched-existing-leads-${ts}.json`, {
+    createdAt: new Date().toISOString(),
+    count: unmatched.length,
+    statusBreakdown,
+    matchKeys: ["LeadID", "normalized phone", "email", "full name + address"],
+    leads: unmatched,
+  });
+  const csvPath = writeCsv(args.reportDir, `unmatched-existing-leads-${ts}.csv`, unmatched, [
+    { key: "docId", label: "Firestore Doc ID" },
+    { key: "id", label: "Lead ID" },
+    { key: "leadId", label: "LeadID Field" },
+    { key: "name", label: "Name" },
+    { key: "phone", label: "Normalized Phone" },
+    { key: "phoneRaw", label: "Raw Phone" },
+    { key: "email", label: "Email" },
+    { key: "houseNum", label: "House Number" },
+    { key: "street", label: "Street" },
+    { key: "suburb", label: "Suburb" },
+    { key: "postcode", label: "Postcode" },
+    { key: "status", label: "Status" },
+    { key: "dqRep", label: "DQ Rep" },
+    { key: "region", label: "Region" },
+    { key: "updatedAt", label: "Updated At" },
+    { key: "strongKeys", label: "Strong Keys" },
+  ]);
+
+  return {
+    unmatchedExistingCount: unmatched.length,
+    unmatchedExistingStatusBreakdown: statusBreakdown,
+    sampleUnmatchedExistingLeads: unmatched.slice(0, 25),
+    unmatchedExistingJsonPath: jsonPath,
+    unmatchedExistingCsvPath: csvPath,
+  };
+}
+
+function summarizeStatusBreakdown(rows) {
+  const counts = {};
+  for (const row of rows) {
+    const status = String(row.status || "(missing)");
+    counts[status] = (counts[status] ?? 0) + 1;
+  }
+  return counts;
+}
+
+function buildExistingDuplicateGroups(existingLeads, directlyMatchedDocIds) {
+  const byKey = new Map();
+  for (const lead of existingLeads) {
+    for (const keyItem of strongDuplicateKeys(lead)) {
+      const group = byKey.get(keyItem.key) ?? {
+        duplicateKey: keyItem.key,
+        duplicateKeyType: keyItem.type,
+        docs: [],
+      };
+      group.docs.push({
+        ...summarizeExistingLead(lead),
+        directlyMatchedForUpdate: directlyMatchedDocIds.has(String(lead.__docId ?? lead.id)),
+      });
+      byKey.set(keyItem.key, group);
+    }
+  }
+  return Array.from(byKey.values())
+    .filter((group) => group.docs.length > 1)
+    .map((group) => ({
+      ...group,
+      count: group.docs.length,
+      selectedDocs: group.docs.filter((doc) => doc.directlyMatchedForUpdate).map((doc) => doc.docId),
+      sampleDocs: group.docs.slice(0, 10),
+    }));
+}
+
+function buildFullReplaceImpact(existingLeads, sheetAnalysis, args, ts) {
+  const directlyMatchedDocIds = new Set(
+    sheetAnalysis.importLeads
+      .filter((item) => item.existingDocId)
+      .map((item) => String(item.existingDocId)),
+  );
+  const incomingKeyToRows = new Map();
+  for (const item of sheetAnalysis.importLeads) {
+    const keys = item.strongKeys?.length ? item.strongKeys : strongDuplicateKeys(item.lead);
+    for (const keyItem of keys) {
+      const rows = incomingKeyToRows.get(keyItem.key) ?? [];
+      rows.push({
+        sourceTab: item.sourceTab,
+        rowNumber: item.rowNumber,
+        incomingLeadId: item.lead.id,
+        incomingName: item.lead.name,
+        selectedExistingDocId: item.existingDocId ?? "",
+      });
+      incomingKeyToRows.set(keyItem.key, rows);
+    }
+  }
+
+  const notDirectlyReimported = [];
+  const unmatchedByAnyStrongKey = [];
+  const matchedByStrongKeyButNotSelected = [];
+
+  for (const lead of existingLeads) {
+    const docId = String(lead.__docId ?? lead.id);
+    if (directlyMatchedDocIds.has(docId)) continue;
+    const existingKeys = strongDuplicateKeys(lead);
+    const matchedKeys = existingKeys
+      .filter((keyItem) => incomingKeyToRows.has(keyItem.key))
+      .map((keyItem) => ({
+        duplicateKey: keyItem.key,
+        duplicateKeyType: keyItem.type,
+        incomingRows: incomingKeyToRows.get(keyItem.key) ?? [],
+      }));
+    const summary = summarizeExistingLead(lead);
+    const reason = matchedKeys.length > 0
+      ? "matched-by-strong-key-but-not-selected"
+      : "unmatched-by-any-strong-key";
+    const row = {
+      ...summary,
+      reason,
+      matchedKeys: matchedKeys.map((item) => item.duplicateKey).join(";"),
+      matchedKeyTypes: matchedKeys.map((item) => item.duplicateKeyType).join(";"),
+      selectedExistingDocIds: Array.from(
+        new Set(matchedKeys.flatMap((item) => item.incomingRows.map((incoming) => incoming.selectedExistingDocId).filter(Boolean))),
+      ).join(";"),
+    };
+    notDirectlyReimported.push(row);
+    if (matchedKeys.length > 0) matchedByStrongKeyButNotSelected.push(row);
+    else unmatchedByAnyStrongKey.push(row);
+  }
+
+  const duplicateExistingDocGroups = buildExistingDuplicateGroups(existingLeads, directlyMatchedDocIds);
+  const duplicateExistingDocRows = duplicateExistingDocGroups.flatMap((group) =>
+    group.docs.map((doc) => ({
+      duplicateKey: group.duplicateKey,
+      duplicateKeyType: group.duplicateKeyType,
+      duplicateGroupCount: group.count,
+      selectedDocs: group.selectedDocs.join(";"),
+      ...doc,
+      reason: doc.directlyMatchedForUpdate ? "selected-for-update" : "duplicate-existing-doc-not-selected",
+    })),
+  );
+
+  const impact = {
+    existingLeadCount: existingLeads.length,
+    incomingValidImportCount: sheetAnalysis.importLeads.length,
+    existingDocsDirectlyMatchedForUpdate: directlyMatchedDocIds.size,
+    incomingCreates: sheetAnalysis.importLeads.filter((item) => item.action === "create").length,
+    existingDocsNotDirectlyReimported: existingLeads.length - directlyMatchedDocIds.size,
+    existingDocsUnmatchedByAnyStrongKey: unmatchedByAnyStrongKey.length,
+    existingDocsMatchedByStrongKeyButNotSelected: matchedByStrongKeyButNotSelected.length,
+    duplicateExistingDocGroups: duplicateExistingDocGroups.length,
+    statusBreakdown: {
+      notDirectlyReimported: summarizeStatusBreakdown(notDirectlyReimported),
+      unmatchedByAnyStrongKey: summarizeStatusBreakdown(unmatchedByAnyStrongKey),
+      matchedByStrongKeyButNotSelected: summarizeStatusBreakdown(matchedByStrongKeyButNotSelected),
+    },
+    samples: {
+      notDirectlyReimported: notDirectlyReimported.slice(0, 25),
+      unmatchedByAnyStrongKey: unmatchedByAnyStrongKey.slice(0, 25),
+      matchedByStrongKeyButNotSelected: matchedByStrongKeyButNotSelected.slice(0, 25),
+      duplicateExistingDocGroups: duplicateExistingDocGroups.slice(0, 25),
+    },
+  };
+
+  const jsonPath = writeJson(args.reportDir, `full-replace-impact-${ts}.json`, {
+    createdAt: new Date().toISOString(),
+    matchKeys: ["LeadID", "normalized phone", "email", "full name + address"],
+    ...impact,
+    notDirectlyReimported,
+    unmatchedByAnyStrongKey,
+    matchedByStrongKeyButNotSelected,
+    duplicateExistingDocGroups,
+  });
+  const csvPath = writeCsv(args.reportDir, `full-replace-impact-${ts}.csv`, notDirectlyReimported, [
+    { key: "reason", label: "Reason" },
+    { key: "docId", label: "Firestore Doc ID" },
+    { key: "id", label: "Lead ID" },
+    { key: "leadId", label: "LeadID Field" },
+    { key: "name", label: "Name" },
+    { key: "phone", label: "Normalized Phone" },
+    { key: "email", label: "Email" },
+    { key: "suburb", label: "Suburb" },
+    { key: "status", label: "Status" },
+    { key: "dqRep", label: "DQ Rep" },
+    { key: "matchedKeyTypes", label: "Matched Key Types" },
+    { key: "matchedKeys", label: "Matched Keys" },
+    { key: "selectedExistingDocIds", label: "Selected Existing Doc IDs" },
+    { key: "strongKeys", label: "Existing Strong Keys" },
+  ]);
+  const duplicateCsvPath = writeCsv(args.reportDir, `duplicate-existing-firebase-docs-${ts}.csv`, duplicateExistingDocRows, [
+    { key: "duplicateKeyType", label: "Duplicate Key Type" },
+    { key: "duplicateKey", label: "Duplicate Key" },
+    { key: "duplicateGroupCount", label: "Duplicate Group Count" },
+    { key: "reason", label: "Reason" },
+    { key: "directlyMatchedForUpdate", label: "Directly Matched For Update" },
+    { key: "selectedDocs", label: "Selected Docs In Group" },
+    { key: "docId", label: "Firestore Doc ID" },
+    { key: "id", label: "Lead ID" },
+    { key: "leadId", label: "LeadID Field" },
+    { key: "name", label: "Name" },
+    { key: "phone", label: "Normalized Phone" },
+    { key: "email", label: "Email" },
+    { key: "suburb", label: "Suburb" },
+    { key: "status", label: "Status" },
+    { key: "dqRep", label: "DQ Rep" },
+    { key: "strongKeys", label: "Existing Strong Keys" },
+  ]);
+
+  return { ...impact, jsonPath, csvPath, duplicateCsvPath };
+}
+
+function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedReferences, writeSummary, verification, unmatchedExisting, fullReplaceImpact }) {
   const created = sheetAnalysis.importLeads.filter((item) => item.action === "create").length;
   const updated = sheetAnalysis.importLeads.filter((item) => item.action === "update").length;
   const missingRequired = [];
+  const statusConflictWarnings = [];
   for (const item of sheetAnalysis.importLeads) {
     const missing = ["id", "name", "phone", "suburb", "dqRep", "status"].filter((field) => item.lead[field] === undefined || item.lead[field] === "");
     if (missing.length > 0) missingRequired.push({ rowNumber: item.rowNumber, id: item.lead.id, missing });
+    for (const warning of item.conflictWarnings ?? []) {
+      statusConflictWarnings.push({
+        sourceTab: item.sourceTab,
+        rowNumber: item.rowNumber,
+        originalStatus: item.originalStatus,
+        finalStatus: item.finalStatus,
+        warning,
+      });
+    }
   }
   return {
     createdAt: new Date().toISOString(),
@@ -1085,13 +1454,31 @@ function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedRe
     tabDiscovery: sheetAnalysis.tabDiscovery ?? null,
     availableSheetTitles: sheetAnalysis.tabDiscovery?.availableSheetTitles ?? [],
     matchedLeadTabs: sheetAnalysis.tabDiscovery?.matchedLeadTabs ?? [],
+    discoveredLeadTabs: sheetAnalysis.tabDiscovery?.discoveredLeadTabs ?? [],
     missingExpectedTabs: sheetAnalysis.tabDiscovery?.missingExpectedTabs ?? [],
+    excludedTabs: sheetAnalysis.tabDiscovery?.excludedTabs ?? [],
+    skippedEmptyTabs: sheetAnalysis.tabDiscovery?.skippedEmptyTabs ?? [],
     skippedNonLeadTabs: sheetAnalysis.tabDiscovery?.skippedNonLeadTabs ?? [],
     collection: LEADS_COLLECTION,
     backupPath,
     existingLeadCount: existingLeads.length,
     sheetRowCount: sheetAnalysis.totalSheetRows,
     totalRowsAcrossTabs: sheetAnalysis.totalSheetRows,
+    perTabRowsIncludingHeader: sheetAnalysis.perTabRowsIncludingHeader ?? {
+      [args.tab]: sheetAnalysis.totalSheetRows + 1,
+    },
+    perTabDataRows: sheetAnalysis.perTabDataRows ?? {
+      [args.tab]: sheetAnalysis.totalSheetRows,
+    },
+    perTabValidImports: sheetAnalysis.perTabValidImports ?? {
+      [args.tab]: sheetAnalysis.importLeads.length,
+    },
+    perTabSkippedRows: sheetAnalysis.perTabSkippedRows ?? {
+      [args.tab]: sheetAnalysis.skippedRows.length,
+    },
+    perTabStatusBreakdown: sheetAnalysis.perTabStatusBreakdown ?? {
+      [args.tab]: sheetAnalysis.statusBreakdown,
+    },
     rowsPerTab: sheetAnalysis.rowsPerTab ?? {
       [args.tab]: {
         sheetRowCount: sheetAnalysis.totalSheetRows,
@@ -1104,6 +1491,7 @@ function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedRe
     skippedRowCount: sheetAnalysis.skippedRows.length,
     duplicateCount: sheetAnalysis.duplicates.length,
     statusBreakdown: sheetAnalysis.statusBreakdown,
+    statusConflictWarnings: statusConflictWarnings.slice(0, 100),
     plannedCreatedCount: created,
     plannedUpdatedCount: updated,
     idStrategy: {
@@ -1124,6 +1512,28 @@ function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedRe
     duplicates: sheetAnalysis.duplicates.slice(0, 100),
     nameOnlySimilarities: sheetAnalysis.nameOnlySimilarities.slice(0, 100),
     missingRequiredFields: missingRequired.slice(0, 100),
+    unmatchedExistingCount: unmatchedExisting?.unmatchedExistingCount ?? 0,
+    unmatchedExistingStatusBreakdown: unmatchedExisting?.unmatchedExistingStatusBreakdown ?? {},
+    sampleUnmatchedExistingLeads: unmatchedExisting?.sampleUnmatchedExistingLeads ?? [],
+    unmatchedExistingJsonPath: unmatchedExisting?.unmatchedExistingJsonPath ?? null,
+    unmatchedExistingCsvPath: unmatchedExisting?.unmatchedExistingCsvPath ?? null,
+    fullReplaceImpact: fullReplaceImpact
+      ? {
+          existingLeadCount: fullReplaceImpact.existingLeadCount,
+          incomingValidImportCount: fullReplaceImpact.incomingValidImportCount,
+          existingDocsDirectlyMatchedForUpdate: fullReplaceImpact.existingDocsDirectlyMatchedForUpdate,
+          incomingCreates: fullReplaceImpact.incomingCreates,
+          existingDocsNotDirectlyReimported: fullReplaceImpact.existingDocsNotDirectlyReimported,
+          existingDocsUnmatchedByAnyStrongKey: fullReplaceImpact.existingDocsUnmatchedByAnyStrongKey,
+          existingDocsMatchedByStrongKeyButNotSelected: fullReplaceImpact.existingDocsMatchedByStrongKeyButNotSelected,
+          duplicateExistingDocGroups: fullReplaceImpact.duplicateExistingDocGroups,
+          statusBreakdown: fullReplaceImpact.statusBreakdown,
+          samples: fullReplaceImpact.samples,
+          jsonPath: fullReplaceImpact.jsonPath,
+          csvPath: fullReplaceImpact.csvPath,
+          duplicateCsvPath: fullReplaceImpact.duplicateCsvPath,
+        }
+      : null,
     relatedReferences,
     verification,
     sampleImports: sheetAnalysis.importLeads.slice(0, 5).map((item) => ({
@@ -1133,6 +1543,10 @@ function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedRe
       match: item.match,
       duplicateKeyType: item.duplicateKeyType,
       idSource: item.idSource,
+      originalStatus: item.originalStatus,
+      sourceTab: item.sourceTab,
+      finalStatus: item.finalStatus,
+      statusSource: item.statusSource,
       lead: {
         id: item.lead.id,
         name: item.lead.name,
@@ -1141,6 +1555,9 @@ function buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedRe
         suburb: item.lead.suburb,
         status: item.lead.status,
         sourceTab: item.lead.sourceTab,
+        originalStatus: item.lead.originalStatus,
+        finalStatus: item.lead.finalStatus,
+        statusSource: item.lead.statusSource,
         dqRep: item.lead.dqRep,
         region: item.lead.region,
       },
@@ -1161,9 +1578,17 @@ function printReport(report) {
   if (report.allTabs) {
     console.log(`Available sheet titles: ${JSON.stringify(report.availableSheetTitles)}`);
     console.log(`Matched lead tabs: ${JSON.stringify(report.matchedLeadTabs)}`);
+    console.log(`Discovered lead tabs: ${JSON.stringify(report.discoveredLeadTabs)}`);
     console.log(`Missing expected tabs: ${JSON.stringify(report.missingExpectedTabs)}`);
+    console.log(`Excluded tabs: ${JSON.stringify(report.excludedTabs)}`);
+    console.log(`Skipped empty tabs: ${JSON.stringify(report.skippedEmptyTabs)}`);
     console.log(`Skipped non-lead tabs: ${JSON.stringify(report.skippedNonLeadTabs)}`);
     console.log(`Total rows across all tabs: ${report.totalRowsAcrossTabs}`);
+    console.log(`Rows including header per tab: ${JSON.stringify(report.perTabRowsIncludingHeader)}`);
+    console.log(`Data rows per tab: ${JSON.stringify(report.perTabDataRows)}`);
+    console.log(`Valid imports per tab: ${JSON.stringify(report.perTabValidImports)}`);
+    console.log(`Skipped rows per tab: ${JSON.stringify(report.perTabSkippedRows)}`);
+    console.log(`Status breakdown per tab: ${JSON.stringify(report.perTabStatusBreakdown)}`);
     console.log(`Rows per tab: ${JSON.stringify(report.rowsPerTab)}`);
   }
   console.log(`Valid import count: ${report.validImportCount}`);
@@ -1175,6 +1600,31 @@ function printReport(report) {
   console.log(`Updated count: ${report.updatedCount} (${report.plannedUpdatedCount} planned)`);
   console.log(`Deleted count: ${report.deletedCount}`);
   console.log(`Backup file path: ${report.backupPath}`);
+  if (report.allTabs && report.mode === "dry-run") {
+    console.log("");
+    console.log("Unmatched existing Firebase leads:");
+    console.log(`Unmatched existing count: ${report.unmatchedExistingCount}`);
+    console.log(`Unmatched existing status breakdown: ${JSON.stringify(report.unmatchedExistingStatusBreakdown)}`);
+    console.log(`Sample unmatched existing leads: ${JSON.stringify(report.sampleUnmatchedExistingLeads)}`);
+    console.log(`Unmatched existing JSON path: ${report.unmatchedExistingJsonPath ?? "(not generated)"}`);
+    console.log(`Unmatched existing CSV path: ${report.unmatchedExistingCsvPath ?? "(not generated)"}`);
+    if (report.fullReplaceImpact) {
+      console.log("");
+      console.log("Full replace impact:");
+      console.log(`Existing lead count: ${report.fullReplaceImpact.existingLeadCount}`);
+      console.log(`Incoming valid import count: ${report.fullReplaceImpact.incomingValidImportCount}`);
+      console.log(`Existing docs directly matched for update: ${report.fullReplaceImpact.existingDocsDirectlyMatchedForUpdate}`);
+      console.log(`Incoming creates: ${report.fullReplaceImpact.incomingCreates}`);
+      console.log(`Existing docs not directly reimported: ${report.fullReplaceImpact.existingDocsNotDirectlyReimported}`);
+      console.log(`Existing docs unmatched by any strong key: ${report.fullReplaceImpact.existingDocsUnmatchedByAnyStrongKey}`);
+      console.log(`Existing docs matched by strong key but not selected: ${report.fullReplaceImpact.existingDocsMatchedByStrongKeyButNotSelected}`);
+      console.log(`Duplicate existing doc groups: ${report.fullReplaceImpact.duplicateExistingDocGroups}`);
+      console.log(`Full replace impact status breakdown: ${JSON.stringify(report.fullReplaceImpact.statusBreakdown)}`);
+      console.log(`Full replace impact JSON path: ${report.fullReplaceImpact.jsonPath}`);
+      console.log(`Full replace impact CSV path: ${report.fullReplaceImpact.csvPath}`);
+      console.log(`Duplicate existing Firebase docs CSV path: ${report.fullReplaceImpact.duplicateCsvPath}`);
+    }
+  }
   if (Object.keys(report.unmappedStatuses ?? {}).length > 0) {
     console.log(`Unmapped statuses using fallback: ${JSON.stringify(report.unmappedStatuses)}`);
   }
@@ -1240,6 +1690,45 @@ async function writeImport(db, existingLeads, sheetAnalysis, args) {
   return { deleted, created, updated };
 }
 
+function buildLiveToBookedSummary(existingLeads) {
+  const matches = existingLeads.filter((lead) => String(lead.status ?? "").trim().toLowerCase() === "live");
+  const samples = matches.slice(0, 25).map((lead) => ({
+    docId: lead.__docId,
+    id: lead.id,
+    name: lead.name,
+    phone: normalizeAUPhone(lead.phone ?? lead.phoneRaw ?? ""),
+    status: lead.status,
+    finalStatus: "Booked",
+    suburb: lead.suburb,
+    dqRep: lead.dqRep,
+  }));
+  return { liveToBookedCount: matches.length, samples, leads: matches };
+}
+
+async function normalizeLiveToBooked(db, existingLeads, args) {
+  const summary = buildLiveToBookedSummary(existingLeads);
+  if (args.mode === "normalize-live-to-booked-dry-run") {
+    return { ...summary, updated: 0 };
+  }
+  if (!args.confirmNormalizeStatuses) {
+    throw new Error("Status normalization writes require --confirm-normalize-statuses.");
+  }
+  let updated = 0;
+  for (const chunk of chunks(summary.leads, 450)) {
+    const batch = db.batch();
+    for (const lead of chunk) {
+      batch.set(
+        db.collection(LEADS_COLLECTION).doc(String(lead.__docId ?? lead.id)),
+        { status: "Booked", updatedAt: Date.now() },
+        { merge: true },
+      );
+      updated += 1;
+    }
+    await batch.commit();
+  }
+  return { ...summary, updated };
+}
+
 function chunks(items, size) {
   const out = [];
   for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
@@ -1283,6 +1772,7 @@ async function verifyImport(db, importedItems) {
 }
 
 async function main() {
+  loadDotEnvIfPresent();
   const args = parseArgs(process.argv.slice(2));
   if (args.help) {
     printHelp();
@@ -1296,7 +1786,10 @@ async function main() {
       "Refusing single-tab full replace. This would delete all current leads and import only one tab. Add --all-tabs, or add --confirm-single-tab-replace if this single-tab reset is intentional.",
     );
   }
-  if (!["dry-run", "backup-only", "import", "full-replace"].includes(args.mode)) {
+  if (args.mode === "normalize-live-to-booked" && !args.confirmNormalizeStatuses) {
+    throw new Error("Refusing status normalization writes without --confirm-normalize-statuses.");
+  }
+  if (!["dry-run", "backup-only", "import", "full-replace", "normalize-live-to-booked-dry-run", "normalize-live-to-booked"].includes(args.mode)) {
     throw new Error(`Invalid mode: ${args.mode}`);
   }
 
@@ -1324,8 +1817,6 @@ async function main() {
       const totalRowsIncludingHeaders = sheetTabs.reduce((sum, tab) => sum + tab.rows.length, 0);
       console.log(`Google Sheet all-tabs read complete: ${totalRowsIncludingHeaders} rows including headers`);
       if (sheetTabs.length === 0) throw new Error("No lead tabs were discovered in the Google Sheet.");
-      const emptyTabs = sheetTabs.filter((tab) => tab.rows.length < 2).map((tab) => tab.tab);
-      if (emptyTabs.length > 0) throw new Error(`Sheet tab(s) with no data rows: ${emptyTabs.join(", ")}`);
     } else {
       console.log(`Reading Google Sheet ${args.tab} range...`);
       rows = await readSheetRows(args, serviceAccount);
@@ -1339,6 +1830,32 @@ async function main() {
   console.log(`Existing Firebase leads read complete: ${existingLeads.length} leads`);
 
   const backupPath = backupLeads(existingLeads, args, ts);
+
+  if (args.mode === "normalize-live-to-booked-dry-run" || args.mode === "normalize-live-to-booked") {
+    const summary = await normalizeLiveToBooked(db, existingLeads, args);
+    const report = {
+      createdAt: new Date().toISOString(),
+      mode: args.mode,
+      projectId: args.projectId ?? null,
+      collection: LEADS_COLLECTION,
+      existingLeadCount: existingLeads.length,
+      backupPath,
+      liveToBookedCount: summary.liveToBookedCount,
+      updatedCount: summary.updated,
+      sampleLiveLeads: summary.samples,
+    };
+    const reportPath = writeJson(args.reportDir, `leads-${args.mode}-report-${ts}.json`, report);
+    console.log("");
+    console.log("Live to Booked Status Normalization Report");
+    console.log("------------------------------------------");
+    console.log(`Existing Firebase lead count: ${existingLeads.length}`);
+    console.log(`Live records ${args.mode.endsWith("dry-run") ? "that would change" : "changed"}: ${summary.liveToBookedCount}`);
+    console.log(`Updated count: ${summary.updated}`);
+    console.log(`Backup file path: ${backupPath}`);
+    console.log(`Report file path: ${reportPath}`);
+    if (args.mode.endsWith("dry-run")) console.log("Dry run only. No Firestore writes were performed.");
+    return;
+  }
 
   if (args.mode === "backup-only") {
     const report = {
@@ -1393,6 +1910,8 @@ async function main() {
 
   let writeSummary = { deleted: 0, created: 0, updated: 0 };
   let verification = null;
+  let unmatchedExisting = null;
+  let fullReplaceImpact = null;
   if (args.mode === "import" || args.mode === "full-replace") {
     console.log("Writing Firebase leads...");
     writeSummary = await writeImport(db, existingLeads, sheetAnalysis, args);
@@ -1402,12 +1921,23 @@ async function main() {
     console.log(`Firebase verification complete: ${verification.finalLeadCount} final leads`);
   }
 
+  if (args.mode === "dry-run" && args.allTabs) {
+    console.log("Finding unmatched existing Firebase leads...");
+    unmatchedExisting = buildUnmatchedExistingReport(existingLeads, sheetAnalysis, args, ts);
+    console.log(`Unmatched existing Firebase leads complete: ${unmatchedExisting.unmatchedExistingCount} unmatched`);
+    console.log("Building full replace impact report...");
+    fullReplaceImpact = buildFullReplaceImpact(existingLeads, sheetAnalysis, args, ts);
+    console.log(
+      `Full replace impact complete: ${fullReplaceImpact.existingDocsNotDirectlyReimported} existing docs not directly reimported`,
+    );
+  }
+
   if (args.mode === "dry-run") {
     console.log("Generating dry-run report...");
   } else {
     console.log("Generating migration report...");
   }
-  const report = buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedReferences, writeSummary, verification });
+  const report = buildReport({ args, existingLeads, sheetAnalysis, backupPath, relatedReferences, writeSummary, verification, unmatchedExisting, fullReplaceImpact });
   const reportPath = writeJson(args.reportDir, `leads-${args.mode}-report-${ts}.json`, report);
   if (args.mode === "dry-run") {
     console.log("Dry-run report complete");
@@ -1424,7 +1954,19 @@ async function main() {
   }
 }
 
-export { buildExistingIndexes, mapSheetRows, mapSheetTabs, strongDuplicateKeys, normalizeAUPhone, normalizeTabTitle, leadHeaderScore, quoteSheetTabName };
+export {
+  buildExistingIndexes,
+  buildFullReplaceImpact,
+  buildUnmatchedExistingReport,
+  excludedTabReason,
+  mapSheetRows,
+  mapSheetTabs,
+  strongDuplicateKeys,
+  normalizeAUPhone,
+  normalizeTabTitle,
+  leadHeaderScore,
+  quoteSheetTabName,
+};
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch((err) => {
