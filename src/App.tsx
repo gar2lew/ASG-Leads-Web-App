@@ -17,7 +17,9 @@ import {
   useAddAuditEntry,
 } from "./hooks/useFirebase";
 import { deriveOperationalCounters } from "./lib/workflowState";
-import { getRegionIdentity, REGION_IDENTITIES } from "./lib/regionIdentity";
+import { AppSidebar } from "./components/navigation/AppSidebar";
+import { getRegionIdentity } from "./lib/regionIdentity";
+import { PAGE_LABELS, type NavigationPageKey } from "./lib/navigationConfig";
 import {
   LayoutDashboard,
   MessageCircle,
@@ -35,12 +37,7 @@ import {
   Calculator,
   UserCircle,
   BarChart2,
-  Settings,
   Shield,
-  Sun,
-  Moon,
-  LogOut,
-  X,
   Menu,
   ArrowLeftRight,
   FileUp,
@@ -166,30 +163,7 @@ function useUiScale(): [string, (v: string) => void] {
   return [scale, setScale];
 }
 
-type Page =
-  | "dashboard"
-  | "leads"
-  | "client-hub"
-  | "dq-import"
-  | "map"
-  | "draps"
-  | "commissions"
-  | "admin"
-  | "team-chat"
-  | "knowledge-base"
-  | "document-centre"
-  | "deal-dashboard"
-  | "reports"
-  | "training"
-  | "calendar"
-  | "admin-guide"
-  | "my-dashboard"
-  | "rep-settings"
-  | "pia"
-  | "smsf"
-  | "rep-dashboard"
-  | "assistant"
-  | "inbox";
+type Page = NavigationPageKey;
 
 // ── Login screen ──────────────────────────────────────────────────────────────
 type LoginStep = "select" | "access-code" | "setup" | "pin" | "forgot" | "new-pin" | "admin";
@@ -723,78 +697,7 @@ function LoginScreen({
   );
 }
 
-// ── Page labels (for topbar title) ───────────────────────────────────────────
-const PAGE_LABELS: Record<string, string> = {
-  dashboard: "Dashboard",
-  leads: "Leads",
-  "client-hub": "Clients",
-  calendar: "Calendar",
-  "deal-dashboard": "Deal Dashboard",
-  reports: "Reports",
-  training: "Training Hub",
-  "dq-import": "DQ Import",
-  map: "Map",
-  draps: "DRAPS & Stats",
-  commissions: "Comms Calculator",
-  admin: "Admin",
-  "team-chat": "Team Chat",
-  "knowledge-base": "Knowledge Base",
-  "document-centre": "Documents",
-  "admin-guide": "Admin Guide",
-  "my-dashboard": "My Dashboard",
-  "rep-settings": "My Settings",
-  pia: "PIA Calculator",
-  smsf: "SMSF Calculator",
-  "rep-dashboard": "Rep Dashboard",
-};
-
-// ── Sidebar item ──────────────────────────────────────────────────────────────
-function SidebarItem({
-  icon,
-  label,
-  active,
-  onClick,
-  badge,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  badge?: number;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all text-left ${
-        active ? "bg-[#1A1A1D] text-[var(--region-accent)]" : "text-[#c8c8c4] hover:bg-[#222226] hover:text-white"
-      }`}
-      style={
-        active ? { borderLeft: "2px solid var(--region-accent)", paddingLeft: "10px" } : { borderLeft: "2px solid transparent" }
-      }
-    >
-      {icon}
-      <span className="truncate flex-1">{label}</span>
-      {badge !== undefined && badge > 0 && (
-        <span
-          className="flex-shrink-0 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-          style={{ background: "var(--region-accent)", color: "var(--region-text-on-accent)" }}
-        >
-          {badge > 99 ? "99+" : badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-// ── Sidebar section ───────────────────────────────────────────────────────────
-function SidebarSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-0.5">
-      <p className="px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#7a7a74]">{label}</p>
-      {children}
-    </div>
-  );
-}// ── Authenticated app shell ───────────────────────────────────────────────────
+// ── Authenticated app shell ───────────────────────────────────────────────────
 function AppShell() {
   const { currentUser, setCurrentUser, leads, reps, activeRegion, setActiveRegion, setLeads } = useAppStore();
   useReps(); // sync Firestore reps → Zustand store (keeps credentials current across devices)
@@ -1171,7 +1074,7 @@ function AppShell() {
           const newLead: import("./types").Lead = {
             id: Date.now() + Math.random(),
             name: name || "Unknown",
-            phone: rawPhone,
+            phone,
             suburb,
             houseNum: houseIdx >= 0 ? get(row, houseIdx) || undefined : undefined,
             street: streetIdx >= 0 ? get(row, streetIdx) || undefined : undefined,
@@ -1285,228 +1188,60 @@ function AppShell() {
     return <LoginScreen onLoginRep={handleLoginRep} onAdminBypass={handleAdminBypass} />;
   }
 
-  // ── Sidebar nav helpers (shared between desktop + mobile) ────────────────
-  const sidebarNav = (onNav: (p: Page) => void) => (
-    <nav className="flex-1 py-3 px-2 space-y-4 overflow-y-auto scrollbar-none bg-[#0B0B0C]">
-      {/* Top section (no label) */}
-      <div className="space-y-1">
-        {canSee("assistant") && (
-          <SidebarItem
-            icon={<Sparkles size={15} />}
-            label="Assistant"
-            active={effectivePage === "assistant"}
-            onClick={() => onNav("assistant")}
-          />
-        )}
-        {canSee("inbox") && (
-          <SidebarItem
-            icon={<Inbox size={15} />}
-            label="Inbox"
-            active={effectivePage === "inbox"}
-            onClick={() => onNav("inbox")}
-          />
-        )}
-        {canSee("dashboard") && (
-          <SidebarItem
-            icon={<LayoutDashboard size={15} />}
-            label="Dashboard"
-            active={effectivePage === "dashboard"}
-            onClick={() => onNav("dashboard")}
-          />
-        )}
-        {canSee("team-chat") && (
-          <SidebarItem
-            icon={<MessageCircle size={15} />}
-            label="Team Chat"
-            active={effectivePage === "team-chat"}
-            onClick={() => onNav("team-chat")}
-          />
-        )}
-        {canSee("map") && (
-          <SidebarItem
-            icon={<MapPin size={15} />}
-            label="Map"
-            active={effectivePage === "map"}
-            onClick={() => onNav("map")}
-          />
-        )}
-        {canSee("calendar") && (
-          <SidebarItem
-            icon={<CalendarDays size={15} />}
-            label="Calendar"
-            active={effectivePage === "calendar"}
-            onClick={() => onNav("calendar")}
-          />
-        )}
-      </div>
+  const actionableBadge = callbackBadge + followUpBadge;
+  const iconForPage = (pageKey: NavigationPageKey) => {
+    const iconProps = { size: 15 };
+    switch (pageKey) {
+      case "dashboard":
+        return <LayoutDashboard {...iconProps} />;
+      case "inbox":
+        return <Inbox {...iconProps} />;
+      case "team-chat":
+        return <MessageCircle {...iconProps} />;
+      case "assistant":
+        return <Sparkles {...iconProps} />;
+      case "leads":
+        return <Users {...iconProps} />;
+      case "dq-import":
+        return <ClipboardList {...iconProps} />;
+      case "draps":
+      case "reports":
+        return <BarChart3 {...iconProps} />;
+      case "client-hub":
+        return <Briefcase {...iconProps} />;
+      case "deal-dashboard":
+        return <TrendingUp {...iconProps} />;
+      case "commissions":
+        return <DollarSign {...iconProps} />;
+      case "map":
+        return <MapPin {...iconProps} />;
+      case "calendar":
+        return <CalendarDays {...iconProps} />;
+      case "document-centre":
+        return <FolderOpen {...iconProps} />;
+      case "pia":
+      case "smsf":
+        return <Calculator {...iconProps} />;
+      case "training":
+        return <GraduationCap {...iconProps} />;
+      case "knowledge-base":
+      case "admin-guide":
+        return <BookOpen {...iconProps} />;
+      case "my-dashboard":
+      case "rep-settings":
+        return <UserCircle {...iconProps} />;
+      case "rep-dashboard":
+        return <BarChart2 {...iconProps} />;
+      case "admin":
+        return <Shield {...iconProps} />;
+      default:
+        return <LayoutDashboard {...iconProps} />;
+    }
+  };
 
-      {/* LEADS */}
-      {(canSee("leads") || canSee("dq-import") || canSee("draps")) && (
-        <SidebarSection label="LEADS">
-          {canSee("leads") && (
-            <SidebarItem
-              icon={<Users size={15} />}
-              label="Leads"
-              active={effectivePage === "leads"}
-              onClick={() => {
-                if (callbackBadge + followUpBadge > 0) setLeadsFilter("actionable-queue");
-                onNav("leads");
-              }}
-              badge={callbackBadge + followUpBadge}
-            />
-          )}
-          {canSee("dq-import") && (
-            <SidebarItem
-              icon={<ClipboardList size={15} />}
-              label="DQ Import"
-              active={effectivePage === "dq-import"}
-              onClick={() => onNav("dq-import")}
-            />
-          )}
-          {canSee("draps") && (
-            <SidebarItem
-              icon={<BarChart3 size={15} />}
-              label="DRAPS & Stats"
-              active={effectivePage === "draps"}
-              onClick={() => onNav("draps")}
-            />
-          )}
-        </SidebarSection>
-      )}
-
-      {/* SALES */}
-      {(canSee("client-hub") || canSee("deal-dashboard") || canSee("commissions")) && (
-        <SidebarSection label="SALES">
-          {canSee("client-hub") && (
-            <SidebarItem
-              icon={<Briefcase size={15} />}
-              label="Clients"
-              active={effectivePage === "client-hub"}
-              onClick={() => onNav("client-hub")}
-            />
-          )}
-          {canSee("deal-dashboard") && (
-            <SidebarItem
-              icon={<TrendingUp size={15} />}
-              label="Deal Dashboard"
-              active={effectivePage === "deal-dashboard"}
-              onClick={() => onNav("deal-dashboard")}
-            />
-          )}
-          {canSee("commissions") && (
-            <SidebarItem
-              icon={<DollarSign size={15} />}
-              label="Comms Calculator"
-              active={effectivePage === "commissions"}
-              onClick={() => onNav("commissions")}
-            />
-          )}
-        </SidebarSection>
-      )}
-
-      {/* DOCUMENTS & TRAINING */}
-      {(canSee("document-centre") || canSee("knowledge-base") || canSee("training")) && (
-        <SidebarSection label="DOCUMENTS & TRAINING">
-          {canSee("document-centre") && (
-            <SidebarItem
-              icon={<FolderOpen size={15} />}
-              label="Documents"
-              active={effectivePage === "document-centre"}
-              onClick={() => onNav("document-centre")}
-            />
-          )}
-          {canSee("knowledge-base") && (
-            <SidebarItem
-              icon={<BookOpen size={15} />}
-              label="Knowledge Base"
-              active={effectivePage === "knowledge-base"}
-              onClick={() => onNav("knowledge-base")}
-            />
-          )}
-          {canSee("training") && (
-            <SidebarItem
-              icon={<GraduationCap size={15} />}
-              label="Training Hub"
-              active={effectivePage === "training"}
-              onClick={() => onNav("training")}
-            />
-          )}
-        </SidebarSection>
-      )}
-
-      {/* TOOLS */}
-      {(canSee("pia") || canSee("smsf")) && (
-        <SidebarSection label="TOOLS">
-          {canSee("pia") && (
-            <SidebarItem
-              icon={<Calculator size={15} />}
-              label="PIA Calculator"
-              active={effectivePage === "pia"}
-              onClick={() => onNav("pia")}
-            />
-          )}
-          {canSee("smsf") && (
-            <SidebarItem
-              icon={<Calculator size={15} />}
-              label="SMSF Calculator"
-              active={effectivePage === "smsf"}
-              onClick={() => onNav("smsf")}
-            />
-          )}
-        </SidebarSection>
-      )}
-
-      {/* MY */}
-      {(canSee("my-dashboard") || canSee("rep-dashboard") || canSee("rep-settings")) && (
-        <SidebarSection label="MY">
-          {canSee("my-dashboard") && (
-            <SidebarItem
-              icon={<UserCircle size={15} />}
-              label="My Dashboard"
-              active={effectivePage === "my-dashboard"}
-              onClick={() => onNav("my-dashboard")}
-            />
-          )}
-          {canSee("rep-dashboard") && (
-            <SidebarItem
-              icon={<BarChart2 size={15} />}
-              label="Rep Dashboard"
-              active={effectivePage === "rep-dashboard"}
-              onClick={() => onNav("rep-dashboard")}
-            />
-          )}
-          {canSee("rep-settings") && (
-            <SidebarItem
-              icon={<Settings size={15} />}
-              label="My Settings"
-              active={effectivePage === "rep-settings"}
-              onClick={() => onNav("rep-settings")}
-            />
-          )}
-        </SidebarSection>
-      )}
-
-      {/* SYSTEM */}
-      <SidebarSection label="SYSTEM">
-        {isAdmin && (
-          <SidebarItem
-            icon={<Shield size={15} />}
-            label="Admin"
-            active={effectivePage === "admin"}
-            onClick={() => onNav("admin")}
-          />
-        )}
-        {isAdmin && (
-          <SidebarItem
-            icon={<BookOpen size={15} />}
-            label="Admin Guide"
-            active={effectivePage === "admin-guide"}
-            onClick={() => onNav("admin-guide")}
-          />
-        )}
-      </SidebarSection>
-    </nav>
-  );
+  const handleSidebarLeadQueueIntent = () => {
+    setLeadsFilter("actionable-queue");
+  };
 
   const syncSettings = appSettings?.sheets;
   const syncStatusIndicator = syncSettings?.lastSyncAt
@@ -1538,166 +1273,6 @@ function AppShell() {
         );
       })()
     : null;
-
-  const WorkspaceSwitcher = () => (
-    <div
-      className="mt-3 rounded-xl border px-2.5 py-2"
-      style={{
-        background: "var(--region-accent-soft)",
-        borderColor: "var(--region-accent-border)",
-      }}
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8e8e86]">Workspace</span>
-        <span className="text-[10px] font-bold uppercase" style={{ color: "var(--region-accent)" }}>
-          {regionIdentity.shortLabel}
-        </span>
-      </div>
-      <div className="grid grid-cols-2 gap-1">
-        {(Object.keys(REGION_IDENTITIES) as Region[]).map((region) => {
-          const identity = getRegionIdentity(region);
-          const isActive = activeRegion === region;
-          return (
-            <button
-              key={region}
-              type="button"
-              onClick={() => handleRegionChange(region)}
-              className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition ${
-                isActive ? "shadow-sm" : "text-[#9a9a92] hover:bg-white/[0.06] hover:text-[#c8c8c4]"
-              }`}
-              style={
-                isActive
-                  ? {
-                      background: identity.accent,
-                      color: identity.textOnAccent,
-                    }
-                  : undefined
-              }
-              aria-pressed={isActive}
-              aria-label={`Switch to ${identity.label} workspace`}
-            >
-              {identity.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const sidebarBrand = (
-    <div className="flex-shrink-0 border-b border-white/[0.06] px-4 py-3">
-      <div className="flex items-center gap-3">
-        <img
-          src="/asg-circle.png"
-          alt="ASG"
-          className="h-7 w-7 flex-shrink-0 rounded-full object-cover"
-          style={{ border: "1.5px solid var(--region-accent-border)" }}
-        />
-        <div className="min-w-0">
-          <p className="font-display text-sm font-bold leading-none tracking-tight text-white">ASG CRM</p>
-          <p className="mt-0.5 truncate text-[10px] font-semibold" style={{ color: "var(--region-accent)" }}>
-            {regionIdentity.label} workspace
-          </p>
-        </div>
-      </div>
-      <WorkspaceSwitcher />
-    </div>
-  );
-
-  const sidebarUserCard = (
-    <div className="flex-shrink-0 border-t border-white/[0.06]">
-      {/* Quick Pull button — shown when sheet is configured */}
-      {appSettings?.sheets?.url && (
-        <div className="px-3 pt-2">
-          <button
-            onClick={handleQuickPull}
-            disabled={quickPulling}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600/20 text-green-400 hover:bg-green-600/30 disabled:opacity-50 transition"
-            title="Pull latest leads from Google Sheet"
-          >
-            {quickPulling ? (
-              <>
-                <svg
-                  className="w-3 h-3 animate-spin"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-                Pulling…
-              </>
-            ) : (
-              <>↓ Quick Pull</>
-            )}
-          </button>
-        </div>
-      )}
-      {syncStatusIndicator}
-      <div className="px-3 py-4">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white"
-            style={{ background: "#b8933a" }}
-          >
-            {currentUser.name
-              .split(" ")
-              .map((w) => w[0])
-              .join("")
-              .slice(0, 2)
-              .toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-[#c8c8c4] truncate leading-none">{currentUser.name}</p>
-            <p className="text-[10px] text-[#7a7a74] mt-0.5 capitalize">{currentUser.role}</p>
-          </div>
-          <button
-            onClick={toggleDark}
-            title={dark ? "Light mode" : "Dark mode"}
-            className="p-1.5 text-[#7a7a74] hover:text-[#c8c8c4] transition rounded"
-          >
-            {dark ? <Sun size={14} /> : <Moon size={14} />}
-          </button>
-          <select
-            value={uiScale}
-            onChange={(e) => setUiScale(e.target.value)}
-            title="Display zoom"
-            className="text-[10px] bg-transparent text-[#7a7a74] hover:text-[#c8c8c4] border border-white/10 rounded px-1 py-0.5 cursor-pointer outline-none"
-          >
-            <option value="auto" className="bg-[#0B0B0C]">
-              Auto
-            </option>
-            <option value="0.85" className="bg-[#0B0B0C]">
-              85%
-            </option>
-            <option value="0.90" className="bg-[#0B0B0C]">
-              90%
-            </option>
-            <option value="0.95" className="bg-[#0B0B0C]">
-              95%
-            </option>
-            <option value="1" className="bg-[#0B0B0C]">
-              100%
-            </option>
-            <option value="1.1" className="bg-[#0B0B0C]">
-              110%
-            </option>
-            <option value="1.2" className="bg-[#0B0B0C]">
-              120%
-            </option>
-          </select>
-          <button
-            onClick={handleSignOut}
-            title="Sign out"
-            className="p-1.5 text-[#7a7a74] hover:text-[#c8c8c4] transition rounded"
-          >
-            <LogOut size={14} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div
@@ -1741,10 +1316,28 @@ function AppShell() {
         </div>
       )}
       <aside className="hidden lg:flex w-64 flex-shrink-0 flex-col bg-[#0B0B0C] border-r border-white/[0.06] overflow-hidden">
-        {/* Brand */}
-        {sidebarBrand}
-        {sidebarNav(setPage)}
-        {sidebarUserCard}
+        <AppSidebar
+          activePage={effectivePage}
+          activeRegion={activeRegion}
+          currentUser={currentUser}
+          workspaceLabel={regionIdentity.label}
+          isAdmin={isAdmin}
+          dark={dark}
+          uiScale={uiScale}
+          quickPulling={quickPulling}
+          showQuickPull={Boolean(appSettings?.sheets?.url)}
+          actionableBadge={actionableBadge}
+          syncStatusIndicator={syncStatusIndicator}
+          canSee={canSee}
+          iconForPage={iconForPage}
+          onNavigate={setPage}
+          onLeadQueueIntent={handleSidebarLeadQueueIntent}
+          onRegionChange={handleRegionChange}
+          onQuickPull={handleQuickPull}
+          onToggleDark={toggleDark}
+          onUiScaleChange={setUiScale}
+          onSignOut={handleSignOut}
+        />
       </aside>
 
       {/* ── Mobile Sidebar Overlay ────────────────────────────────────────── */}
@@ -1752,21 +1345,32 @@ function AppShell() {
         <>
           <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} />
           <aside className="fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-[#0B0B0C] border-r border-white/[0.06] overflow-hidden lg:hidden">
-            <div className="relative">
-              {sidebarBrand}
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="absolute right-3 top-3 p-1.5 text-[#7a7a74] hover:text-white transition"
-                aria-label="Close sidebar"
-              >
-                <X size={16} />
-              </button>
-            </div>
-            {sidebarNav((p) => {
-              setPage(p);
-              setSidebarOpen(false);
-            })}
-            {sidebarUserCard}
+            <AppSidebar
+              activePage={effectivePage}
+              activeRegion={activeRegion}
+              currentUser={currentUser}
+              workspaceLabel={regionIdentity.label}
+              isAdmin={isAdmin}
+              dark={dark}
+              uiScale={uiScale}
+              quickPulling={quickPulling}
+              showQuickPull={Boolean(appSettings?.sheets?.url)}
+              actionableBadge={actionableBadge}
+              syncStatusIndicator={syncStatusIndicator}
+              canSee={canSee}
+              iconForPage={iconForPage}
+              onNavigate={(nextPage) => {
+                setPage(nextPage);
+                setSidebarOpen(false);
+              }}
+              onLeadQueueIntent={handleSidebarLeadQueueIntent}
+              onRegionChange={handleRegionChange}
+              onQuickPull={handleQuickPull}
+              onToggleDark={toggleDark}
+              onUiScaleChange={setUiScale}
+              onSignOut={handleSignOut}
+              onClose={() => setSidebarOpen(false)}
+            />
           </aside>
         </>
       )}

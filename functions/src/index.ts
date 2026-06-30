@@ -29,6 +29,9 @@ export { followUpEngine } from "./followups";
 export { appendAuditEvent } from "./audit";
 export { updateAppSettingsCallable, rollbackAppSettingsCallable } from "./settingsAdmin";
 
+// ── Migration Utilities ──
+export { backfillPhoneNormalization } from "./phoneMigration";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------

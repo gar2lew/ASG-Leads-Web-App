@@ -18,7 +18,7 @@ export function normalizeAUPhone(raw: string): string {
 
   // International +614XX or 614XX → 04XX
   if (digits.length === 11 && digits.startsWith("614")) return `0${digits.slice(2)}`;
-  if (digits.length === 12 && digits.startsWith("6104")) return `0${digits.slice(2)}`;
+  if (digits.length === 12 && digits.startsWith("6104")) return `0${digits.slice(3)}`;
 
   // Already 10 digits (AU mobile or landline) — return digits only (spaces stripped)
   if (digits.length === 10) return digits;
