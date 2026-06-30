@@ -84,6 +84,7 @@ import {
   SYNC_INDEX_BATCH_SIZE,
 } from "../lib/sheetsSyncIndex";
 import type { SyncLeadIndexEntry } from "../lib/sheetsSyncIndex";
+import type { CanonicalLeadStatus } from "../lib/statusConfig";
 
 // Firestore rejects `undefined` field values — strip them before writing (deep: handles nested objects + arrays)
 function stripUndefined<T extends object>(obj: T): Partial<T> {
@@ -105,6 +106,51 @@ function stripUndefined<T extends object>(obj: T): Partial<T> {
 
 const PAGE_SIZE = 100;
 const OPERATIONAL_QUEUE_LIMIT = 500;
+
+const EMPTY_CRM_STATUS_COUNTS: Record<CanonicalLeadStatus, number> = {
+  DQ: 0,
+  "No Answer": 0,
+  Revisit: 0,
+  Booked: 0,
+  "Not Interested": 0,
+  "Wrong Number": 0,
+};
+
+const CRM_STATUS_SUMMARY_ALIASES: Record<CanonicalLeadStatus, string[]> = {
+  DQ: ["DQ", "dq", "lead", "leads", "new", "new lead", "new leads", "fresh", "Back to DQ", "back to dq"],
+  "No Answer": ["No Answer", "no answer", "NA", "na", "No Ans", "no ans", "not answered", "No Reply", "no reply"],
+  Revisit: ["Revisit", "revisit", "callback", "Callback", "call back", "cb", "follow up", "followup", "fu"],
+  Booked: ["Booked", "booked", "Live", "LIVE", "live", "appointment booked", "Appointment Booked", "booking", "Appointment", "appt"],
+  "Not Interested": ["Not Interested", "not interested", "NI", "ni", "not int", "n/i", "lost"],
+  "Wrong Number": ["Wrong Number", "wrong number", "WN", "wn", "wrong no", "wrong num"],
+};
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function chunks<T>(values: T[], size: number) {
+  const output: T[][] = [];
+  for (let i = 0; i < values.length; i += size) output.push(values.slice(i, i + size));
+  return output;
+}
+
+async function countStatusAliases(aliases: string[]) {
+  const base = collection(db, "leads");
+  const uniqueAliases = uniqueValues(aliases);
+  if (uniqueAliases.length === 0) return 0;
+  if (uniqueAliases.length === 1) {
+    const snap = await getCountFromServer(query(base, where("status", "==", uniqueAliases[0])));
+    return snap.data().count;
+  }
+
+  const snaps = await Promise.all(
+    chunks(uniqueAliases, 10).map((aliasChunk) =>
+      getCountFromServer(query(base, where("status", "in", aliasChunk))),
+    ),
+  );
+  return snaps.reduce((sum, snap) => sum + snap.data().count, 0);
+}
 
 export function useLeads() {
   const { setLeads: setStoreLeads, activeRegion } = useAppStore();
@@ -295,6 +341,74 @@ export function useFullCrmLeadSyncIndex() {
           : "Loading CRM sync index",
     reload: loadIndex,
   };
+}
+
+export function useCrmLeadTotalCount() {
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCount = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const snap = await getCountFromServer(collection(db, "leads"));
+      setTotalCount(snap.data().count);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load CRM lead count");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCount();
+  }, [loadCount]);
+
+  return { totalCount, loading, error, reload: loadCount };
+}
+
+export function useCrmLeadStatusSummary() {
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [statusCounts, setStatusCounts] = useState<Record<CanonicalLeadStatus, number>>(EMPTY_CRM_STATUS_COUNTS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadSummary = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [totalSnap, dq, noAnswer, revisit, booked, notInterested, wrongNumber] = await Promise.all([
+        getCountFromServer(collection(db, "leads")),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES.DQ),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES["No Answer"]),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES.Revisit),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES.Booked),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES["Not Interested"]),
+        countStatusAliases(CRM_STATUS_SUMMARY_ALIASES["Wrong Number"]),
+      ]);
+
+      setTotalCount(totalSnap.data().count);
+      setStatusCounts({
+        DQ: dq,
+        "No Answer": noAnswer,
+        Revisit: revisit,
+        Booked: booked,
+        "Not Interested": notInterested,
+        "Wrong Number": wrongNumber,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load CRM lead status summary");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
+
+  return { totalCount, statusCounts, loading, error, reload: loadSummary };
 }
 
 export function useSaveLead() {

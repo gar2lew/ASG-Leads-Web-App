@@ -6,12 +6,11 @@ import {
   deriveOperationalCounters,
   deriveOperationalQueueSnapshot,
   filterOperationalLeads,
-  getOperationalLeadBucket,
   getWorkflowState,
   type OperationalLeadFilter,
 } from "../lib/workflowState";
-import { getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
-import { useLeads, useOperationalQueueLeads } from "../hooks/useFirebase";
+import { CANONICAL_LEAD_STATUSES, getStatusColor, normalizeLeadStatus } from "../lib/statusConfig";
+import { useCrmLeadStatusSummary, useLeads, useOperationalQueueLeads } from "../hooks/useFirebase";
 import { useAppStore } from "../stores/appStore";
 import {
   Phone,
@@ -288,6 +287,12 @@ export function DashboardPage({
   onNavigate?: (page: string, filter?: { type: "leads" | "clients"; value: string }) => void;
 }) {
   const { leads, loading } = useLeads();
+  const {
+    totalCount: crmLeadTotal,
+    statusCounts: crmStatusCounts,
+    loading: crmStatusSummaryLoading,
+    error: crmStatusSummaryError,
+  } = useCrmLeadStatusSummary();
   const { leads: operationalQueueLeads, truncated: queueTruncated } = useOperationalQueueLeads();
   const { currentUser, reps, statusColors } = useAppStore();
   const today = todayStr();
@@ -337,6 +342,18 @@ export function DashboardPage({
       convRate,
     };
   }, [leads, leadCounters, queueSnapshot, allCalls, today, weekStart]);
+
+  const dashboardTotals = useMemo(() => {
+    const statusTotal = Object.values(crmStatusCounts).reduce((sum, count) => sum + count, 0);
+    const total = crmLeadTotal ?? statusTotal;
+    const booked = crmStatusCounts.Booked;
+    return {
+      total,
+      booked,
+      dq: crmStatusCounts.DQ,
+      convRate: total > 0 ? ((booked / total) * 100).toFixed(1) : "0.0",
+    };
+  }, [crmLeadTotal, crmStatusCounts]);
 
   // ── Priority Work Queue (Next Action Engine) ─────────────────────────────
   // No extra Firestore queries — uses call history + lead fields only.
@@ -489,23 +506,16 @@ export function DashboardPage({
   }, [allCalls, today]);
 
   // ── Conversion funnel data ───────────────────────────────────────────────
-  const funnelTotal = stats.total;
+  const funnelTotal = dashboardTotals.total;
 
   // ── Status donut ─────────────────────────────────────────────────────────
   const statusCounts = useMemo(() => {
-    const map: Record<string, number> = {};
-    leads.forEach((l) => {
-      const bucket = getOperationalLeadBucket(l);
-      map[bucket] = (map[bucket] || 0) + 1;
-    });
-    return Object.entries(map)
-      .map(([label, value]) => ({
-        label,
-        value,
-        color: getStatusColor(label, statusColors),
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [leads, statusColors]);
+    return CANONICAL_LEAD_STATUSES.map((label) => ({
+      label,
+      value: crmStatusCounts[label],
+      color: getStatusColor(label, statusColors),
+    }));
+  }, [crmStatusCounts, statusColors]);
 
   // ── Recent activity (last 20 calls) ─────────────────────────────────────
   const recentActivity = useMemo(() => {
@@ -585,6 +595,11 @@ export function DashboardPage({
 
   return (
     <div className="flex-1 overflow-y-auto bg-[var(--bg)] p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
+      {crmStatusSummaryError && (
+        <div className="rounded-xl border border-red-300/60 bg-red-50 dark:bg-red-900/20 px-4 py-2 text-xs text-red-800 dark:text-red-200">
+          Dashboard full CRM status counts could not load: {crmStatusSummaryError}
+        </div>
+      )}
       {queueTruncated && (
         <div className="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 text-xs text-amber-800 dark:text-amber-200">
           Operational queue query reached its safety limit. Counts may exclude older matching items until the queue is narrowed.
@@ -632,7 +647,13 @@ export function DashboardPage({
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                {stats.total.toLocaleString()} leads loaded
+                Operational window: {stats.total.toLocaleString()} loaded
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80">
+                Total CRM leads: {crmLeadTotal?.toLocaleString() ?? "…"}
+              </span>
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-white/80">
+                Dashboard totals use full CRM status counts
               </span>
               {stats.newToday > 0 && (
                 <span
@@ -720,9 +741,9 @@ export function DashboardPage({
       {/* ── Stat cards (6) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
         <StatCard
-          label="Loaded Leads"
+          label="Operational Window"
           value={stats.total.toLocaleString()}
-          sub={`current window; ${stats.newThisWeek} added this week`}
+          sub={`Total CRM leads: ${crmLeadTotal?.toLocaleString() ?? "loading"}; ${stats.newThisWeek} added this week`}
           icon={<Users size={20} className="text-[var(--text-muted)]" />}
           gradient="bg-[var(--hover)] dark:bg-gray-800/30"
           border="border-[var(--border)]"
@@ -738,25 +759,25 @@ export function DashboardPage({
         />
         <StatCard
           label="DQ Leads"
-          value={stats.dq}
-          sub="new/fresh leads"
+          value={crmStatusSummaryLoading ? "…" : dashboardTotals.dq.toLocaleString()}
+          sub="full CRM new/fresh leads"
           icon={<Activity size={20} className="text-[var(--text-muted)]" />}
           gradient="bg-[var(--hover)] dark:bg-gray-800/30"
           border="border-[var(--border)]"
         />
         <StatCard
           label="Booked"
-          value={stats.booked}
-          sub="appointments set"
+          value={crmStatusSummaryLoading ? "…" : dashboardTotals.booked.toLocaleString()}
+          sub="full CRM appointments set"
           icon={<CheckCircle2 size={20} className="text-emerald-600 dark:text-emerald-400" />}
           gradient="bg-emerald-50 dark:bg-emerald-900/30"
           border="border-emerald-200 dark:border-emerald-900/50"
-          trend={stats.booked > 0 ? { dir: "up", label: `${stats.convRate}%` } : undefined}
+          trend={dashboardTotals.booked > 0 ? { dir: "up", label: `${dashboardTotals.convRate}%` } : undefined}
         />
         <StatCard
           label="Conversion"
-          value={`${stats.convRate}%`}
-          sub={`${stats.booked} of ${stats.total} leads`}
+          value={crmStatusSummaryLoading ? "…" : `${dashboardTotals.convRate}%`}
+          sub={`${dashboardTotals.booked.toLocaleString()} of ${dashboardTotals.total.toLocaleString()} total CRM leads`}
           icon={<TrendingUp size={20} className="text-amber-600 dark:text-amber-400" />}
           gradient="bg-amber-50 dark:bg-amber-900/30"
           border="border-amber-200 dark:border-amber-900/50"
@@ -1225,7 +1246,7 @@ export function DashboardPage({
           <div className="space-y-3">
             <FunnelStep
               label="DQ'd"
-              count={stats.dq}
+              count={dashboardTotals.dq}
               total={funnelTotal}
               color="bg-[var(--hover)]"
               icon={<Users size={14} className="text-slate-500 dark:text-slate-400" />}
@@ -1235,7 +1256,7 @@ export function DashboardPage({
             </div>
             <FunnelStep
               label="Booked"
-              count={stats.booked}
+              count={dashboardTotals.booked}
               total={funnelTotal}
               color="bg-emerald-100 dark:bg-emerald-900/40"
               icon={<CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />}
