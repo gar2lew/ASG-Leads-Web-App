@@ -35,6 +35,9 @@ export { updateAppSettingsCallable, rollbackAppSettingsCallable } from "./settin
 // ── Migration Utilities ──
 export { backfillPhoneNormalization } from "./phoneMigration";
 
+// ── Salestrail Integration ──
+export { syncSalestrailCallsCallable, getSalestrailConfig, updateSalestrailConfig, resetSalestrailSyncLock } from "./salestrail";
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
