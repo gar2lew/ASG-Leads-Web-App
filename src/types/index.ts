@@ -10,25 +10,27 @@ export type Region = "brisbane" | "perth";
 
 export const effectiveRegion = (region?: Region): Region => region ?? "brisbane";
 
-// ── Simplified Lead Statuses ──────────────────────────────────────────────────
-// New canonical values for writes; legacy values retained in the type for
-// backward-compat with existing Firestore documents that still contain them.
+// ── Lead Statuses ─────────────────────────────────────────────────────────────
+// Display/canonical values for writes. Legacy values are retained in the type
+// for backward-compat with older Firestore documents and are normalized at app
+// boundaries.
 
 export type LeadStatus =
-  // New canonical values (use these for all writes)
+  // Legacy lowercase values still present in older workflow helpers
   | "new"
   | "contacted"
   | "qualified"
   | "booked"
   | "lost"
-  // Legacy values — read-only backward-compat with existing Firestore docs
+  // Canonical CRM display values
   | "DQ"
-  | "Live"
   | "Booked"
   | "Revisit"
   | "Not Interested"
   | "Wrong Number"
-  | "No Answer";
+  | "No Answer"
+  // Legacy alias — read-only backward-compat; normalize to Booked for display/writes
+  | "Live";
 
 // ── Deal Statuses (DealPipeline) ──────────────────────────────────────────────
 
@@ -393,11 +395,12 @@ export interface FilterOptions {
 
 /** Default hex colours for each LeadStatus — used as fallback when no custom colour is saved */
 export const DEFAULT_STATUS_COLORS: Record<string, string> = {
-  new: "#3b82f6", // blue
-  contacted: "#22c55e", // green
-  qualified: "#8b5cf6", // violet/purple
-  booked: "#f97316", // orange
-  lost: "#ef4444", // red
+  DQ: "#3b82f6",
+  "No Answer": "#f59e0b",
+  Revisit: "#8b5cf6",
+  Booked: "#22c55e",
+  "Not Interested": "#ef4444",
+  "Wrong Number": "#6b7280",
 };
 
 // ── Knock Mode ────────────────────────────────────────────────────────────────

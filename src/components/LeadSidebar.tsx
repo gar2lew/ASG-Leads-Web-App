@@ -35,6 +35,7 @@ import { useAIGuidance } from "../hooks/useAIGuidance";
 import { AIGuidanceCard } from "./AIGuidanceCard";
 import { isOverdue, isDueToday, formatFollowUpDate } from "../lib/followUp";
 import { applyAutomation } from "../lib/automation";
+import { LEAD_STATUS_OPTIONS } from "../lib/statusConfig";
 import {
   useLeadFiles,
   useDeleteLeadFile,
@@ -79,7 +80,7 @@ interface LeadSidebarProps {
 }
 
 const SUPER_OPTIONS = ["$0-75k", "$75k to 150k", "$150k+", "Other"];
-const STATUS_OPTIONS = ["new", "contacted", "qualified", "booked", "lost"];
+const STATUS_OPTIONS = LEAD_STATUS_OPTIONS;
 
 function buildAddress(lead: Lead): string {
   return [lead.houseNum, lead.street, lead.suburb, lead.postcode].filter(Boolean).join(" ");
@@ -404,7 +405,7 @@ export function LeadSidebar({
     setFormPickerOpen(true);
   };
 
-  /** One-click "I just spoke to this lead" — sets status to Live and logs a minimal call entry */
+  /** One-click "I just spoke to this lead" — sets status to Booked and logs a minimal call entry */
   const handleMarkContacted = () => {
     if (!currentUser) return;
     const now = new Date();
@@ -412,7 +413,7 @@ export function LeadSidebar({
     const timeStr = now.toTimeString().slice(0, 5);
     const updatedLead: Lead = {
       ...form,
-      status: "qualified",
+      status: "Booked",
       lastCall: `${dateStr}T${timeStr}`,
       callHistory: [
         ...(form.callHistory ?? []),
@@ -600,10 +601,10 @@ export function LeadSidebar({
               </button>
 
               {/* Quick "Mark as Contacted" — available when lead hasn't been contacted yet or is DQ/No Answer */}
-              {form.status === "new" && (
+              {form.status === "DQ" && (
                 <button
                   onClick={handleMarkContacted}
-                  title="Mark as Contacted — sets status to Live and logs a quick contact entry"
+                  title="Mark as Contacted — sets status to Booked and logs a quick contact entry"
                   className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-500 transition flex-shrink-0"
                 >
                   <CheckCheck size={14} />

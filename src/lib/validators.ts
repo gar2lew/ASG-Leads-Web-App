@@ -116,19 +116,19 @@ export function validateDeal(deal: Record<string, unknown>): ValidationResult {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const VALID_LEAD_STATUSES = new Set([
+  "DQ",
+  "No Answer",
+  "Revisit",
+  "Booked",
+  "Not Interested",
+  "Wrong Number",
+  // Legacy aliases still accepted before normalization at write/read boundaries
+  "Live",
   "new",
   "contacted",
   "qualified",
   "booked",
   "lost",
-  // Legacy values — still valid in existing data
-  "DQ",
-  "Live",
-  "Booked",
-  "Revisit",
-  "Not Interested",
-  "Wrong Number",
-  "No Answer",
 ]);
 
 export function validateLead(lead: Record<string, unknown>): ValidationResult {

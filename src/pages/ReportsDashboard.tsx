@@ -23,6 +23,7 @@ import { useDeals } from "../hooks/useFirebase";
 import { useFirebaseAuthUser } from "../hooks/useFirebaseAuthUser";
 import { db } from "../lib/firebase";
 import { useAppStore } from "../stores/appStore";
+import { normalizeLeadStatus } from "../lib/statusConfig";
 import { Rep, Lead, DealStatus, AppSettings } from "../types";
 import {
   Download,
@@ -290,7 +291,7 @@ function getFlags(d: Deal) {
 function calculateKPIs(deals: Deal[], leads: Lead[]): KPIs {
   const active = deals.filter((d) => isActive(d.status));
   const settled = deals.filter((d) => d.status === "settled");
-  const bookedLeads = leads.filter((l) => l.status === "booked" || l.status === "Booked");
+  const bookedLeads = leads.filter((l) => normalizeLeadStatus(l.status) === "Booked");
   return {
     activeDeals: active.length,
     pipelineValue: active.reduce((s, d) => s + (d.dealValue || 0), 0),

@@ -10,19 +10,12 @@ import { geocodeBatch, geocodeAddressSafe, buildAddressString } from "../lib/geo
 import { WA_SUBURB_POSTCODES, WA_POSTCODE_SUBURB } from "../data/waSuburbPostcodes";
 import { ClipboardList, Plus, Trash2, AlertTriangle, RotateCcw, Calendar, Tag, Users, UserPlus, List, Loader2, Check } from "lucide-react";
 import { LeadStatus } from "../types";
+import { LEAD_STATUS_OPTIONS } from "../lib/statusConfig";
 
 const MAX_ROWS = 25;
 const SUPER_OPTIONS = ["$0-75k", "$75k to 150k", "$150k+", "Other"];
 const EMPLOYMENT_OPTIONS = ["Full Time", "Part Time", "Casual", "Self Employed", "Retired"];
-const IMPORT_STATUSES: LeadStatus[] = [
-  "DQ",
-  "Live",
-  "Booked",
-  "Revisit",
-  "Not Interested",
-  "Wrong Number",
-  "No Answer",
-];
+const IMPORT_STATUSES: LeadStatus[] = [...LEAD_STATUS_OPTIONS] as LeadStatus[];
 
 interface DQRow {
   name: string;
