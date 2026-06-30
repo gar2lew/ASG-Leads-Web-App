@@ -11,7 +11,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Lead, LeadStatus } from "../types";
 import type { SyncConfig } from "../types";
 import { useAppStore } from "../stores/appStore";
-import { useSaveLead, useLeads, useAppSettings, useSaveSettings } from "../hooks/useFirebase";
+import { useSaveLead, useLeads, useFullCrmLeadSyncIndex, useAppSettings, useSaveSettings } from "../hooks/useFirebase";
 import { useToast } from "../context/ToastContext";
 import { normalizeAUPhone } from "../lib/utils";
 import { LEAD_STATUS_OPTIONS, normalizeLeadStatus } from "../lib/statusConfig";
@@ -31,7 +31,12 @@ import {
 } from "lucide-react";
 
 // ── Config ────────────────────────────────────────────────────────────────────
-const CLIENT_ID = "685269806752-qip9oh4413gd0r4p4emkis3dpb5lanjh.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? "";
+const GOOGLE_CLIENT_ID_ERROR = "Google OAuth Client ID is not configured. Set VITE_GOOGLE_CLIENT_ID.";
+const MASKED_GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID
+  ? `${GOOGLE_CLIENT_ID.slice(0, 12)}...${GOOGLE_CLIENT_ID.slice(-22)}`
+  : "missing";
+console.info("Sheets OAuth client configured:", MASKED_GOOGLE_CLIENT_ID);
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY ?? import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
@@ -296,7 +301,10 @@ const inp =
 // ── Main component ────────────────────────────────────────────────────────────
 export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
   const { reps, currentUser } = useAppStore();
-  const { leads } = useLeads(); // live Firestore subscription — never []
+  const { leads } = useLeads(); // dashboard operational window, intentionally limited
+  const crmSyncIndex = useFullCrmLeadSyncIndex();
+  const crmSyncLeads = crmSyncIndex.leads as Lead[];
+  const syncIndexBlocked = crmSyncIndex.loading || crmSyncIndex.isPartial || !!crmSyncIndex.error;
   const { save: saveLead } = useSaveLead();
   const { showToast } = useToast();
   const { settings } = useAppSettings();
@@ -320,9 +328,17 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
   const [gisReady, setGisReady] = useState(false);
   // Restore cached token from sessionStorage (valid ~1h per Google OAuth spec)
   const [accessToken, setAccessToken] = useState<string | null>(() => {
+    if (!GOOGLE_CLIENT_ID) return null;
     try {
       const cached = sessionStorage.getItem("asgSheetsToken");
       const ts = Number(sessionStorage.getItem("asgSheetsTokenTs") ?? 0);
+      const clientId = sessionStorage.getItem("asgSheetsClientId");
+      if (clientId !== GOOGLE_CLIENT_ID) {
+        sessionStorage.removeItem("asgSheetsToken");
+        sessionStorage.removeItem("asgSheetsTokenTs");
+        sessionStorage.removeItem("asgSheetsClientId");
+        return null;
+      }
       if (cached && Date.now() - ts < 55 * 60 * 1000) return cached; // use if < 55 min old
     } catch {
       /* ignore */
@@ -376,6 +392,22 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     null,
   );
 
+  const ensureSyncIndexReady = useCallback(() => {
+    if (crmSyncIndex.loading) {
+      showToast(crmSyncIndex.progressLabel, "info");
+      return false;
+    }
+    if (crmSyncIndex.error) {
+      showToast(`CRM sync index failed to load: ${crmSyncIndex.error}`, "error");
+      return false;
+    }
+    if (crmSyncIndex.isPartial) {
+      showToast("CRM sync index is partial. Reload the index before syncing.", "error");
+      return false;
+    }
+    return true;
+  }, [crmSyncIndex.error, crmSyncIndex.isPartial, crmSyncIndex.loading, crmSyncIndex.progressLabel, showToast]);
+
   // ── Sync sheet config from Firestore settings when available ──────────────
   // Overrides localStorage so config is shared across devices
   useEffect(() => {
@@ -391,6 +423,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
   // ── Load GIS script ───────────────────────────────────────────────────────
   useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
     if (window.google?.accounts?.oauth2) {
       setGisReady(true);
       return;
@@ -404,9 +437,10 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
   // ── Initialise token client when GIS is ready ──────────────────────────────
   useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) return;
     if (!gisReady || !window.google) return;
     tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
+      client_id: GOOGLE_CLIENT_ID,
       scope: SCOPES,
       callback: (response) => {
         if (response.access_token) {
@@ -415,6 +449,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
           try {
             sessionStorage.setItem("asgSheetsToken", response.access_token);
             sessionStorage.setItem("asgSheetsTokenTs", String(Date.now()));
+            sessionStorage.setItem("asgSheetsClientId", GOOGLE_CLIENT_ID);
           } catch {
             /* ignore */
           }
@@ -426,8 +461,12 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
   }, [gisReady, showToast]);
 
   const requestAuth = useCallback(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      showToast(GOOGLE_CLIENT_ID_ERROR, "error");
+      return;
+    }
     tokenClientRef.current?.requestAccessToken();
-  }, []);
+  }, [showToast]);
 
   // ── Fetch sheet tab names ──────────────────────────────────────────────────
   const fetchSheetTabs = useCallback(async (token: string, sid: string) => {
@@ -555,6 +594,10 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
       loadHeaders();
     } else {
       // No token — trigger Google OAuth popup; loadHeaders will fire automatically once token arrives
+      if (!GOOGLE_CLIENT_ID) {
+        showToast(GOOGLE_CLIENT_ID_ERROR, "error");
+        return;
+      }
       if (!gisReady || !tokenClientRef.current) {
         showToast("Google sign-in is loading, please try again in a moment", "error");
         return;
@@ -593,6 +636,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
       showToast("Please connect to Google first", "error");
       return;
     }
+    if (!ensureSyncIndexReady()) return;
     const tabsToScan = sheetTabs.length > 0 ? sheetTabs : [tabName];
     if (tabsToScan.length === 0) {
       showToast("No sheet tabs found — go back to Step 1 and connect first", "error");
@@ -603,7 +647,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     setSmartSyncResult(null);
 
     // Build a phone set from existing CRM leads for new vs update classification
-    const existingPhones = new Set(leads.map((l) => normalizeAUPhone(l.phone ?? "")));
+    const existingPhones = new Set(crmSyncLeads.map((l) => normalizeAUPhone(l.phone ?? "")));
 
     const scans: TabScan[] = [];
 
@@ -696,7 +740,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
       `Scanned ${scans.length} tab${scans.length !== 1 ? "s" : ""} — ${totalNew} new, ${totalUpdate} to update`,
       "success",
     );
-  }, [accessToken, sheetId, sheetTabs, tabName, leads, mapping, showToast]);
+  }, [accessToken, sheetId, sheetTabs, tabName, crmSyncLeads, mapping, showToast, ensureSyncIndexReady]);
 
   // ── SMART SYNC — Phase 2: Sync included tabs ──────────────────────────────
   // For each included TabScan: update existing leads (by phone) or create new.
@@ -704,6 +748,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
   // Creates: new lead with status = tab's mapped status, leadDate = today if absent.
   const syncFromScans = useCallback(async () => {
     if (tabScans.length === 0) return;
+    if (!ensureSyncIndexReady()) return;
     const included = tabScans.filter((t) => t.included);
     if (included.length === 0) {
       showToast("No tabs selected — toggle at least one tab to include", "error");
@@ -715,7 +760,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
     // Build phone → lead map for fast update lookups
     const phoneToLead = new Map<string, Lead>();
-    leads.forEach((l) => {
+    crmSyncLeads.forEach((l) => {
       const p = normalizeAUPhone(l.phone ?? "");
       if (p) phoneToLead.set(p, l);
     });
@@ -854,12 +899,13 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
         }
       })();
     }
-  }, [tabScans, leads, repsByName, saveLead, showToast]);
+  }, [tabScans, crmSyncLeads, repsByName, saveLead, showToast, ensureSyncIndexReady]);
 
   // ── ANALYSE: fetch + group by status (no Firestore writes) ────────────────
   // Phase 1 of the dedicated Pull flow. Groups sheet rows by their raw status
   // string and pre-fills the routing map with normalised target statuses.
   const analyseSheet = useCallback(async () => {
+    if (!ensureSyncIndexReady()) return;
     setAnalysing(true);
     setAnalysis(null);
     setSyncResult(null);
@@ -893,7 +939,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
         }
       });
 
-      const existingPhones = new Set(leads.map((l) => normalizeAUPhone(l.phone ?? "")));
+      const existingPhones = new Set(crmSyncLeads.map((l) => normalizeAUPhone(l.phone ?? "")));
       // Map: mapKey → { rows: all rows, updateRows: rows that match existing CRM leads }
       const groupMap = new Map<string, { rows: string[][]; updateRows: Set<number> }>();
 
@@ -959,18 +1005,19 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     } finally {
       setAnalysing(false);
     }
-  }, [tabName, sheetId, mapping, leads, defaultStatus, showToast]);
+  }, [tabName, sheetId, mapping, crmSyncLeads, defaultStatus, showToast, ensureSyncIndexReady]);
 
   // ── IMPORT FROM ANALYSIS: save grouped rows using the routing map ──────────
   // Phase 2 of the dedicated Pull flow. Uses routingMap to assign each group's
   // rows to the correct target status before saving to Firestore.
   const importFromAnalysis = useCallback(async () => {
     if (!analysis) return;
+    if (!ensureSyncIndexReady()) return;
     setImporting(true);
     setSyncResult(null);
     // Build a phone → lead map for fast lookups when updating existing leads
     const phoneToLead = new Map<string, Lead>();
-    leads.forEach((l) => {
+    crmSyncLeads.forEach((l) => {
       const p = normalizeAUPhone(l.phone ?? "");
       if (p) phoneToLead.set(p, l);
     });
@@ -1072,7 +1119,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     analysis,
     routingMap,
     defaultStatus,
-    leads,
+    crmSyncLeads,
     repsByName,
     saveLead,
     showToast,
@@ -1080,11 +1127,13 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     settings,
     sheetUrl,
     tabName,
+    ensureSyncIndexReady,
   ]);
 
   // ── SYNC UPDATES: match by phone, diff enabled fields, preview ────────────
   const previewUpdates = useCallback(async () => {
     if (!accessToken) return;
+    if (!ensureSyncIndexReady()) return;
     // Phone must be mapped — it's the matching key
     if (!mapping["phone"]) {
       showToast('Map the "Contact Number" column first so leads can be matched by phone', "error");
@@ -1124,8 +1173,8 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
       // Build phone → lead lookup map from CRM leads
       const phoneMap = new Map<string, Lead>();
-      leads.forEach((l) => {
-        const phone = (l.phone ?? "").replace(/\s/g, "");
+      crmSyncLeads.forEach((l) => {
+        const phone = normalizeAUPhone(l.phone ?? "");
         if (phone) phoneMap.set(phone, l);
       });
 
@@ -1133,7 +1182,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
       for (const row of dataRows) {
         const get = (key: string) => (row[colIdx[key] ?? -1] ?? "").trim();
-        const sheetPhone = get("phone").replace(/\s/g, "");
+        const sheetPhone = normalizeAUPhone(get("phone"));
         if (!sheetPhone) continue;
 
         // Find matching CRM lead by phone
@@ -1197,7 +1246,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     } finally {
       setPreviewing(false);
     }
-  }, [accessToken, sheetId, tabName, mapping, leads, updateFields, showToast]);
+  }, [accessToken, sheetId, tabName, mapping, crmSyncLeads, updateFields, showToast, ensureSyncIndexReady]);
 
   // ── SYNC UPDATES: apply previewed changes ──────────────────────────────────
   const applyUpdates = useCallback(async () => {
@@ -1242,6 +1291,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
   // ── PULL UPDATES: one-pass match → diff → apply (no preview step) ──────────
   const pullAndApplyUpdates = useCallback(async () => {
     if (!accessToken) return;
+    if (!ensureSyncIndexReady()) return;
     if (!mapping["phone"]) {
       showToast('Map the "Contact Number" column first so leads can be matched by phone', "error");
       return;
@@ -1281,8 +1331,8 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
       // Phone → lead lookup
       const phoneMap = new Map<string, Lead>();
-      leads.forEach((l) => {
-        const phone = (l.phone ?? "").replace(/\s/g, "");
+      crmSyncLeads.forEach((l) => {
+        const phone = normalizeAUPhone(l.phone ?? "");
         if (phone) phoneMap.set(phone, l);
       });
 
@@ -1292,7 +1342,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
       for (const row of dataRows) {
         const get = (key: string) => (row[colIdx[key] ?? -1] ?? "").trim();
-        const sheetPhone = get("phone").replace(/\s/g, "");
+        const sheetPhone = normalizeAUPhone(get("phone"));
         if (!sheetPhone) continue;
 
         const existingLead = phoneMap.get(sheetPhone);
@@ -1354,11 +1404,12 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     } finally {
       setUpdating(false);
     }
-  }, [accessToken, sheetId, tabName, mapping, leads, updateFields, saveLead, showToast]);
+  }, [accessToken, sheetId, tabName, mapping, crmSyncLeads, updateFields, saveLead, showToast, ensureSyncIndexReady]);
 
   // ── PULL: sheet → Firestore ────────────────────────────────────────────────
   const pullFromSheet = useCallback(async (): Promise<SyncResult> => {
     if (!accessToken) throw new Error("Not authenticated");
+    if (!ensureSyncIndexReady()) throw new Error("CRM sync index is not fully loaded");
     const range = encodeURIComponent(`${tabName}!A:Z`);
     const res = await fetch(`${SHEETS_API}/${sheetId}/values/${range}`, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -1385,7 +1436,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
       }
     });
 
-    const existingPhones = new Set(leads.map((l) => normalizeAUPhone(l.phone ?? "")));
+    const existingPhones = new Set(crmSyncLeads.map((l) => normalizeAUPhone(l.phone ?? "")));
     let added = 0,
       skipped = 0;
     const errors: string[] = [];
@@ -1485,21 +1536,24 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
     }
 
     return { action: "pull", added, updated: 0, skipped, errors };
-  }, [accessToken, sheetId, tabName, mapping, leads, repsByName, saveLead, defaultStatus]);
+  }, [accessToken, sheetId, tabName, mapping, crmSyncLeads, repsByName, saveLead, defaultStatus, ensureSyncIndexReady]);
 
   // ── PUSH: Firestore → sheet ────────────────────────────────────────────────
   const pushToSheet = useCallback(async (): Promise<SyncResult> => {
     if (!accessToken) throw new Error("Not authenticated");
+    if (!ensureSyncIndexReady()) throw new Error("CRM sync index is not fully loaded");
 
     // Build header row from active mapping
     const activeMappings = LEAD_FIELDS.filter(({ key }) => mapping[key]);
     const headerRow = activeMappings.map(({ key }) => mapping[key]);
-    const dataRows = leads.map((lead) =>
+    const dataRows = crmSyncLeads.map((lead) =>
       activeMappings.map(({ key }) => {
         // Virtual 'address' key — combine split fields into one string for the sheet
         if (key === "address") {
-          return [lead.houseNum, lead.street, lead.suburb, lead.postcode].filter(Boolean).join(" ");
+          const address = (lead as unknown as { address?: string }).address;
+          return address || [lead.houseNum, lead.street, lead.suburb, lead.postcode].filter(Boolean).join(" ");
         }
+        if (key === "status") return normalizeLeadStatus(lead.status);
         if (key === "dqRepName") return repName(lead.dqRep);
         const val = (lead as unknown as Record<string, unknown>)[key];
         return val !== undefined && val !== null ? String(val) : "";
@@ -1528,8 +1582,8 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
       throw new Error(e.error?.message ?? "Write failed");
     }
 
-    return { action: "push", added: 0, updated: leads.length, skipped: 0, errors: [] };
-  }, [accessToken, sheetId, tabName, mapping, leads, repName]);
+    return { action: "push", added: 0, updated: crmSyncLeads.length, skipped: 0, errors: [] };
+  }, [accessToken, sheetId, tabName, mapping, crmSyncLeads, repName, ensureSyncIndexReady]);
 
   // ── Run sync ───────────────────────────────────────────────────────────────
   const runSync = useCallback(
@@ -1703,9 +1757,21 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                   </ul>
                 </div>
 
-                {!gisReady && (
+                {!GOOGLE_CLIENT_ID && (
+                  <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 text-xs text-red-700 dark:text-red-300">
+                    {GOOGLE_CLIENT_ID_ERROR}
+                  </div>
+                )}
+
+                {GOOGLE_CLIENT_ID && !gisReady && (
                   <p className="text-xs text-gray-400 flex items-center gap-1.5">
                     <Loader2 size={12} className="animate-spin" /> Loading Google Sign-In…
+                  </p>
+                )}
+
+                {GOOGLE_CLIENT_ID && (
+                  <p className="text-xs text-gray-400">
+                    Google OAuth Client ID loaded: {MASKED_GOOGLE_CLIENT_ID}
                   </p>
                 )}
 
@@ -1784,13 +1850,22 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
               <div className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Choose a sync direction. CRM has{" "}
-                    <strong className="text-gray-900 dark:text-white">{leads.length}</strong> leads. Sheet:{" "}
+                    Choose a sync direction. Dashboard loaded leads:{" "}
+                    <strong className="text-gray-900 dark:text-white">{leads.length}</strong>. Firestore total leads:{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      {crmSyncIndex.loading ? "…" : crmSyncIndex.totalCount.toLocaleString()}
+                    </strong>. CRM sync index loaded:{" "}
+                    <strong className="text-gray-900 dark:text-white">{crmSyncIndex.loadedCount.toLocaleString()}</strong>. Sheet:{" "}
                     <strong className="text-gray-900 dark:text-white">{tabName}</strong>
                     {accessToken && (
                       <span className="ml-2 text-green-600 dark:text-green-400 text-xs">● Connected</span>
                     )}
                   </p>
+                  {!crmSyncIndex.loading && !crmSyncIndex.error && !crmSyncIndex.isPartial && (
+                    <p className="basis-full text-xs text-green-600 dark:text-green-400">
+                      Loading CRM sync index complete
+                    </p>
+                  )}
                   {/* Fallback status — used when a row has no status column mapped or an unrecognised value */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -1809,6 +1884,34 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                     </select>
                   </div>
                 </div>
+
+                {(crmSyncIndex.loading || crmSyncIndex.error || crmSyncIndex.isPartial) && (
+                  <div
+                    className={`rounded-xl border px-4 py-3 text-sm ${
+                      crmSyncIndex.error || crmSyncIndex.isPartial
+                        ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300"
+                        : "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span>
+                        {crmSyncIndex.error
+                          ? `CRM sync index failed: ${crmSyncIndex.error}`
+                          : crmSyncIndex.isPartial
+                            ? `CRM sync index is partial: ${crmSyncIndex.loadedCount}/${crmSyncIndex.totalCount} loaded`
+                            : crmSyncIndex.progressLabel}
+                      </span>
+                      {(crmSyncIndex.error || crmSyncIndex.isPartial) && (
+                        <button
+                          onClick={crmSyncIndex.reload}
+                          className="flex-shrink-0 rounded-lg border border-current px-2.5 py-1 text-xs font-semibold"
+                        >
+                          Reload index
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Smart Sync — scan all tabs, then sync ── */}
                 <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20 overflow-hidden">
@@ -1829,7 +1932,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                     {tabScans.length === 0 && !smartSyncResult && (
                       <button
                         onClick={scanAllTabs}
-                        disabled={scanning || !accessToken}
+                        disabled={scanning || !accessToken || syncIndexBlocked}
                         className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-600 text-white text-xs font-semibold hover:bg-gray-500 disabled:opacity-50 transition flex-shrink-0"
                       >
                         {scanning ? (
@@ -1979,7 +2082,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                         return (
                           <button
                             onClick={syncFromScans}
-                            disabled={smartSyncing || includedScans.length === 0}
+                            disabled={smartSyncing || includedScans.length === 0 || syncIndexBlocked}
                             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 disabled:opacity-50 transition"
                           >
                             {smartSyncing ? (
@@ -2108,7 +2211,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
 
                         <button
                           onClick={pullAndApplyUpdates}
-                          disabled={updating || !mapping["phone"]}
+                          disabled={updating || !mapping["phone"] || syncIndexBlocked}
                           title={!mapping["phone"] ? "Map the Contact Number column first" : undefined}
                           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-violet-600 text-white text-sm font-semibold hover:bg-violet-500 disabled:opacity-50 transition"
                         >
@@ -2168,6 +2271,12 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                 </div>
 
                 {/* ── Push + Two-Way cards (require OAuth sign-in for write access) ── */}
+                {!GOOGLE_CLIENT_ID && (
+                  <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-xs text-red-700 dark:text-red-300">
+                    {GOOGLE_CLIENT_ID_ERROR}
+                  </div>
+                )}
+
                 {!accessToken && (
                   <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-4 py-3 flex items-center justify-between gap-3">
                     <p className="text-xs text-amber-700 dark:text-amber-300">
@@ -2175,7 +2284,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                     </p>
                     <button
                       onClick={requestAuth}
-                      disabled={!gisReady}
+                      disabled={!GOOGLE_CLIENT_ID || !gisReady}
                       className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-500 disabled:opacity-50 transition"
                     >
                       <Link2 size={12} /> Sign in with Google
@@ -2190,7 +2299,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                     subtitle="CRM → Sheet"
                     description="Export all CRM leads to the sheet. Overwrites the tab contents."
                     color="amber"
-                    disabled={syncing || !accessToken}
+                    disabled={syncing || !accessToken || syncIndexBlocked}
                     loading={syncing}
                     onClick={() => (accessToken ? runSync("push") : requestAuth())}
                   />
@@ -2201,7 +2310,7 @@ export function SheetsSyncModal({ onClose }: SheetsSyncModalProps) {
                     subtitle="Pull then Push"
                     description="Pulls new leads using the fallback status, then pushes all CRM leads back."
                     color="green"
-                    disabled={syncing || !accessToken}
+                    disabled={syncing || !accessToken || syncIndexBlocked}
                     loading={syncing}
                     onClick={() => (accessToken ? runSync("two-way") : requestAuth())}
                   />
