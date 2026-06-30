@@ -5,6 +5,7 @@ import { ToastProvider, useToast } from "./context/ToastContext";
 import { LeadsPage } from "./pages/Leads"; // eager — it's the landing page
 import { db } from "./lib/firebase";
 import { doc, updateDoc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
 import { useAppStore } from "./stores/appStore";
 import {
   useReps,
@@ -96,6 +97,7 @@ import { useNotifications } from "./hooks/useNotifications";
 import { useOfflineQueue } from "./hooks/useOfflineQueue";
 import { useNetworkStatus } from "./hooks/useNetworkStatus";
 import { useFirebaseAuthUser } from "./hooks/useFirebaseAuthUser";
+import { auth, functions } from "./lib/firebase";
 
 // ── Google Sheets Quick Pull constants ───────────────────────────────────────
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
@@ -212,6 +214,49 @@ function LoginCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function expectedClaimRole(rep: Rep): "rep" | "manager" | "admin" {
+  return rep.role === "admin" || rep.role === "manager" ? rep.role : "rep";
+}
+
+async function refreshPinSessionClaims(rep: Rep): Promise<void> {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) return;
+
+  const expectedRole = expectedClaimRole(rep);
+  let lastClaims: Record<string, unknown> = {};
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const tokenResult = await firebaseUser.getIdTokenResult(true);
+    lastClaims = tokenResult.claims;
+    const claimRepId = tokenResult.claims.repId;
+    const claimRole = tokenResult.claims.role;
+    const isAdminClaim = tokenResult.claims.admin === true || tokenResult.claims.director === true;
+    const roleMatches = expectedRole === "admin" ? isAdminClaim || claimRole === "admin" : claimRole === expectedRole;
+
+    console.info("[LoginScreen] Refreshed PIN session claims", {
+      authUid: firebaseUser.uid,
+      repId: claimRepId ?? null,
+      decodedRole: claimRole ?? null,
+      admin: tokenResult.claims.admin === true,
+      director: tokenResult.claims.director === true,
+      region: tokenResult.claims.region ?? null,
+      attempt: attempt + 1,
+    });
+
+    if (claimRepId === rep.id && roleMatches) return;
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  }
+
+  console.warn("[LoginScreen] PIN session claims did not match the selected rep after refresh", {
+    expectedRepId: rep.id,
+    expectedRole,
+    decodedRepId: lastClaims.repId ?? null,
+    decodedRole: lastClaims.role ?? null,
+    admin: lastClaims.admin === true,
+    director: lastClaims.director === true,
+  });
+}
+
 function LoginScreen({
   onLoginRep,
   onAdminBypass,
@@ -243,6 +288,7 @@ function LoginScreen({
 
   // Step: forgot
   const [backupInput, setBackupInput] = useState("");
+  const [verifiedBackupPassword, setVerifiedBackupPassword] = useState("");
 
   // Step: new-pin
   const [newPin, setNewPin] = useState("");
@@ -310,50 +356,58 @@ function LoginScreen({
     }
     setLoading(true);
     try {
-      const updated: Rep = {
-        ...selectedRep,
-        email: setupEmail,
-        pin: setupPin,
-        backupPassword: setupBackup,
-        isSetup: true,
-      };
+      const doSetPin = httpsCallable(functions, "setPin");
+      await doSetPin({ repId: selectedRep.id, pin: setupPin, backupPassword: setupBackup });
+      await refreshPinSessionClaims(selectedRep);
+      await updateDoc(doc(db, "reps", String(selectedRep.id)), { email: setupEmail });
+
+      const updated: Rep = { ...selectedRep, email: setupEmail, isSetup: true };
       setReps(reps.map((r) => (r.id === updated.id ? updated : r)));
-      await updateDoc(doc(db, "reps", String(selectedRep.id)), {
-        email: setupEmail,
-        pin: setupPin,
-        backupPassword: setupBackup,
-        isSetup: true,
-      });
       onLoginRep(updated);
-    } catch {
-      setError("Failed to save. Please try again.");
+    } catch (err) {
+      const fbErr = err as { message?: string };
+      setError(fbErr?.message ?? "Failed to save. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   // ── Step: PIN login ──────────────────────────────────────────────────────
-  const handlePin = (e: React.FormEvent) => {
+  const handlePin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRep) return;
-    if (pin !== selectedRep.pin) {
-      setError("Incorrect PIN");
+    setLoading(true);
+    try {
+      const doVerifyPin = httpsCallable(functions, "verifyPin");
+      await doVerifyPin({ repId: selectedRep.id, pin });
+      await refreshPinSessionClaims(selectedRep);
+      onLoginRep(selectedRep);
+    } catch (err) {
+      const fbErr = err as { message?: string };
+      setError(fbErr?.message ?? "Incorrect PIN");
       setPin("");
-      return;
+    } finally {
+      setLoading(false);
     }
-    onLoginRep(selectedRep);
   };
 
   // ── Step: forgot PIN — enter backup password ─────────────────────────────
-  const handleForgot = (e: React.FormEvent) => {
+  const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRep) return;
-    if (backupInput !== selectedRep.backupPassword) {
-      setError("Incorrect backup password");
-      return;
+    setLoading(true);
+    try {
+      const doVerifyBackup = httpsCallable(functions, "verifyBackupPassword");
+      await doVerifyBackup({ repId: selectedRep.id, backupPassword: backupInput });
+      setVerifiedBackupPassword(backupInput);
+      setBackupInput("");
+      go("new-pin");
+    } catch (err) {
+      const fbErr = err as { message?: string };
+      setError(fbErr?.message ?? "Incorrect backup password");
+    } finally {
+      setLoading(false);
     }
-    setBackupInput("");
-    go("new-pin");
   };
 
   // ── Step: set new PIN after recovery ─────────────────────────────────────
@@ -370,12 +424,16 @@ function LoginScreen({
     }
     setLoading(true);
     try {
-      const updated: Rep = { ...selectedRep, pin: newPin };
+      const doSetPin = httpsCallable(functions, "setPin");
+      await doSetPin({ repId: selectedRep.id, pin: newPin, backupPassword: verifiedBackupPassword });
+      await refreshPinSessionClaims(selectedRep);
+      const updated: Rep = { ...selectedRep, isSetup: true };
       setReps(reps.map((r) => (r.id === updated.id ? updated : r)));
-      await updateDoc(doc(db, "reps", String(selectedRep.id)), { pin: newPin });
+      setVerifiedBackupPassword("");
       onLoginRep(updated);
-    } catch {
-      setError("Failed to save. Please try again.");
+    } catch (err) {
+      const fbErr = err as { message?: string };
+      setError(fbErr?.message ?? "Failed to save. Please try again.");
     } finally {
       setLoading(false);
     }
