@@ -19,6 +19,9 @@ dist/
 .firebase/
 firebase-debug.log
 .firebaserc.local
+*service-account*.json
+*firebase-admin*.json
+firebase-service-account*.json
 
 # Logs
 logs/
