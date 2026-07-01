@@ -32,7 +32,7 @@ interface AuditEntryOptions {
 }
 
 const CONFIG_DOC_PATH = "appSettings/config";
-const SETTINGS_SECTIONS = new Set(["dealSettings", "trainingSettings", "aiSettings", "featureFlags"]);
+const SETTINGS_SECTIONS = new Set(["dealSettings", "trainingSettings", "aiSettings", "featureFlags", "integrations"]);
 const SECTION_FIELDS: Record<string, Set<string>> = {
   dealSettings: new Set(["stuckDaysThreshold", "atRiskDaysThreshold"]),
   trainingSettings: new Set(["weeklyTargetSessions", "minimumScoreTarget"]),
@@ -50,6 +50,7 @@ const SECTION_FIELDS: Record<string, Set<string>> = {
     "disableVoice",
     "readOnlyMode",
   ]),
+  integrations: new Set(["salestrail"]),
 };
 
 function getDb() {

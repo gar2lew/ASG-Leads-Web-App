@@ -1032,3 +1032,59 @@ export interface RepSettings {
   };
   updatedAt: number;
 }
+
+// ── Salestrail Integration ────────────────────────────────────────────────────
+
+export interface SalestrailCallDoc {
+  salestrailCallId: string;
+  callerNumber: string;
+  callerNumberNormalized: string;
+  calleeNumber: string;
+  calleeNumberNormalized: string;
+  callerName: string | null;
+  userEmail: string;
+  userName: string;
+  direction: "inbound" | "outbound" | "internal" | null;
+  callType: string | null;
+  durationSeconds: number | null;
+  sourceCreatedAt: number;
+  sourceUpdatedAt: number | null;
+  recordingAvailable: boolean;
+  recordingReference: string | null;
+  matchedLeadId: string | null;
+  matchedPhoneNumber: string | null;
+  matchedOn: "caller" | "callee" | null;
+  matchConfidence: "exact" | "partial" | "none";
+  assignedRepId: number | null;
+  region: "brisbane" | "perth" | null;
+  importBatchId: string;
+  importStatus: "new" | "matched" | "unmatched" | "error";
+  importedAt: number;
+  rawPayload?: Record<string, unknown>;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface SyncResult {
+  success: boolean;
+  dryRun: boolean;
+  fullSync: boolean;
+  fetchedCount: number;
+  wouldImportCount: number;
+  importedCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  errorCount: number;
+  errors: string[];
+  batchId: string;
+}
+
+export interface SalestrailConfig {
+  enabled: boolean;
+  lastSyncAt: number | null;
+  lastSyncStatus: "success" | "error" | "in_progress" | null;
+  lastSyncError: string | null;
+  lastSyncCallCount: number | null;
+  syncInProgress: boolean;
+  syncStartedAt: number | null;
+}
