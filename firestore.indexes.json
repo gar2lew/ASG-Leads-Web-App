@@ -364,6 +364,111 @@
         }
       ],
       "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "matchedLeadId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userEmail",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "importStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "direction",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "importBatchId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "assignedRepId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "salestrailCalls",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "region",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourceCreatedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
     }
   ],
   "fieldOverrides": []

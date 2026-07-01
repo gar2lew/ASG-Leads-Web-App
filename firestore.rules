@@ -377,6 +377,14 @@ service cloud.firestore {
     }
 
     // ─────────────────────────────────────────────
+    // Salestrail call records (callable-only access)
+    // ─────────────────────────────────────────────
+
+    match /salestrailCalls/{callId} {
+      allow read, write: if false;
+    }
+
+    // ─────────────────────────────────────────────
     // Catch-all (deny everything else)
     // ─────────────────────────────────────────────
 
