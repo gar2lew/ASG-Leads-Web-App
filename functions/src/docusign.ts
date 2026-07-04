@@ -30,6 +30,7 @@
 
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import * as path from "path";
 import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
@@ -260,7 +261,7 @@ async function recordDealEvent(params: {
       message: params.message,
       createdBy: params.createdBy || "system",
       metadata: params.metadata || {},
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: firestoreServerTimestamp(),
     });
   } catch (err) {
     console.error("Failed to record deal event:", err);
@@ -492,8 +493,8 @@ export const createDocuSignEnvelope = onCall<CreateEnvelopeRequest>(async (reque
     sentBy: request.auth.uid,
     viewingUrl,
     lastProcessedEventId: null,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: firestoreServerTimestamp(),
+    updatedAt: firestoreServerTimestamp(),
   });
 
   // ── Lock the document instance to prevent further edits ───────────────
@@ -503,7 +504,7 @@ export const createDocuSignEnvelope = onCall<CreateEnvelopeRequest>(async (reque
         status: "locked",
         editable: false,
         envelopeId,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
       });
     } catch (err) {
       console.error("[DocuSign] Failed to lock document instance:", err);
@@ -573,8 +574,8 @@ export const resendDocuSignEnvelope = onCall<ResendEnvelopeRequest>(async (reque
     const doc = query.docs[0];
     await doc.ref.update({
       status: "sent",
-      resentAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      resentAt: firestoreServerTimestamp(),
+      updatedAt: firestoreServerTimestamp(),
     });
 
     await recordDealEvent({
@@ -636,8 +637,8 @@ export const voidDocuSignEnvelope = onCall<VoidEnvelopeRequest>(async (request) 
     await doc.ref.update({
       status: "voided",
       voidedReason: reason || "Voided by sender",
-      voidedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      voidedAt: firestoreServerTimestamp(),
+      updatedAt: firestoreServerTimestamp(),
     });
 
     await recordDealEvent({
@@ -715,8 +716,8 @@ export const syncEnvelopeStatus = onCall<SyncStatusRequest>(async (request) => {
 
       await doc.ref.update({
         status: actualStatus,
-        syncedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        syncedAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
       });
 
       // Record deal event for the correction
@@ -891,7 +892,7 @@ export const docusignWebhook = onRequest(async (req, res) => {
           fileSize: signedPdfBuffer.byteLength,
           uploadedBy: "DocuSign",
           signed: true,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: firestoreServerTimestamp(),
         });
 
         console.log(`[DocuSign Webhook] Signed document uploaded: ${signedUrl}`);
@@ -913,8 +914,8 @@ export const docusignWebhook = onRequest(async (req, res) => {
         status: "completed",
         signedUrl,
         signedStoragePath,
-        completedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        completedAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
         lastProcessedEventId: eventId,
       };
 
@@ -929,8 +930,8 @@ export const docusignWebhook = onRequest(async (req, res) => {
             .update({
               status: "signed",
               signedUrl,
-              signedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              signedAt: firestoreServerTimestamp(),
+              updatedAt: firestoreServerTimestamp(),
             });
         } catch (err) {
           console.error("[DocuSign Webhook] Failed to update document instance:", err);
@@ -952,8 +953,8 @@ export const docusignWebhook = onRequest(async (req, res) => {
             await instanceQuery.docs[0].ref.update({
               status: "signed",
               signedUrl,
-              signedAt: admin.firestore.FieldValue.serverTimestamp(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+              signedAt: firestoreServerTimestamp(),
+              updatedAt: firestoreServerTimestamp(),
             });
           }
         } catch (err) {
@@ -1007,8 +1008,8 @@ export const docusignWebhook = onRequest(async (req, res) => {
     if (envelopeStatus === "declined") {
       await envelopeDoc.ref.update({
         status: "declined",
-        declinedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        declinedAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
         lastProcessedEventId: eventId,
       });
 
@@ -1037,8 +1038,8 @@ export const docusignWebhook = onRequest(async (req, res) => {
     if (envelopeStatus === "voided") {
       await envelopeDoc.ref.update({
         status: "voided",
-        voidedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        voidedAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
         lastProcessedEventId: eventId,
       });
 

@@ -18,6 +18,7 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Added explicit Auth and Functions emulator ports for callable validation.
 - Added emulator harness execution report showing non-emulator validation passes and emulator startup remains blocked because Java is not visible on PATH.
 - Fixed callable emulator host detection and verified emulator preflight, rules, Firestore smoke, and callable dry-run harness execution.
+- Fixed Functions Admin SDK timestamp compatibility and restored executable emulator coverage for PIN setup/change and settings/admin mutation callables.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.

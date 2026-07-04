@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { requireAuth, requireMinimumRole, type ServerAuthContext } from "./auth";
 
 type SettingsAction = "update" | "rollback";
@@ -143,7 +144,7 @@ export const updateAppSettingsCallable = onCall(async (request) => {
   const actorName = cleanActorName(data.userName, auth);
   const db = getDb();
   const configRef = db.doc(CONFIG_DOC_PATH);
-  const serverTimestamp = admin.firestore.FieldValue.serverTimestamp();
+  const serverTimestamp = firestoreServerTimestamp();
   let previousSettings: unknown = null;
 
   await db.runTransaction(async (tx) => {
@@ -170,7 +171,7 @@ export const updateAppSettingsCallable = onCall(async (request) => {
     after: updates,
     actorName,
     auth,
-    serverTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+    serverTimestamp: firestoreServerTimestamp(),
   });
 
   console.info("[updateAppSettingsCallable] Settings update applied", {
@@ -195,7 +196,7 @@ export const rollbackAppSettingsCallable = onCall(async (request) => {
   const historyId = optionalHistoryId(data.historyId);
   const db = getDb();
   const configRef = db.doc(CONFIG_DOC_PATH);
-  const serverTimestamp = admin.firestore.FieldValue.serverTimestamp();
+  const serverTimestamp = firestoreServerTimestamp();
   let currentSettings: unknown = null;
 
   await db.runTransaction(async (tx) => {
@@ -223,7 +224,7 @@ export const rollbackAppSettingsCallable = onCall(async (request) => {
     after: rollbackTarget,
     actorName,
     auth,
-    serverTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+    serverTimestamp: firestoreServerTimestamp(),
   });
 
   console.info("[rollbackAppSettingsCallable] Settings rollback applied", {

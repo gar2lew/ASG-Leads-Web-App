@@ -1,12 +1,12 @@
 # Emulator Harness Execution Report
 
 Date: 2026-07-04
-Branch: `test/emulator-harness-execution`
-Savepoint tag: `savepoint-before-emulator-harness-execution`
+Branch: `fix/functions-admin-timestamp-compatibility`
+Savepoint tag: `savepoint-before-functions-admin-timestamp-compatibility`
 
 ## Objective
 
-Run and debug the Firebase emulator harnesses after Java was installed and the callable harness exposed a Functions emulator host detection failure.
+Fix the Functions Admin SDK timestamp compatibility issue discovered during callable emulator testing, then restore executable emulator coverage for affected callables.
 
 ## Safety Position
 
@@ -51,7 +51,7 @@ Codex shell note:
 | `npm run test:emulator:preflight` | Pass | Firebase CLI available, Java runtime available, explicit emulator config present, production default remains `amplify-leads-2026`. |
 | `npm run test:emulator:rules` | Pass | Authenticated Firestore rules harness passed against `demo-asg-crm-emulator`. Expected permission-denied logs were emitted for denied writes. |
 | `npm run test:emulator:firestore-smoke` | Pass | Firestore smoke checks passed when run by itself. A parallel run collided with the rules emulator hub port, so emulator suites should run sequentially. |
-| `npm run test:emulator:callables-dry-run` | Pass | Callable harness passed after Functions emulator host detection was fixed. |
+| `npm run test:emulator:callables-dry-run` | Pass | Callable harness passed with executable coverage for `verifyPin`, `setPin`, `changePin`, settings update/rollback, and phone normalisation dry-run. |
 | `cd functions && npm run build` | Pass | Functions TypeScript build passed. |
 | `cd functions && npm run test:settings-admin` | Pass | Functions settings/admin unit test passed. |
 
@@ -60,37 +60,28 @@ Codex shell note:
 - Fixed the callable harness so it no longer requires `FUNCTIONS_EMULATOR_HOST` from Firebase CLI.
 - The harness now falls back to the explicit Functions emulator port in `firebase.json`.
 - Updated the harness to use the modular Firebase Admin API for emulator seeding, matching the installed Admin SDK package shape.
-- Kept executable callable coverage on `verifyPin` and `backfillPhoneNormalization` dry-run.
-- Kept PIN setup/change/backup and settings/admin callables as source auth/role contract checks because executable mutation paths hit a server timestamp compatibility issue that requires a separate production-code decision.
+- Added a Functions `firestoreCompat` helper that uses modular `firebase-admin/firestore` exports for `FieldValue.serverTimestamp()`, `Timestamp.now()`, and `Timestamp.fromDate()`.
+- Replaced incompatible namespace timestamp usage in Functions source while preserving existing lazy Firestore initialisation, auth checks, role checks, and business logic.
+- Restored executable callable emulator coverage for `setPin`, `changePin`, `updateAppSettingsCallable`, and `rollbackAppSettingsCallable`.
 
 ## Current Blocker
 
 No emulator startup blocker remains when Java is visible to the shell.
 
-The remaining callable limitation is:
+The `admin.firestore.FieldValue.serverTimestamp()` compatibility issue is fixed for known Functions source call sites.
 
-```text
-admin.firestore.FieldValue.serverTimestamp() is undefined inside the Functions emulator runtime for mutation callables that use the current namespace Admin import path.
-```
-
-Observed affected executable paths during diagnosis:
-
-- `setPin`
-- `updateAppSettingsCallable`
-
-This goal did not change production Functions code. The issue should be handled in a separate targeted Functions Admin SDK compatibility goal.
+Salestrail dry-run remains source-contract-only because the dry-run path can still reach the live API when secrets are present. It needs an approved no-network mock seam before direct executable emulator coverage.
 
 ## Remaining Emulator Work
 
-1. Add a separate targeted fix for Functions Admin SDK `FieldValue.serverTimestamp()` compatibility.
-2. Restore executable emulator coverage for `setPin`, `changePin`, and settings/admin mutation callables after that fix.
-3. Keep Salestrail dry-run behind source contracts until an approved no-network mock seam exists.
-4. Run emulator suites sequentially to avoid hub port collisions.
+1. Keep Salestrail dry-run behind source contracts until an approved no-network mock seam exists.
+2. Add executable emulator coverage for `verifyBackupPassword`.
+3. Run emulator suites sequentially to avoid hub port collisions.
 
 ## Release Risk
 
 This branch proves the emulator rules, Firestore smoke, and callable dry-run harnesses can execute against `demo-asg-crm-emulator`.
 
-Release risk remains around callable mutation paths that use `admin.firestore.FieldValue.serverTimestamp()` until the Functions Admin SDK compatibility issue is fixed and executable callable coverage is restored.
+Release risk remains around callable surfaces outside this harness, including known unauthenticated callables documented in the risk register and Salestrail live API behaviour.
 
 Production Firebase deploys, Functions deploys, Firestore rules deploys, Salestrail live sync, phone normalisation writes, and migration runs remain blocked.

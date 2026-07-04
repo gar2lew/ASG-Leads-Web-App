@@ -1,6 +1,7 @@
 import { onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { sendNotification, sendNotificationToMany } from "./notifications";
 import {
   createDocuSignEnvelope,
@@ -119,8 +120,8 @@ export const getPropertyInsights = onCall(async (request) => {
 
     dataMode: "estimated",
 
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: firestoreServerTimestamp(),
+    fetchedAt: firestoreServerTimestamp(),
   };
 
   const ref = await db.collection("properties").add(propertyDoc);
@@ -250,8 +251,8 @@ export const aggregateDailyStats = onSchedule(
           presentations: drapsEntry?.presentations || 0,
           sales: drapsEntry?.sold || 0,
         },
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
       });
     }
 

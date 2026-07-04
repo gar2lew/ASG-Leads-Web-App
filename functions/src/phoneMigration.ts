@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { requireAuth, requireMinimumRole } from "./auth";
 
 function getDb() {
@@ -161,7 +162,7 @@ export const backfillPhoneNormalization = onCall(async (request) => {
         authRepId: auth.repId ?? null,
         authRole: auth.role ?? null,
         source: "callable",
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timestamp: firestoreServerTimestamp(),
       });
     }
 

@@ -12,6 +12,7 @@
  */
 
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { getMessaging, MulticastMessage } from "firebase-admin/messaging";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 
@@ -340,7 +341,7 @@ export const onDailyStatsWritten = onDocumentWritten(
         repId,
         date,
         alertType: alert.type,
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        sentAt: firestoreServerTimestamp(),
       });
     }
 

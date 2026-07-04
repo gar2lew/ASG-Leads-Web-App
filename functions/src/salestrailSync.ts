@@ -18,6 +18,7 @@
  */
 
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp, firestoreTimestampFromDate, firestoreTimestampNow } from "./firestoreCompat";
 import { defineSecret } from "firebase-functions/params";
 
 // ---------------------------------------------------------------------------
@@ -77,8 +78,8 @@ export interface SalestrailCallDoc {
   direction: "inbound" | "outbound" | "internal" | null;
   callType: string | null;
   durationSeconds: number | null;
-  sourceCreatedAt: admin.firestore.Timestamp;
-  sourceUpdatedAt: admin.firestore.Timestamp | null;
+  sourceCreatedAt: FirebaseFirestore.Timestamp;
+  sourceUpdatedAt: FirebaseFirestore.Timestamp | null;
   recordingAvailable: boolean;
   recordingReference: string | null;
   matchedLeadId: string | null;
@@ -89,10 +90,10 @@ export interface SalestrailCallDoc {
   region: "brisbane" | "perth" | null;
   importBatchId: string;
   importStatus: "new" | "matched" | "unmatched" | "error";
-  importedAt: admin.firestore.Timestamp;
+  importedAt: FirebaseFirestore.Timestamp;
   rawPayload: Record<string, unknown>;
-  createdAt: admin.firestore.FieldValue;
-  updatedAt: admin.firestore.FieldValue;
+  createdAt: FirebaseFirestore.FieldValue;
+  updatedAt: FirebaseFirestore.FieldValue;
 }
 
 export interface SyncResult {
@@ -324,7 +325,7 @@ function transformCall(
     direction: dir,
     callType: deriveCallType(raw),
     durationSeconds: typeof raw.duration === "number" ? raw.duration : null,
-    sourceCreatedAt: admin.firestore.Timestamp.fromDate(resolveSourceTimestamp(raw)),
+    sourceCreatedAt: firestoreTimestampFromDate(resolveSourceTimestamp(raw)),
     sourceUpdatedAt: null,
     recordingAvailable: false,
     recordingReference: callId || null,
@@ -336,10 +337,10 @@ function transformCall(
     region: null,
     importBatchId: batchId,
     importStatus: "new",
-    importedAt: admin.firestore.Timestamp.now(),
+    importedAt: firestoreTimestampNow(),
     rawPayload: sanitizePayload(raw),
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: firestoreServerTimestamp(),
+    updatedAt: firestoreServerTimestamp(),
   };
 }
 
@@ -646,7 +647,7 @@ async function writeAuditLog(
     authUid: `salestrail-sync-${result.batchId}`,
     authRole: "system",
     source: "salestrail.sync",
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timestamp: firestoreServerTimestamp(),
   });
 }
 

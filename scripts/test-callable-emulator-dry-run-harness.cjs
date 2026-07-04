@@ -81,23 +81,9 @@ function assertPinSourceContract() {
   assert.match(pinSource, /export const verifyBackupPassword = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);/s);
 }
 
-function assertSettingsAdminSourceContract() {
-  const settingsSource = fs.readFileSync("functions/src/settingsAdmin.ts", "utf8");
-
-  assert.match(
-    settingsSource,
-    /export const updateAppSettingsCallable = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);\s*requireMinimumRole\(auth, "admin"\);/s,
-  );
-  assert.match(
-    settingsSource,
-    /export const rollbackAppSettingsCallable = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);\s*requireMinimumRole\(auth, "admin"\);/s,
-  );
-}
-
 async function main() {
   assertDemoOnly();
   assertPinSourceContract();
-  assertSettingsAdminSourceContract();
   assertSalestrailDryRunSourceContract();
 
   const { initializeApp, deleteApp } = await import("firebase/app");
@@ -111,12 +97,20 @@ async function main() {
 
   const runId = `callable-harness-${Date.now()}`;
   const adminRepId = 970001;
+  const setupRepId = 970002;
   const leadId = `${runId}-phone-lead`;
 
   await adminDb.collection("reps").doc(String(adminRepId)).set({
     name: "Callable Harness Admin",
     pin: "1234",
     role: "admin",
+    active: true,
+    primaryRegion: "brisbane",
+    allowedRegions: ["brisbane"],
+  });
+  await adminDb.collection("reps").doc(String(setupRepId)).set({
+    name: "Callable Harness Setup Rep",
+    role: "rep",
     active: true,
     primaryRegion: "brisbane",
     allowedRegions: ["brisbane"],
@@ -144,6 +138,10 @@ async function main() {
   connectFunctionsEmulator(functions, functionsHost.host, functionsHost.port);
 
   const verifyPin = httpsCallable(functions, "verifyPin");
+  const setPin = httpsCallable(functions, "setPin");
+  const changePin = httpsCallable(functions, "changePin");
+  const updateAppSettingsCallable = httpsCallable(functions, "updateAppSettingsCallable");
+  const rollbackAppSettingsCallable = httpsCallable(functions, "rollbackAppSettingsCallable");
   const backfillPhoneNormalization = httpsCallable(functions, "backfillPhoneNormalization");
 
   await expectCallableError("Unauthenticated phone dry-run callable", "unauthenticated", () =>
@@ -156,6 +154,37 @@ async function main() {
   assert.equal(pinResult.data?.repId, adminRepId, "verifyPin should return the seeded rep ID.");
 
   await refreshUntilClaim(credential.user, "role", "admin");
+
+  const settingsResult = await updateAppSettingsCallable({
+    updates: { featureFlags: { enableVoiceMode: false } },
+    userName: "Callable Harness",
+  });
+  assert.equal(settingsResult.data?.ok, true, "settings update callable should succeed for admin claims.");
+  const settingsAfterUpdate = await adminDb.doc("appSettings/config").get();
+  assert.equal(settingsAfterUpdate.data()?.featureFlags?.enableVoiceMode, false, "settings update should write emulator config.");
+
+  const rollbackResult = await rollbackAppSettingsCallable({
+    previousSettings: {
+      featureFlags: { enableVoiceMode: true },
+      integrations: { salestrail: { enabled: false } },
+    },
+    userName: "Callable Harness",
+    historyId: `${runId}-history`,
+  });
+  assert.equal(rollbackResult.data?.ok, true, "settings rollback callable should succeed for admin claims.");
+  const settingsAfterRollback = await adminDb.doc("appSettings/config").get();
+  assert.equal(settingsAfterRollback.data()?.featureFlags?.enableVoiceMode, true, "settings rollback should restore emulator config.");
+
+  const setPinResult = await setPin({ repId: setupRepId, pin: "5678", backupPassword: "backup-password" });
+  assert.equal(setPinResult.data?.success, true, "setPin should write setup data in the emulator.");
+  const setupRepAfterSet = await adminDb.collection("reps").doc(String(setupRepId)).get();
+  assert.equal(setupRepAfterSet.data()?.isSetup, true, "setPin should mark the rep as setup.");
+  assert.equal(typeof setupRepAfterSet.data()?.pinHash, "string", "setPin should store a hash server-side.");
+
+  const changePinResult = await changePin({ repId: setupRepId, currentPin: "5678", newPin: "6789" });
+  assert.equal(changePinResult.data?.success, true, "changePin should update the emulator PIN hash.");
+  const setupRepAfterChange = await adminDb.collection("reps").doc(String(setupRepId)).get();
+  assert.notEqual(setupRepAfterChange.data()?.pinHash, setupRepAfterSet.data()?.pinHash, "changePin should replace the PIN hash.");
 
   const auditBeforePhone = await adminDb.collection("auditLogs").get();
   const leadBefore = (await adminDb.collection("leads").doc(leadId).get()).data();
@@ -170,9 +199,9 @@ async function main() {
 
   await deleteApp(app);
   console.log("Callable emulator dry-run harness checks passed");
-  console.log("- PIN verify callable exercised against emulator data");
-  console.log("- PIN setup/change/backup callables checked for source auth contracts");
-  console.log("- Settings admin callables checked for source auth and admin role contracts");
+  console.log("- PIN verify, setup, and change callables exercised against emulator data");
+  console.log("- PIN backup callable checked for source auth contract");
+  console.log("- Settings admin update and rollback callables exercised against emulator data");
   console.log("- Phone normalisation dry-run exercised with no lead or audit writes");
   console.log("- Salestrail dry-run source contract checked without invoking the live API path");
 }
