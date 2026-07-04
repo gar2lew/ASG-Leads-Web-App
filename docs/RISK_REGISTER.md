@@ -18,9 +18,10 @@
 | R-005 | Phone normalisation can write many lead records with `dryRun:false`. | High | Dry-run first, review samples, backup/export, explicit approval. | Active |
 | R-006 | Firebase lead migration tooling can replace live lead data. | Critical | Follow runbook, backup/export, dry-run, duplicate review, explicit approval. | Active |
 | R-007 | Large UI files increase regression risk. | Medium | Refactor by workflow with tests and screenshots. | Active |
-| R-008 | Missing emulator harness blocks complete validation of rules and callables. | High | Create rules and callable emulator test goal. | Active |
+| R-008 | Missing full emulator harness blocks complete validation of rules and callables. | High | Preflight and Firestore smoke scaffolding exist. Add authenticated rules and callable emulator tests next. | Active |
 | R-009 | Build writes generated release metadata. | Low | Inspect and restore when generated drift is not intended. | Active |
 | R-010 | Lint still reports warning-level debt when `npm run lint:report` is used. | Medium | Address `any`, hook dependency, and Fast Refresh warnings in small targeted goals. Keep `npm run lint` focused on blocking errors. | Active |
+| R-011 | Local Java is missing from PATH, blocking Firestore emulator startup. | High | Install Java and rerun `npm run test:emulator:firestore-smoke` before Firebase rules or callable work. | Active |
 
 ## Risk Review Cadence
 

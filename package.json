@@ -14,6 +14,8 @@
     "test:region-identity": "node scripts/test-region-identity.cjs",
     "test:observability": "node scripts/test-observability.cjs",
     "test:release-metadata": "node scripts/test-release-metadata.cjs",
+    "test:emulator:preflight": "node scripts/test-emulator-preflight.cjs",
+    "test:emulator:firestore-smoke": "firebase emulators:exec --project demo-asg-crm-emulator --only firestore \"node scripts/test-emulator-firestore-smoke.cjs\"",
     "release:metadata": "node scripts/write-release-metadata.cjs",
     "release:deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
     "release:dry-run": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1 -DryRun",

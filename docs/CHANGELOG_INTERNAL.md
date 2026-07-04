@@ -9,6 +9,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Scoped root linting to source-of-truth `src` and `functions/src` paths, excluding the nested mirror.
 - Restored passing workflow-state and region-identity guardrail tests by updating stale fixtures and sidebar expectations.
 - Cleared blocking ESLint errors while leaving warning-level type and hook dependency cleanup for later targeted work.
+- Added emulator validation baseline scripts and documentation.
+- Added Firestore emulator smoke test scaffolding for demo-project direct-read denial checks.
+- Documented Java and explicit emulator config blockers for full emulator execution.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.
