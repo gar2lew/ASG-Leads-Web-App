@@ -18,10 +18,12 @@
 | R-005 | Phone normalisation can write many lead records with `dryRun:false`. | High | Dry-run first, review samples, backup/export, explicit approval. | Active |
 | R-006 | Firebase lead migration tooling can replace live lead data. | Critical | Follow runbook, backup/export, dry-run, duplicate review, explicit approval. | Active |
 | R-007 | Large UI files increase regression risk. | Medium | Refactor by workflow with tests and screenshots. | Active |
-| R-008 | Missing full emulator harness blocks complete validation of rules and callables. | High | Preflight and Firestore smoke scaffolding exist. Add authenticated rules and callable emulator tests next. | Active |
+| R-008 | Missing full emulator harness blocks complete validation of rules and callables. | High | Preflight, Firestore smoke scaffolding, explicit emulator config, and authenticated rules harness exist. Java and callable tests remain. | Active |
 | R-009 | Build writes generated release metadata. | Low | Inspect and restore when generated drift is not intended. | Active |
 | R-010 | Lint still reports warning-level debt when `npm run lint:report` is used. | Medium | Address `any`, hook dependency, and Fast Refresh warnings in small targeted goals. Keep `npm run lint` focused on blocking errors. | Active |
-| R-011 | Local Java is missing from PATH, blocking Firestore emulator startup. | High | Install Java and rerun `npm run test:emulator:firestore-smoke` before Firebase rules or callable work. | Active |
+| R-011 | Local Java is missing from PATH, blocking Firestore emulator startup. | High | Install Java 21 JDK where practical, confirm `java -version`, then rerun `npm run test:emulator:firestore-smoke` and `npm run test:emulator:rules`. | Active |
+| R-012 | Callable emulator coverage is still missing for PIN, settings/admin, Salestrail dry-run, and phone dry-run. | High | Add callable emulator or mocked callable tests before integration or Firebase deploy work. | Active |
+| R-013 | `npm install` reported 29 dependency audit vulnerabilities. | Medium | Do not run broad audit fixes inside emulator harness work. Create a separate dependency audit goal. | Active |
 
 ## Risk Review Cadence
 

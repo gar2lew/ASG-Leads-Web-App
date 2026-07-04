@@ -35,14 +35,24 @@ assert.equal(firebaseJson.functions?.source, "functions", "Functions source shou
 
 assert.ok(hasScript(packageJson, "test:emulator:preflight"), "Root package should expose emulator preflight.");
 assert.ok(hasScript(packageJson, "test:emulator:firestore-smoke"), "Root package should expose Firestore emulator smoke validation.");
+assert.ok(hasScript(packageJson, "test:emulator:rules"), "Root package should expose authenticated Firestore rules validation.");
 assert.match(
   packageJson.scripts["test:emulator:firestore-smoke"],
   new RegExp(`--project ${DEMO_PROJECT}`),
   "Firestore emulator smoke command must use the demo project.",
 );
 assert.ok(!packageJson.scripts["test:emulator:firestore-smoke"].includes(PRODUCTION_PROJECT), "Emulator smoke must not target production.");
+assert.match(
+  packageJson.scripts["test:emulator:rules"],
+  new RegExp(`--project ${DEMO_PROJECT}`),
+  "Authenticated rules command must use the demo project.",
+);
+assert.ok(!packageJson.scripts["test:emulator:rules"].includes(PRODUCTION_PROJECT), "Authenticated rules command must not target production.");
 
 assert.ok(hasScript(functionsPackageJson, "serve"), "Functions package should expose an emulator serve command.");
+assert.equal(firebaseJson.emulators?.firestore?.port, 8080, "Firestore emulator port should be explicit.");
+assert.equal(firebaseJson.emulators?.ui?.port, 4000, "Emulator UI port should be explicit.");
+assert.equal(firebaseJson.emulators?.singleProjectMode, true, "Emulator singleProjectMode should be enabled.");
 assert.ok(
   /match \/salestrailCalls\/\{callId\} \{\s*allow read, write: if false;/s.test(rules),
   "salestrailCalls must deny direct client access.",

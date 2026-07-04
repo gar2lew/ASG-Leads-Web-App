@@ -25,7 +25,7 @@ Establish a safe Firebase emulator validation baseline before cleanup, refactor,
 | --- | --- | --- |
 | `.firebaserc` | Default project is `amplify-leads-2026`. | Production-like default requires explicit safety checks. |
 | `firebase.json` | Hosting, Functions, Firestore rules, and indexes are configured. | Deploy surfaces are broad, but this goal does not deploy. |
-| `firebase.json` emulators block | Missing. | Emulator ports are implicit, which makes repeatable automation weaker. |
+| `firebase.json` emulators block | Present. | Firestore and UI ports are now explicit for repeatable local validation. |
 | Root emulator scripts | Added in this goal. | Scripts are baseline only until Java is installed. |
 | Functions emulator script | Existing `functions/package.json` has `serve`. | It does not specify a demo project in the script. Use with care. |
 | Rules unit testing dependency | Missing. | Authenticated role and claim tests need a later harness. |
@@ -68,9 +68,9 @@ The Firestore smoke script is ready to check, once Java is installed:
    - `java -version` failed.
    - Firestore emulator startup is blocked until Java is installed and visible to the shell.
 
-2. `firebase.json` does not contain an explicit `emulators` block.
-   - Firebase CLI can use defaults, but repeatable CI and local validation should define explicit ports later.
-   - This goal did not change Firebase config, per safety rules.
+2. Authenticated Firestore rules tests require Java before they can run.
+   - A minimal explicit emulator config now exists.
+   - Firestore and UI ports are documented in `firebase.json`.
 
 3. Authenticated Firestore rules tests are not yet covered.
    - The repo does not include `@firebase/rules-unit-testing`.
@@ -132,7 +132,7 @@ Do not run live migration, Salestrail sync, or phone backfill write commands.
 
 ## Baseline Decision
 
-The repository now has a safe emulator preflight and a demo-project Firestore smoke command. Full emulator validation is still blocked by Java availability and missing authenticated rules/callable harnesses.
+The repository now has a safe emulator preflight, a demo-project Firestore smoke command, explicit local emulator ports, and authenticated rules harness scaffolding. Full emulator validation is still blocked by Java availability and missing callable harnesses.
 
 The next goal should install or approve the missing test harness pieces and add actual authenticated emulator coverage before any rules, callable, integration, migration, cleanup, refactor, or UI redesign work proceeds.
 

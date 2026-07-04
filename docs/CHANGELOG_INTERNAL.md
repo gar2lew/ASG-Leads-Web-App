@@ -12,6 +12,8 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Added emulator validation baseline scripts and documentation.
 - Added Firestore emulator smoke test scaffolding for demo-project direct-read denial checks.
 - Documented Java and explicit emulator config blockers for full emulator execution.
+- Added explicit Firestore emulator config and authenticated rules harness scaffolding.
+- Added Windows Java setup documentation for Firebase emulator validation.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.
