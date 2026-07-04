@@ -20,6 +20,7 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Fixed callable emulator host detection and verified emulator preflight, rules, Firestore smoke, and callable dry-run harness execution.
 - Fixed Functions Admin SDK timestamp compatibility and restored executable emulator coverage for PIN setup/change and settings/admin mutation callables.
 - Performed safe cleanup of low-risk lint warnings and stale deployment copy without changing Firebase rules, config, project selection, or CRM workflow behaviour.
+- Added UI audit planning for the next documentation-only workflow audit goal.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.

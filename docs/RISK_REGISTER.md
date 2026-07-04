@@ -25,6 +25,7 @@
 | R-012 | Salestrail dry-run callable cannot be safely invoked in emulator while it can still reach the live API if secrets are present. | High | Keep the callable behind static contract checks until an approved mock fetch seam or no-network emulator adapter exists. Do not run live Salestrail sync during tests. | Active |
 | R-013 | `npm install` reported 29 dependency audit vulnerabilities. | Medium | Do not run broad audit fixes inside emulator harness work. Create a separate dependency audit goal. | Active |
 | R-014 | Callable mutation paths previously failed in the Functions emulator when using namespace Admin timestamp sentinels. | Low | Replaced known timestamp call sites with modular Admin Firestore compatibility helpers and restored executable coverage for `setPin`, `changePin`, and settings/admin mutation callables. Keep monitoring new timestamp call sites. | Mitigated |
+| R-015 | UI redesign could change core CRM workflows before current behaviour is captured. | High | Complete a documentation-only UI workflow audit with current-state notes, acceptance states, permission boundaries, and manual QA checklist before editing UI code. | Active |
 
 ## Risk Review Cadence
 
