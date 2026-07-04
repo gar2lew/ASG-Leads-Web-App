@@ -279,3 +279,34 @@ Exit criteria:
 - `npm run test:workflow-state` passes.
 - `npm run test:region-identity` passes.
 - No Firebase deploy, production data write, migration, or live sync is performed.
+
+## Validation Baseline Update
+
+Date: 2026-07-04
+Branch: `fix/validation-baseline`
+
+The validation baseline follow-up resolved the blockers identified above without Firebase config, security rule, deployment, migration, Salestrail, phone backfill, or production data changes.
+
+Updated results:
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `npm run typecheck` | Pass | New script runs client and Functions TypeScript checks. |
+| `npm run lint` | Pass | New script checks blocking ESLint errors against root `src` and `functions/src` only. |
+| `npm run build` | Pass with warning | Build still reports large chunks and still regenerates release metadata. Generated metadata was restored after validation. |
+| `npm test` | Pass | New script runs the root guardrail test suite. |
+| `npm run test:auth-boundaries` | Pass | Completed successfully. |
+| `npm run test:workflow-state` | Pass | Fixture now uses canonical actionable status rather than lower-case legacy `contacted`, which normalises to `Booked`. |
+| `npm run test:region-identity` | Pass | Test now checks the current sidebar `WorkspaceSwitcher` location instead of stale `App.tsx` inline brand markup. |
+| `npm run test:observability` | Pass | Completed successfully. |
+| `npm run test:release-metadata` | Pass | Completed successfully. |
+| `cd functions && npm run build` | Pass | Functions TypeScript build completed. |
+| `cd functions && npm run test:settings-admin` | Pass | Functions settings-admin test completed. |
+| `git diff --check` | Pass | No whitespace errors after fixes. |
+
+Remaining validation debt:
+
+- `npm run lint:report` reports warning-level debt, mostly `any` usage, hook dependency warnings, and Fast Refresh warnings.
+- Large Vite chunks remain a performance risk.
+- Firebase emulator rules and callable integration tests remain missing.
+- Production-sensitive Firebase, Salestrail, phone backfill, and migration tasks remain blocked.

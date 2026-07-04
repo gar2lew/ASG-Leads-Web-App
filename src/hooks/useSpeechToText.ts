@@ -67,7 +67,7 @@ export function useSpeechToText(onResult: (text: string) => void): UseSpeechToTe
 
   function resetSilenceTimer(recognition: unknown) {
     if (silenceTimerRef.current !== null) clearTimeout(silenceTimerRef.current);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     silenceTimerRef.current = setTimeout(() => {
       try {
         (recognition as any).stop();

@@ -479,7 +479,7 @@ async function batchWriteCalls(
 ): Promise<{ imported: number; updated: number; skipped: number; errors: number }> {
   let imported = 0;
   let updated = 0;
-  let skipped = 0;
+  const skipped = 0;
   let errors = 0;
 
   for (let i = 0; i < docs.length; i += 500) {

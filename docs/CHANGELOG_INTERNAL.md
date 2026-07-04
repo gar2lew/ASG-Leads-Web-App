@@ -4,6 +4,11 @@ This changelog tracks engineering process and internal operating changes. Produc
 
 ## 2026-07-04
 
+- Established the validation baseline on `fix/validation-baseline`.
+- Added root `typecheck`, `test`, and `lint:report` scripts.
+- Scoped root linting to source-of-truth `src` and `functions/src` paths, excluding the nested mirror.
+- Restored passing workflow-state and region-identity guardrail tests by updating stale fixtures and sidebar expectations.
+- Cleared blocking ESLint errors while leaving warning-level type and hook dependency cleanup for later targeted work.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.

@@ -184,7 +184,6 @@ export function KnowledgeLayout({ title, subtitle, sections }: KnowledgeLayoutPr
               <div
                 className="kb-content prose prose-sm dark:prose-invert max-w-none"
                 // Safe: content is static, authored in src/data/knowledgeBase.ts
-                // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: activeSection.content }}
               />
             </div>

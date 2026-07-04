@@ -85,7 +85,7 @@ export function evaluateCondition(
     case "not-equals":
       return String(resolved.value) !== String(expected);
     case "falsy":
-      return !Boolean(resolved.value);
+      return !resolved.value;
     case "truthy":
     default:
       return Boolean(resolved.value);

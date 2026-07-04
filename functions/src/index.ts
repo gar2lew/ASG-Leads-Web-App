@@ -88,12 +88,12 @@ export const getPropertyInsights = onCall(async (request) => {
   const lastSoldDate: string | null = null;
 
   // ---- Resolve value ----
-  let resolvedValue: number | null = baselineValue;
-  let resolvedValueSource: "api" | "appreciation_model" | "baseline" | null = "baseline";
+  const resolvedValue: number | null = baselineValue;
+  const resolvedValueSource: "api" | "appreciation_model" | "baseline" | null = "baseline";
 
   // ---- Equity calc ----
   let estimatedEquity: number | null = null;
-  let equityMethod: "full_model" | "appreciation_model" | "baseline_proxy" = "baseline_proxy";
+  const equityMethod: "full_model" | "appreciation_model" | "baseline_proxy" = "baseline_proxy";
 
   if (resolvedValue) {
     estimatedEquity = resolvedValue * 0.2; // proxy for now

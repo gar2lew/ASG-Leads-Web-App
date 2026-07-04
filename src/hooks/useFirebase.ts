@@ -1620,7 +1620,7 @@ export function useAppointments(dateRange?: { from: string; to: string }): {
       },
     );
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [authLoading, currentUser, queryRef, from, to]);
 
   return { appointments, loading };

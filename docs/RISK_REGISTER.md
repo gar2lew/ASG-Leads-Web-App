@@ -20,6 +20,7 @@
 | R-007 | Large UI files increase regression risk. | Medium | Refactor by workflow with tests and screenshots. | Active |
 | R-008 | Missing emulator harness blocks complete validation of rules and callables. | High | Create rules and callable emulator test goal. | Active |
 | R-009 | Build writes generated release metadata. | Low | Inspect and restore when generated drift is not intended. | Active |
+| R-010 | Lint still reports warning-level debt when `npm run lint:report` is used. | Medium | Address `any`, hook dependency, and Fast Refresh warnings in small targeted goals. Keep `npm run lint` focused on blocking errors. | Active |
 
 ## Risk Review Cadence
 

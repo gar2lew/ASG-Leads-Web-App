@@ -68,14 +68,13 @@ export function useNetworkStatus(): {
   pendingWritesStartedAt?: number;
   isProbablyOffline: boolean;
 } {
-  if (typeof window === "undefined") {
-    return SSR_DEFAULTS;
-  }
-
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const isBrowser = typeof window !== "undefined";
+  const [isOnline, setIsOnline] = useState<boolean>(() => (isBrowser ? navigator.onLine : SSR_DEFAULTS.isOnline));
   const [, setTick] = useState(0);
 
   useEffect(() => {
+    if (!isBrowser) return;
+
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
@@ -90,7 +89,7 @@ export function useNetworkStatus(): {
       window.removeEventListener("offline", handleOffline);
       writeListeners.delete(listener);
     };
-  }, []);
+  }, [isBrowser]);
 
   const lastWriteFailedAt = lastWriteFailedAtModule;
   const lastSyncAt = lastSyncAtModule;
@@ -101,18 +100,22 @@ export function useNetworkStatus(): {
   const isRetryingWrite = hasSyncError && hasPendingWrites;
 
   return useMemo(
-    () => ({
-      isOnline,
-      hasSyncError,
-      hasPendingWrites,
-      isSyncing,
-      isRetryingWrite,
-      lastSyncAt,
-      lastWriteFailedAt,
-      pendingWritesStartedAt,
-      isProbablyOffline: !isOnline || (hasSyncError && !hasPendingWrites),
-    }),
+    () =>
+      isBrowser
+        ? {
+            isOnline,
+            hasSyncError,
+            hasPendingWrites,
+            isSyncing,
+            isRetryingWrite,
+            lastSyncAt,
+            lastWriteFailedAt,
+            pendingWritesStartedAt,
+            isProbablyOffline: !isOnline || (hasSyncError && !hasPendingWrites),
+          }
+        : SSR_DEFAULTS,
     [
+      isBrowser,
       isOnline,
       hasSyncError,
       hasPendingWrites,

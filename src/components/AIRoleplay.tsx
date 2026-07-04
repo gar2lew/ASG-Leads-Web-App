@@ -2239,7 +2239,7 @@ export function AIRoleplayPage() {
     } catch {
       destroyNatural();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [destroyNatural]);
 
   // Auto-restart natural listening after AI finishes speaking

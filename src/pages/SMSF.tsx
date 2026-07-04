@@ -153,7 +153,7 @@ function SMSFPage() {
         console.warn("[SMSF] Failed to load state:", err);
       }
     })();
-  }, [selectedClientId, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedClientId, loaded]);
 
   // Listen for messages from the iframe (SMSF_READY and SMSF_RESULT)
   useEffect(() => {

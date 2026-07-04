@@ -403,7 +403,7 @@ export function LeadsPage({
     return (
       <div className="flex-1 flex items-center justify-center bg-[var(--surface)]">
         <div className="text-center max-w-md px-6">
-          <div className="text-4xl mb-4">âš ï¸</div>
+          <div className="text-4xl mb-4">!</div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Failed to load leads</h2>
           <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
             We could not load the live lead queue. Check your connection, then retry. If this keeps happening, contact an admin with the console error details.
@@ -419,7 +419,7 @@ export function LeadsPage({
     );
   }
 
-  // â”€â”€ Main layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Main layout
   return (
     <div className="flex-1 flex flex-col bg-[var(--surface)] overflow-hidden">
       {/* Notification permission hint */}
@@ -427,8 +427,8 @@ export function LeadsPage({
         <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 flex-shrink-0">
           <span>ðŸ””</span>
           <span>
-            Browser notifications are blocked â€” callback reminders won't fire. To enable: open your browser settings â†’
-            Site Settings â†’ Notifications â†’ allow this site.
+            Browser notifications are blocked, so callback reminders won't fire. To enable: open your browser settings,
+            Site Settings, Notifications, then allow this site.
           </span>
         </div>
       )}
@@ -437,8 +437,8 @@ export function LeadsPage({
       {initialFilter && (
         <div className="flex items-center justify-between gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 flex-shrink-0">
           <span className="font-semibold">
-            {initialFilter === "no-contact" && "ðŸ“ž Filter: Leads with no contact yet"}
-            {initialFilter === "clients-no-fc" && "ðŸ“‹ Filter: Clients needing FC booking"}
+            {initialFilter === "no-contact" && "Filter: Leads with no contact yet"}
+            {initialFilter === "clients-no-fc" && "Filter: Clients needing FC booking"}
             {initialFilter === "overdue-callbacks" && "Filter: Overdue callbacks"}
             {initialFilter === "overdue-followups" && "Filter: Overdue follow-ups"}
             {initialFilter === "callbacks" && "Filter: Actionable callbacks"}
@@ -465,7 +465,7 @@ export function LeadsPage({
             {actionFeedback}
           </div>
         )}
-        {/* Table â€” fills space; sidebar sits beside it on lg+ */}
+        {/* Table fills space; sidebar sits beside it on lg+ */}
         <div className="flex-1 overflow-hidden min-w-0 transition-all duration-200">
           <DataTable
             leads={filteredLeads}
@@ -536,7 +536,7 @@ export function LeadsPage({
 
       {lastFailedSave && (
         <div className="fixed bottom-16 right-4 z-[9998] flex items-center gap-3 bg-red-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm">
-          <span>âš ï¸ Save failed for <strong>{lastFailedSave.name}</strong></span>
+          <span>Save failed for <strong>{lastFailedSave.name}</strong></span>
           <button
             onClick={handleRetrySave}
             disabled={retrying}

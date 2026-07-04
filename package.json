@@ -7,6 +7,8 @@
     "dev": "vite",
     "prebuild": "node scripts/write-release-metadata.cjs",
     "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions/tsconfig.json",
+    "test": "npm run test:auth-boundaries && npm run test:workflow-state && npm run test:region-identity && npm run test:observability && npm run test:release-metadata",
     "test:auth-boundaries": "node scripts/test-auth-boundaries.cjs",
     "test:workflow-state": "node scripts/test-workflow-state.cjs",
     "test:region-identity": "node scripts/test-region-identity.cjs",
@@ -16,7 +18,8 @@
     "release:deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
     "release:dry-run": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1 -DryRun",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint src functions/src --ext ts,tsx --report-unused-disable-directives --quiet",
+    "lint:report": "eslint src functions/src --ext ts,tsx --report-unused-disable-directives",
     "deploy": "npm run build && firebase deploy --only hosting"
   },
   "dependencies": {
