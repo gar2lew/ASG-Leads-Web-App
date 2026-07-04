@@ -36,6 +36,7 @@ assert.equal(firebaseJson.functions?.source, "functions", "Functions source shou
 assert.ok(hasScript(packageJson, "test:emulator:preflight"), "Root package should expose emulator preflight.");
 assert.ok(hasScript(packageJson, "test:emulator:firestore-smoke"), "Root package should expose Firestore emulator smoke validation.");
 assert.ok(hasScript(packageJson, "test:emulator:rules"), "Root package should expose authenticated Firestore rules validation.");
+assert.ok(hasScript(packageJson, "test:emulator:callables-dry-run"), "Root package should expose callable emulator dry-run validation.");
 assert.match(
   packageJson.scripts["test:emulator:firestore-smoke"],
   new RegExp(`--project ${DEMO_PROJECT}`),
@@ -48,9 +49,17 @@ assert.match(
   "Authenticated rules command must use the demo project.",
 );
 assert.ok(!packageJson.scripts["test:emulator:rules"].includes(PRODUCTION_PROJECT), "Authenticated rules command must not target production.");
+assert.match(
+  packageJson.scripts["test:emulator:callables-dry-run"],
+  new RegExp(`--project ${DEMO_PROJECT}`),
+  "Callable emulator dry-run command must use the demo project.",
+);
+assert.ok(!packageJson.scripts["test:emulator:callables-dry-run"].includes(PRODUCTION_PROJECT), "Callable emulator dry-run command must not target production.");
 
 assert.ok(hasScript(functionsPackageJson, "serve"), "Functions package should expose an emulator serve command.");
+assert.equal(firebaseJson.emulators?.auth?.port, 9099, "Auth emulator port should be explicit.");
 assert.equal(firebaseJson.emulators?.firestore?.port, 8080, "Firestore emulator port should be explicit.");
+assert.equal(firebaseJson.emulators?.functions?.port, 5001, "Functions emulator port should be explicit.");
 assert.equal(firebaseJson.emulators?.ui?.port, 4000, "Emulator UI port should be explicit.");
 assert.equal(firebaseJson.emulators?.singleProjectMode, true, "Emulator singleProjectMode should be enabled.");
 assert.ok(

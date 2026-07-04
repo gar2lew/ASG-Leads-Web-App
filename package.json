@@ -17,6 +17,7 @@
     "test:emulator:preflight": "node scripts/test-emulator-preflight.cjs",
     "test:emulator:firestore-smoke": "firebase emulators:exec --project demo-asg-crm-emulator --only firestore \"node scripts/test-emulator-firestore-smoke.cjs\"",
     "test:emulator:rules": "firebase emulators:exec --project demo-asg-crm-emulator --only firestore \"node scripts/test-firestore-rules-harness.cjs\"",
+    "test:emulator:callables-dry-run": "firebase emulators:exec --project demo-asg-crm-emulator --only auth,firestore,functions \"node scripts/test-callable-emulator-dry-run-harness.cjs\"",
     "release:metadata": "node scripts/write-release-metadata.cjs",
     "release:deploy": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1",
     "release:dry-run": "powershell -ExecutionPolicy Bypass -File ./deploy.ps1 -DryRun",

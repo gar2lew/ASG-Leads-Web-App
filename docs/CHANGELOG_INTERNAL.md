@@ -14,6 +14,8 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Documented Java and explicit emulator config blockers for full emulator execution.
 - Added explicit Firestore emulator config and authenticated rules harness scaffolding.
 - Added Windows Java setup documentation for Firebase emulator validation.
+- Added callable emulator dry-run harness scaffolding for PIN, settings/admin, phone dry-run, and Salestrail dry-run source contract checks.
+- Added explicit Auth and Functions emulator ports for callable validation.
 - Added ASG CRM Engineering Handbook structure.
 - Added Codex operating playbook and prompt templates.
 - Added roadmap, goal structure, development standards, git strategy, UI guidelines, testing standard, release process, security guidelines, architecture summary, decision log, and risk register.
