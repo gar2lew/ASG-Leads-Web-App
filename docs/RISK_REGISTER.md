@@ -18,12 +18,13 @@
 | R-005 | Phone normalisation can write many lead records with `dryRun:false`. | High | Dry-run first, review samples, backup/export, explicit approval. | Active |
 | R-006 | Firebase lead migration tooling can replace live lead data. | Critical | Follow runbook, backup/export, dry-run, duplicate review, explicit approval. | Active |
 | R-007 | Large UI files increase regression risk. | Medium | Refactor by workflow with tests and screenshots. | Active |
-| R-008 | Missing full emulator harness blocks complete validation of rules and callables. | High | Preflight, Firestore smoke scaffolding, explicit emulator config, authenticated rules harness, and callable dry-run harness scaffolding exist. Java still blocks local emulator execution. | Active |
+| R-008 | Emulator harnesses exist but callable mutation coverage is incomplete. | High | Preflight, Firestore smoke, authenticated rules harness, and callable dry-run harness now execute. Restore executable mutation coverage after Admin SDK timestamp compatibility is fixed. | Active |
 | R-009 | Build writes generated release metadata. | Low | Inspect and restore when generated drift is not intended. | Active |
 | R-010 | Lint still reports warning-level debt when `npm run lint:report` is used. | Medium | Address `any`, hook dependency, and Fast Refresh warnings in small targeted goals. Keep `npm run lint` focused on blocking errors. | Active |
-| R-011 | Local Java is missing from PATH, blocking Firebase emulator startup. | High | Install Java 21 JDK where practical, confirm `java -version` and `where.exe java`, then rerun `npm run test:emulator:preflight`, `npm run test:emulator:firestore-smoke`, `npm run test:emulator:rules`, and `npm run test:emulator:callables-dry-run`. | Active |
+| R-011 | Long-running shells may not see newly installed Java on PATH. | Low | Open a fresh terminal or refresh `JAVA_HOME` and prepend `%JAVA_HOME%\bin` before emulator commands. Preflight now passes when Java is visible. | Active |
 | R-012 | Salestrail dry-run callable cannot be safely invoked in emulator while it can still reach the live API if secrets are present. | High | Keep the callable behind static contract checks until an approved mock fetch seam or no-network emulator adapter exists. Do not run live Salestrail sync during tests. | Active |
 | R-013 | `npm install` reported 29 dependency audit vulnerabilities. | Medium | Do not run broad audit fixes inside emulator harness work. Create a separate dependency audit goal. | Active |
+| R-014 | Callable mutation paths using `admin.firestore.FieldValue.serverTimestamp()` fail in the Functions emulator runtime. | High | Add a targeted Functions Admin SDK compatibility goal. Do not deploy Functions until `setPin`, settings/admin mutation callables, and related timestamp-writing paths pass emulator coverage. | Active |
 
 ## Risk Review Cadence
 

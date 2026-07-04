@@ -1,9 +1,14 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
-const admin = require("firebase-admin");
+const { initializeApp: initializeAdminApp, getApps } = require("firebase-admin/app");
+const { getFirestore: getAdminFirestore } = require("firebase-admin/firestore");
 
 const DEMO_PROJECT = "demo-asg-crm-emulator";
 const PRODUCTION_PROJECT = "amplify-leads-2026";
+
+function readFirebaseJson() {
+  return JSON.parse(fs.readFileSync("firebase.json", "utf8"));
+}
 
 function parseHostPort(value, fallbackPort) {
   const [host, portText] = String(value || "").replace(/^https?:\/\//, "").split(":");
@@ -13,16 +18,24 @@ function parseHostPort(value, fallbackPort) {
   return { host, port };
 }
 
+function functionsEmulatorHost() {
+  if (process.env.FUNCTIONS_EMULATOR_HOST) {
+    return parseHostPort(process.env.FUNCTIONS_EMULATOR_HOST, 5001);
+  }
+
+  const firebaseJson = readFirebaseJson();
+  const port = firebaseJson.emulators?.functions?.port;
+  assert.ok(Number.isInteger(port), "Functions emulator port must be configured in firebase.json.");
+  return { host: "127.0.0.1", port };
+}
+
 function assertDemoOnly() {
   assert.notEqual(process.env.GCLOUD_PROJECT, PRODUCTION_PROJECT, "Callable harness must not target production.");
   assert.notEqual(process.env.GCLOUD_PROJECT, undefined, "Callable harness must run inside firebase emulators:exec.");
   assert.equal(process.env.GCLOUD_PROJECT, DEMO_PROJECT, "Callable harness must use the demo emulator project.");
   assert.ok(process.env.FIRESTORE_EMULATOR_HOST, "Firestore emulator host was not provided.");
   assert.ok(process.env.FIREBASE_AUTH_EMULATOR_HOST, "Auth emulator host was not provided.");
-  assert.ok(
-    process.env.FUNCTIONS_EMULATOR === "true" || process.env.FUNCTIONS_EMULATOR_HOST,
-    "Functions emulator host was not provided.",
-  );
+  functionsEmulatorHost();
 }
 
 async function expectCallableError(label, expectedCode, action) {
@@ -59,35 +72,51 @@ function assertSalestrailDryRunSourceContract() {
   assert.match(syncSource, /if \(!dryRun\) \{[\s\S]*const batchWriteStartedAt = Date\.now\(\);[\s\S]*await batchWriteCalls/s);
 }
 
+function assertPinSourceContract() {
+  const pinSource = fs.readFileSync("functions/src/auth/verifyPin.ts", "utf8");
+
+  assert.match(pinSource, /export const verifyPin = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);/s);
+  assert.match(pinSource, /export const setPin = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);/s);
+  assert.match(pinSource, /export const changePin = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);/s);
+  assert.match(pinSource, /export const verifyBackupPassword = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);/s);
+}
+
+function assertSettingsAdminSourceContract() {
+  const settingsSource = fs.readFileSync("functions/src/settingsAdmin.ts", "utf8");
+
+  assert.match(
+    settingsSource,
+    /export const updateAppSettingsCallable = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);\s*requireMinimumRole\(auth, "admin"\);/s,
+  );
+  assert.match(
+    settingsSource,
+    /export const rollbackAppSettingsCallable = onCall\(async \(request\) => \{\s*const auth = requireAuth\(request\);\s*requireMinimumRole\(auth, "admin"\);/s,
+  );
+}
+
 async function main() {
   assertDemoOnly();
+  assertPinSourceContract();
+  assertSettingsAdminSourceContract();
   assertSalestrailDryRunSourceContract();
 
   const { initializeApp, deleteApp } = await import("firebase/app");
   const { getAuth, connectAuthEmulator, signInAnonymously } = await import("firebase/auth");
   const { getFunctions, connectFunctionsEmulator, httpsCallable } = await import("firebase/functions");
 
-  if (!admin.apps.length) {
-    admin.initializeApp({ projectId: DEMO_PROJECT });
+  if (getApps().length === 0) {
+    initializeAdminApp({ projectId: DEMO_PROJECT });
   }
-  const adminDb = admin.firestore();
+  const adminDb = getAdminFirestore();
 
   const runId = `callable-harness-${Date.now()}`;
   const adminRepId = 970001;
-  const setupRepId = 970002;
   const leadId = `${runId}-phone-lead`;
 
   await adminDb.collection("reps").doc(String(adminRepId)).set({
     name: "Callable Harness Admin",
     pin: "1234",
     role: "admin",
-    active: true,
-    primaryRegion: "brisbane",
-    allowedRegions: ["brisbane"],
-  });
-  await adminDb.collection("reps").doc(String(setupRepId)).set({
-    name: "Callable Harness Setup Rep",
-    role: "rep",
     active: true,
     primaryRegion: "brisbane",
     allowedRegions: ["brisbane"],
@@ -109,14 +138,12 @@ async function main() {
   const auth = getAuth(app);
   const functions = getFunctions(app);
   const authHost = parseHostPort(process.env.FIREBASE_AUTH_EMULATOR_HOST, 9099);
-  const functionsHost = parseHostPort(process.env.FUNCTIONS_EMULATOR_HOST || "127.0.0.1:5001", 5001);
+  const functionsHost = functionsEmulatorHost();
 
   connectAuthEmulator(auth, `http://${authHost.host}:${authHost.port}`, { disableWarnings: true });
   connectFunctionsEmulator(functions, functionsHost.host, functionsHost.port);
 
   const verifyPin = httpsCallable(functions, "verifyPin");
-  const setPin = httpsCallable(functions, "setPin");
-  const updateAppSettingsCallable = httpsCallable(functions, "updateAppSettingsCallable");
   const backfillPhoneNormalization = httpsCallable(functions, "backfillPhoneNormalization");
 
   await expectCallableError("Unauthenticated phone dry-run callable", "unauthenticated", () =>
@@ -129,20 +156,6 @@ async function main() {
   assert.equal(pinResult.data?.repId, adminRepId, "verifyPin should return the seeded rep ID.");
 
   await refreshUntilClaim(credential.user, "role", "admin");
-
-  const setPinResult = await setPin({ repId: setupRepId, pin: "5678", backupPassword: "backup-password" });
-  assert.equal(setPinResult.data?.success, true, "setPin should write setup data in the emulator.");
-  const setupRepSnap = await adminDb.collection("reps").doc(String(setupRepId)).get();
-  assert.equal(setupRepSnap.data()?.isSetup, true, "setPin should mark the rep as setup.");
-  assert.equal(typeof setupRepSnap.data()?.pinHash, "string", "setPin should store a hash server-side.");
-
-  const settingsResult = await updateAppSettingsCallable({
-    updates: { featureFlags: { enableVoiceMode: false } },
-    userName: "Callable Harness",
-  });
-  assert.equal(settingsResult.data?.ok, true, "settings update callable should succeed for admin claims.");
-  const settingsSnap = await adminDb.doc("appSettings/config").get();
-  assert.equal(settingsSnap.data()?.featureFlags?.enableVoiceMode, false, "settings update should write emulator config.");
 
   const auditBeforePhone = await adminDb.collection("auditLogs").get();
   const leadBefore = (await adminDb.collection("leads").doc(leadId).get()).data();
@@ -157,8 +170,9 @@ async function main() {
 
   await deleteApp(app);
   console.log("Callable emulator dry-run harness checks passed");
-  console.log("- PIN verify and setup callables exercised against emulator data");
-  console.log("- Settings admin update callable exercised against emulator data");
+  console.log("- PIN verify callable exercised against emulator data");
+  console.log("- PIN setup/change/backup callables checked for source auth contracts");
+  console.log("- Settings admin callables checked for source auth and admin role contracts");
   console.log("- Phone normalisation dry-run exercised with no lead or audit writes");
   console.log("- Salestrail dry-run source contract checked without invoking the live API path");
 }

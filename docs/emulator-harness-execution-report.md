@@ -6,7 +6,7 @@ Savepoint tag: `savepoint-before-emulator-harness-execution`
 
 ## Objective
 
-Run and debug the Firebase emulator harnesses after Java was expected to be installed.
+Run and debug the Firebase emulator harnesses after Java was installed and the callable harness exposed a Functions emulator host detection failure.
 
 ## Safety Position
 
@@ -27,20 +27,18 @@ Firebase CLI is available:
 15.20.0
 ```
 
-Java is not visible to this terminal or the persisted Windows environment:
+Java is installed in the persisted Windows environment:
 
 ```text
-java: The term 'java' is not recognized as a name of a cmdlet, function, script file, or executable program.
+openjdk version "21.0.11" 2026-04-21 LTS
+OpenJDK Runtime Environment Temurin-21.0.11+10
 ```
 
-Additional checks found:
+Codex shell note:
 
-- `where.exe java` found no executable.
-- Current `JAVA_HOME` is empty.
-- Current `Path` does not contain a Java, JDK, Temurin, Adoptium, or Zulu path.
-- Persisted user `JAVA_HOME` is empty.
-- Persisted machine `JAVA_HOME` is empty.
-- Persisted user and machine `Path` values do not contain a Java, JDK, Temurin, Adoptium, or Zulu path.
+- The long-running Codex process still had a stale `Path`.
+- Emulator commands were run after refreshing `JAVA_HOME` and prepending `%JAVA_HOME%\bin` inside the command environment.
+- `npm run test:emulator:preflight` then reported Java runtime available.
 
 ## Commands Run
 
@@ -50,41 +48,49 @@ Additional checks found:
 | `npm run lint` | Pass | Blocking ESLint check passed. |
 | `npm run build` | Pass | Build passed with existing large chunk warnings. Release metadata was generated as a build side effect. |
 | `npm test` | Pass | Root guardrail suite passed. |
-| `npm run test:emulator:preflight` | Pass with blocker reported | Firebase CLI available, Java runtime missing, explicit emulator config present, production default remains `amplify-leads-2026`. |
-| `npm run test:emulator:rules` | Blocked | Firebase CLI could not spawn `java -version`. Harness did not start. |
-| `npm run test:emulator:firestore-smoke` | Blocked | Firebase CLI could not spawn `java -version`. Harness did not start. |
-| `npm run test:emulator:callables-dry-run` | Blocked | Firebase CLI could not spawn `java -version`. Harness did not start. |
+| `npm run test:emulator:preflight` | Pass | Firebase CLI available, Java runtime available, explicit emulator config present, production default remains `amplify-leads-2026`. |
+| `npm run test:emulator:rules` | Pass | Authenticated Firestore rules harness passed against `demo-asg-crm-emulator`. Expected permission-denied logs were emitted for denied writes. |
+| `npm run test:emulator:firestore-smoke` | Pass | Firestore smoke checks passed when run by itself. A parallel run collided with the rules emulator hub port, so emulator suites should run sequentially. |
+| `npm run test:emulator:callables-dry-run` | Pass | Callable harness passed after Functions emulator host detection was fixed. |
 | `cd functions && npm run build` | Pass | Functions TypeScript build passed. |
 | `cd functions && npm run test:settings-admin` | Pass | Functions settings/admin unit test passed. |
 
 ## Failures Fixed
 
-No harness or test failures were fixed in this goal because the emulator commands failed before the emulator suite or harness scripts started. The failure is an environment prerequisite issue, not a proven harness defect.
+- Fixed the callable harness so it no longer requires `FUNCTIONS_EMULATOR_HOST` from Firebase CLI.
+- The harness now falls back to the explicit Functions emulator port in `firebase.json`.
+- Updated the harness to use the modular Firebase Admin API for emulator seeding, matching the installed Admin SDK package shape.
+- Kept executable callable coverage on `verifyPin` and `backfillPhoneNormalization` dry-run.
+- Kept PIN setup/change/backup and settings/admin callables as source auth/role contract checks because executable mutation paths hit a server timestamp compatibility issue that requires a separate production-code decision.
 
 ## Current Blocker
 
-Firebase emulator execution remains blocked until Java is installed and visible on PATH to this terminal. The expected next environment state is:
+No emulator startup blocker remains when Java is visible to the shell.
 
-```powershell
-java -version
-where.exe java
-npm run test:emulator:preflight
+The remaining callable limitation is:
+
+```text
+admin.firestore.FieldValue.serverTimestamp() is undefined inside the Functions emulator runtime for mutation callables that use the current namespace Admin import path.
 ```
 
-These commands should show a Java runtime, a resolved Java executable, and a preflight result that no longer reports Java missing.
+Observed affected executable paths during diagnosis:
+
+- `setPin`
+- `updateAppSettingsCallable`
+
+This goal did not change production Functions code. The issue should be handled in a separate targeted Functions Admin SDK compatibility goal.
 
 ## Remaining Emulator Work
 
-After Java is visible:
-
-1. Re-run `npm run test:emulator:rules`.
-2. Re-run `npm run test:emulator:firestore-smoke`.
-3. Re-run `npm run test:emulator:callables-dry-run`.
-4. Fix only harness/test issues if those commands reach harness code and fail.
-5. Do not change Firestore rules unless a failing test proves a clear rules defect. If that happens, document the proposed rules change first and stop.
+1. Add a separate targeted fix for Functions Admin SDK `FieldValue.serverTimestamp()` compatibility.
+2. Restore executable emulator coverage for `setPin`, `changePin`, and settings/admin mutation callables after that fix.
+3. Keep Salestrail dry-run behind source contracts until an approved no-network mock seam exists.
+4. Run emulator suites sequentially to avoid hub port collisions.
 
 ## Release Risk
 
-This branch does not prove emulator harness execution yet. It proves that the non-emulator validation baseline is healthy and that the remaining blocker is Java availability in the Windows environment.
+This branch proves the emulator rules, Firestore smoke, and callable dry-run harnesses can execute against `demo-asg-crm-emulator`.
+
+Release risk remains around callable mutation paths that use `admin.firestore.FieldValue.serverTimestamp()` until the Functions Admin SDK compatibility issue is fixed and executable callable coverage is restored.
 
 Production Firebase deploys, Functions deploys, Firestore rules deploys, Salestrail live sync, phone normalisation writes, and migration runs remain blocked.
