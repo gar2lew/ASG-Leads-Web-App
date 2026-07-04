@@ -219,3 +219,34 @@ Before removing any file, component, dependency, or script, capture:
 - Oversized surfaces have owners and staged extraction plans.
 - Production-sensitive code remains unchanged until dedicated approval.
 - Bloat removals happen in small, reversible branches.
+
+## Safe Cleanup Update
+
+Date: 2026-07-04
+Branch: `goal/safe-cleanup`
+Savepoint tag: `savepoint-before-safe-cleanup`
+
+Completed low-risk cleanup after validation and emulator baselines were established.
+
+Changes made:
+
+- Replaced low-risk `any` usage in small utility and store surfaces with `unknown`, typed records, and existing CRM types.
+- Cleaned CSV export helper typing in `src/lib/utils.ts`.
+- Cleaned geocoding environment access in `src/lib/geocode.ts`.
+- Cleaned PIA report payload typing in `src/lib/piaReports.ts`.
+- Cleaned CSV import dynamic lead assignment typing in `src/components/CSVImportModal.tsx`.
+- Cleaned app store report payload typing in `src/stores/appStore.ts`.
+- Replaced stale in-app deployment instructions with approval-gated release guidance in `src/lib/firebase.ts` and `src/data/knowledgeBase.ts`.
+
+Validation impact:
+
+- `npm run typecheck` passed after cleanup.
+- `npm run lint:report` warning count reduced from 78 to 64.
+- Remaining warnings are concentrated in larger workflow surfaces, hook dependency reviews, Fast Refresh structure, and higher-risk `any` usage that should stay in dedicated goals.
+
+Deferred cleanup:
+
+- No files or components were deleted because no deletion candidate had enough evidence for this branch.
+- Hook dependency warnings in large UI workflows were not changed because they can affect runtime behaviour.
+- Oversized page/component extraction remains blocked until targeted workflow coverage exists.
+- Nested mirror deletion remains blocked without explicit approval.

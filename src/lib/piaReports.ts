@@ -9,7 +9,7 @@ export interface PIAReport {
   clientId: string | null;
   clientGroupId: string | null;
   label: string;
-  inputs: Record<string, any>;
+  inputs: Record<string, unknown>;
   pdfUrl: string | null;
   createdAt: number;
   source: string;
@@ -21,7 +21,7 @@ export async function savePIAReport(input: {
   clientId?: string | null;
   clientGroupId?: string | null;
   label?: string;
-  inputs?: Record<string, any>;
+  inputs?: Record<string, unknown>;
   pdfUrl?: string | null;
   createdAt?: number;
 }): Promise<string | null> {

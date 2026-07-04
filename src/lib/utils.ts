@@ -4,6 +4,8 @@
  * Input validation, sanitization, formatting
  */
 
+import type { Lead } from "../types";
+
 /**
  * Normalise an Australian phone number.
  * Fixes the most common issue: Google Sheets drops the leading 0 from mobile numbers
@@ -163,7 +165,7 @@ export function sanitizeInput(input: string): string {
  *
  * Returns a debounced version of a function
  */
-export function debounce<T extends (...args: any[]) => any>(fn: T, delay: number): (...args: Parameters<T>) => void {
+export function debounce<T extends (...args: never[]) => unknown>(fn: T, delay: number): (...args: Parameters<T>) => void {
   let timeoutId: NodeJS.Timeout;
 
   return function debounced(...args: Parameters<T>) {
@@ -350,7 +352,7 @@ export function getNextBusinessDay(): Date {
 /**
  * Export data as CSV
  */
-export function exportAsCSV(data: any[], filename: string, columns?: string[]) {
+export function exportAsCSV(data: Array<Record<string, unknown>>, filename: string, columns?: string[]) {
   if (data.length === 0) return;
 
   // Get headers
@@ -388,7 +390,7 @@ export function exportAsCSV(data: any[], filename: string, columns?: string[]) {
 /**
  * Export leads as CSV (formatted, human-readable columns)
  */
-export function exportLeadsCSV(leads: any[], repsMap: Record<number, string> = {}) {
+export function exportLeadsCSV(leads: Lead[], repsMap: Record<number, string> = {}) {
   if (leads.length === 0) return;
   const rows = leads.map((l) => ({
     Name: l.name ?? "",
@@ -414,10 +416,10 @@ export function exportLeadsCSV(leads: any[], repsMap: Record<number, string> = {
 /**
  * Export full call history as CSV
  */
-export function exportCallHistoryCSV(leads: any[]) {
-  const rows: any[] = [];
+export function exportCallHistoryCSV(leads: Lead[]) {
+  const rows: Array<Record<string, unknown>> = [];
   leads.forEach((l) => {
-    (l.callHistory || []).forEach((c: any) => {
+    (l.callHistory || []).forEach((c) => {
       rows.push({
         "Lead Name": l.name ?? "",
         Phone: l.phone ?? "",

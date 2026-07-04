@@ -78,8 +78,8 @@ export const authReady: Promise<void> = new Promise((resolve) => {
               '           To enable full auth-gated security:\n' +
               '             1. Go to: https://console.firebase.google.com/project/_/authentication/providers\n' +
               '             2. Enable the "Anonymous" sign-in provider\n' +
-              '             3. Update firestore.rules: replace `if true;` → `if isAuthenticated();`\n' +
-              '             4. Run: firebase deploy --only firestore:rules',
+              '             3. Prepare and review a Firestore rules change in a safe branch\n' +
+              '             4. Request an approval-gated release-manager deploy for firestore:rules',
             );
           } else {
             console.warn(
