@@ -1,0 +1,28 @@
+# Risk Register
+
+## Risk Ratings
+
+- Critical: can break production, expose data, or block core operations.
+- High: can cause major workflow failure or security weakness.
+- Medium: can cause localised regression or operational friction.
+- Low: manageable with normal review.
+
+## Active Risks
+
+| ID | Risk | Rating | Mitigation | Status |
+| --- | --- | --- | --- | --- |
+| R-001 | Production-like Firebase project is the local default in `.firebaserc`. | Critical | Require explicit deploy approval and use demo emulator projects for tests. | Active |
+| R-002 | Some exported callables lack `requireAuth(request)` or role checks. | Critical | Add callable auth tests and harden before functions deploy. | Active |
+| R-003 | Firestore rules remain broad for operational collections. | Critical | Add emulator tests and tighten collection by collection. | Active |
+| R-004 | Salestrail production reconciliation previously did not prove document writes. | High | Use mocked tests, dry-run, and count reconciliation before live sync. | Active |
+| R-005 | Phone normalisation can write many lead records with `dryRun:false`. | High | Dry-run first, review samples, backup/export, explicit approval. | Active |
+| R-006 | Firebase lead migration tooling can replace live lead data. | Critical | Follow runbook, backup/export, dry-run, duplicate review, explicit approval. | Active |
+| R-007 | Large UI files increase regression risk. | Medium | Refactor by workflow with tests and screenshots. | Active |
+| R-008 | Missing emulator harness blocks complete validation of rules and callables. | High | Create rules and callable emulator test goal. | Active |
+| R-009 | Build writes generated release metadata. | Low | Inspect and restore when generated drift is not intended. | Active |
+
+## Risk Review Cadence
+
+- Review before production readiness.
+- Review after any Firebase rules, Functions, migration, import, or integration change.
+- Close risks only with validation evidence.
