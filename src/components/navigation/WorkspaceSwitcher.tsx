@@ -18,7 +18,7 @@ export function WorkspaceSwitcher({ activeRegion, onRegionChange }: WorkspaceSwi
       }}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8e8e86]">Workspace</span>
+        <span className="text-[10px] font-semibold uppercase text-[#8e8e86]">Workspace</span>
         <span className="text-[10px] font-bold uppercase" style={{ color: "var(--region-accent)" }}>
           {activeIdentity.shortLabel}
         </span>
@@ -32,7 +32,7 @@ export function WorkspaceSwitcher({ activeRegion, onRegionChange }: WorkspaceSwi
               key={region}
               type="button"
               onClick={() => onRegionChange(region)}
-              className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold transition ${
+              className={`min-h-9 rounded-lg px-2 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--region-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0C] ${
                 isActive ? "shadow-sm" : "text-[#9a9a92] hover:bg-white/[0.06] hover:text-[#c8c8c4]"
               }`}
               style={

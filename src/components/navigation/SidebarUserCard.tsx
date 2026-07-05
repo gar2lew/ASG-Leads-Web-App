@@ -57,7 +57,7 @@ export function SidebarUserCard({
           <button
             onClick={onQuickPull}
             disabled={quickPulling}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-600/20 text-green-400 hover:bg-green-600/30 disabled:opacity-50 transition"
+            className="flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-green-600/20 px-3 py-2 text-xs font-semibold text-green-400 transition hover:bg-green-600/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0C] disabled:opacity-50"
             title="Pull latest leads from Google Sheet"
           >
             {quickPulling ? (
@@ -101,7 +101,8 @@ export function SidebarUserCard({
         {canSeeSettings && (
           <button
             onClick={() => onSettingsClick("rep-settings")}
-            className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition ${
+            aria-current={settingsActive ? "page" : undefined}
+            className={`flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--region-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0C] ${
               settingsActive
                 ? "bg-white/[0.08] text-[var(--region-accent)]"
                 : "text-[#c8c8c4] hover:bg-white/[0.06] hover:text-white"
@@ -115,8 +116,9 @@ export function SidebarUserCard({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleDark}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
             title={dark ? "Light mode" : "Dark mode"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#8e8e86] hover:bg-white/[0.06] hover:text-[#c8c8c4] transition"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-[#8e8e86] transition hover:bg-white/[0.06] hover:text-[#c8c8c4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--region-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0C]"
           >
             {dark ? <Sun size={14} /> : <Moon size={14} />}
           </button>
@@ -124,7 +126,7 @@ export function SidebarUserCard({
             value={uiScale}
             onChange={(event) => onUiScaleChange(event.target.value)}
             title="Display zoom"
-            className="h-8 flex-1 rounded-lg border border-white/10 bg-transparent px-2 text-[11px] text-[#8e8e86] outline-none hover:text-[#c8c8c4]"
+            className="h-10 flex-1 rounded-lg border border-white/10 bg-transparent px-2 text-xs text-[#8e8e86] outline-none transition hover:text-[#c8c8c4] focus:ring-2 focus:ring-[var(--region-accent)]"
           >
             <option value="auto" className="bg-[#0B0B0C]">
               Auto
@@ -150,8 +152,9 @@ export function SidebarUserCard({
           </select>
           <button
             onClick={onSignOut}
+            aria-label="Sign out"
             title="Sign out"
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-[#8e8e86] hover:bg-white/[0.06] hover:text-[#c8c8c4] transition"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-[#8e8e86] transition hover:bg-white/[0.06] hover:text-[#c8c8c4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--region-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0B0C]"
           >
             <LogOut size={14} />
           </button>
