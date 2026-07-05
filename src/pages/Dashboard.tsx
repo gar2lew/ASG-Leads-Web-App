@@ -263,7 +263,7 @@ function QuickAction({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-2 px-4 py-3 rounded-xl border transition hover:scale-[1.03] active:scale-[0.97] cursor-pointer select-none ${color}`}
+      className={`flex min-h-11 min-w-[5.75rem] flex-col items-center justify-center gap-2 rounded-xl border px-4 py-3 transition hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214] cursor-pointer select-none ${color}`}
     >
       <div className="relative">
         {icon}
@@ -594,7 +594,7 @@ export function DashboardPage({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[var(--bg)] p-3 sm:p-4 md:p-5 space-y-4 sm:space-y-5">
+    <div className="flex-1 overflow-y-auto bg-[var(--bg)] px-3 py-4 sm:px-4 md:px-5 md:py-5 space-y-4 sm:space-y-5">
       {crmStatusSummaryError && (
         <div className="rounded-xl border border-red-300/60 bg-red-50 dark:bg-red-900/20 px-4 py-2 text-xs text-red-800 dark:text-red-200">
           Dashboard full CRM status counts could not load: {crmStatusSummaryError}
@@ -606,8 +606,9 @@ export function DashboardPage({
         </div>
       )}
       {/* ── Hero banner ── */}
-      <div
-        className="relative rounded-2xl overflow-hidden"
+      <section
+        className="relative overflow-hidden rounded-2xl"
+        aria-labelledby="dashboard-heading"
         style={{
           background: "linear-gradient(135deg, #121214 0%, #1A1A1D 50%, #121214 100%)",
           boxShadow: "0 4px 32px rgba(18,18,20,0.35)",
@@ -627,7 +628,7 @@ export function DashboardPage({
           style={{ background: "linear-gradient(to bottom, #c9a84c, #f59e0b, #c9a84c)" }}
         />
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-5 sm:p-6">
+        <div className="relative flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
           {/* Logo */}
           <img
             src="/asg-circle.png"
@@ -638,7 +639,7 @@ export function DashboardPage({
 
           {/* Greeting text */}
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+            <h1 id="dashboard-heading" className="text-xl sm:text-2xl font-bold text-white leading-tight">
               {greeting(currentUser?.name || "there")}
             </h1>
             <p className="text-sm mt-0.5" style={{ color: "rgba(201,168,76,0.9)" }}>
@@ -684,8 +685,8 @@ export function DashboardPage({
         </div>
 
         {/* Quick actions strip */}
-        <div className="relative border-t border-white/10 px-5 sm:px-6 py-3 flex items-center gap-2 overflow-x-auto scrollbar-none">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-white/40 flex-shrink-0 mr-1">
+        <div className="relative flex items-center gap-2 overflow-x-auto border-t border-white/10 px-5 py-3 scrollbar-none sm:px-6">
+          <span className="mr-1 flex-shrink-0 text-[10px] font-semibold uppercase text-white/40">
             Quick
           </span>
           <QuickAction
@@ -736,7 +737,7 @@ export function DashboardPage({
             onClick={() => onNavigate?.("document-centre")}
           />
         </div>
-      </div>
+      </section>
 
       {/* ── Stat cards (6) ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">

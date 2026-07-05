@@ -1277,10 +1277,10 @@ export function ReportsDashboardPage() {
     );
 
   return (
-    <div className="flex-1 flex flex-col bg-white dark:bg-[var(--surface)] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[var(--bg)] overflow-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[var(--surface)] flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <BarChart3 size={18} className="text-amber-500" /> Reports Dashboard
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -1293,7 +1293,7 @@ export function ReportsDashboardPage() {
                 setCustomTo("");
               }
             }}
-            className="px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[44px]"
+            className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-white"
           >
             <option value="this-week">This Week</option>
             <option value="this-month">This Month</option>
@@ -1306,13 +1306,13 @@ export function ReportsDashboardPage() {
                 type="date"
                 value={customFrom}
                 onChange={(e) => setCustomFrom(e.target.value)}
-                className="px-2 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[44px]"
+                className="min-h-11 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-white"
               />
               <input
                 type="date"
                 value={customTo}
                 onChange={(e) => setCustomTo(e.target.value)}
-                className="px-2 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[44px]"
+                className="min-h-11 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-white"
               />
             </>
           )}
@@ -1321,7 +1321,7 @@ export function ReportsDashboardPage() {
           </span>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition min-h-[44px]"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:text-sm dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-gray-300 dark:hover:bg-[var(--hover)]"
           >
             <Download size={14} />
             <span className="hidden sm:inline">CSV</span>
@@ -1329,7 +1329,7 @@ export function ReportsDashboardPage() {
           <button
             onClick={handleExportPDF}
             disabled={exporting === "pdf"}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition min-h-[44px] disabled:opacity-50"
+            className="flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:opacity-50 sm:text-sm dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-gray-300 dark:hover:bg-[var(--hover)]"
           >
             {exporting === "pdf" ? <Loader size={14} className="animate-spin" /> : <FileText size={14} />}
             <span className="hidden sm:inline">PDF</span>
@@ -1340,17 +1340,17 @@ export function ReportsDashboardPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-5">
           {/* Filters */}
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:gap-3 dark:border-white/[0.06] dark:bg-[var(--surface)]">
+            <div className="flex min-h-11 items-center gap-1.5 pr-1">
               <Filter size={14} className="text-gray-400" />
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <span className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                 Filters:
               </span>
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as DealStatus | "all")}
-              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[44px]"
+              className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-white"
             >
               <option value="all">All Statuses</option>
               {STAGES.map((s) => (
@@ -1362,7 +1362,7 @@ export function ReportsDashboardPage() {
             <select
               value={repFilter}
               onChange={(e) => setRepFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-              className="px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-[var(--surface)] text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 min-h-[44px]"
+              className="min-h-11 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-white/[0.08] dark:bg-[var(--surface)] dark:text-white"
             >
               <option value="all">All Reps</option>
               {activeReps.map((r) => (
