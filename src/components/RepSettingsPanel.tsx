@@ -36,9 +36,9 @@ import type { RepSettings } from "../types";
 // Shared styles
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SECTION = "bg-white dark:bg-[#16161A] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden";
+const SECTION = "bg-white dark:bg-[#16161A] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden shadow-sm";
 const SECTION_HEADER = "px-5 py-3 border-b border-gray-100 dark:border-white/5 text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2";
-const ROW = "flex items-center justify-between gap-4 px-5 py-3.5";
+const ROW = "flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4";
 const ROW_LABEL = "flex flex-col";
 const ROW_TITLE = "text-sm font-medium text-gray-800 dark:text-white";
 const ROW_DESC = "text-xs text-gray-400 dark:text-gray-500 mt-0.5";
@@ -54,12 +54,12 @@ function Segment<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex items-center bg-gray-100 dark:bg-white/5 rounded-lg p-0.5 gap-0.5">
+    <div className="flex flex-wrap items-center bg-gray-100 dark:bg-white/5 rounded-lg p-0.5 gap-0.5">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap ${
+          className={`flex min-h-9 items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8933a]/50 ${
             value === opt.value
               ? "bg-white dark:bg-[#2a2a30] text-gray-900 dark:text-white shadow-sm"
               : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
@@ -78,7 +78,7 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   return (
     <button
       onClick={() => onChange(!value)}
-      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#b8933a]/40 ${
+      className={`relative inline-flex h-6 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#b8933a]/40 ${
         value ? "bg-[#b8933a]" : "bg-gray-200 dark:bg-white/10"
       }`}
     >
@@ -120,7 +120,7 @@ function MicSelector({
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none w-full max-w-[220px] px-3 py-1.5 pr-8 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#b8933a]/40"
+        className="min-h-10 appearance-none w-full max-w-[220px] rounded-lg border border-gray-200 bg-white px-3 py-1.5 pr-8 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#b8933a]/40 dark:border-white/10 dark:bg-white/5 dark:text-gray-300"
       >
         <option value="">System default</option>
         {devices.map((d) => (
@@ -181,10 +181,10 @@ export function RepSettingsPanel() {
   if (!currentUser) return null;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-      <div className="max-w-2xl mx-auto space-y-5">
+    <div className="flex-1 overflow-y-auto bg-[var(--bg)] p-4 sm:p-6">
+      <div className="mx-auto max-w-3xl space-y-5">
         {/* Header */}
-        <div className="mb-2">
+        <div className="mb-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.06] dark:bg-[#16161A]">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Settings size={22} className="text-[#b8933a]" />
             My Settings
@@ -226,12 +226,12 @@ export function RepSettingsPanel() {
               <span className={ROW_TITLE}>UI Scale</span>
               <span className={ROW_DESC}>Adjust the size of all text and interface elements</span>
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+            <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">
               {(["auto", "0.90", "0.95", "1", "1.10", "1.25"] as RepSettings["uiScale"][]).map((v) => (
                 <button
                   key={v}
                   onClick={() => apply({ uiScale: v })}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition border ${
+                  className={`min-h-9 px-2.5 py-1 rounded-lg text-xs font-medium transition border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8933a]/50 ${
                     settings.uiScale === v
                       ? "bg-[#b8933a] text-white border-[#b8933a]"
                       : "border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:border-[#b8933a]/50"

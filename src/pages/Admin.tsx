@@ -3962,7 +3962,14 @@ export function AdminPage({ onOpenSheetsSync }: { onOpenSheetsSync?: () => void 
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-[var(--bg)] p-4 sm:p-6 space-y-6">
+    <div className="flex-1 overflow-y-auto bg-gray-50 px-4 py-5 sm:px-6 dark:bg-[var(--bg)] space-y-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Manage roster, operations, system controls, sync tools, and audit visibility.
+        </p>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCard label="Total Reps" value={reps.length} sub={`${activeCount} active`} />
@@ -3974,12 +3981,12 @@ export function AdminPage({ onOpenSheetsSync }: { onOpenSheetsSync?: () => void 
       <TodayBriefingStrip data={briefingData} />
 
       {/* Tabs */}
-      <div className="sticky top-0 z-20 flex gap-1 border-b border-gray-200 dark:border-white/[0.06] overflow-x-auto bg-gray-50/95 dark:bg-[var(--bg)]/95 backdrop-blur">
+      <div className="sticky top-0 z-20 flex gap-1 overflow-x-auto border-b border-gray-200 bg-gray-50/95 py-1 backdrop-blur dark:border-white/[0.06] dark:bg-[var(--bg)]/95">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition -mb-px whitespace-nowrap flex-shrink-0 ${
+            className={`flex min-h-11 items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium transition -mb-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex-shrink-0 ${
               activeTab === t.id
                 ? "border-amber-500 text-amber-600 dark:text-amber-400"
                 : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"

@@ -57,7 +57,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-[var(--surface)] rounded-xl border border-gray-200 dark:border-white/[0.06] p-5 space-y-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.06] dark:bg-[var(--surface)] space-y-4">
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
           {icon}
@@ -346,7 +346,7 @@ export function SystemSettingsPanel() {
     <div className="space-y-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-white/[0.06] dark:bg-[var(--surface)]">
         <div>
           <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Settings size={16} className="text-amber-500" /> System Settings
@@ -355,11 +355,11 @@ export function SystemSettingsPanel() {
             Changes apply instantly across the entire app — no redeploy required.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {dirty && (
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition"
+              className="flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:border-white/[0.08] dark:text-gray-400 dark:hover:bg-[var(--hover)]"
             >
               <RotateCcw size={12} /> Discard
             </button>
@@ -367,7 +367,7 @@ export function SystemSettingsPanel() {
           <button
             onClick={handleSave}
             disabled={!dirty || saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex min-h-10 items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? (
               <Loader size={12} className="animate-spin" />
@@ -393,7 +393,7 @@ export function SystemSettingsPanel() {
           <span>Live settings changed while you were editing. Keep editing, or discard to load the latest saved values.</span>
           <button
             onClick={handleReset}
-            className="flex-shrink-0 px-3 py-1 rounded-lg bg-amber-500 text-white font-semibold hover:bg-amber-400 transition"
+            className="min-h-9 flex-shrink-0 rounded-lg bg-amber-500 px-3 py-1 font-semibold text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
             Load latest
           </button>
@@ -401,7 +401,7 @@ export function SystemSettingsPanel() {
       )}
 
       {/* Live indicator */}
-      <div className="flex items-center gap-2 text-[11px] text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg border border-green-200 dark:border-green-800/40">
+      <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-[11px] text-green-600 dark:border-green-800/40 dark:bg-green-900/20 dark:text-green-400">
         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
         Real-time sync active — changes propagate to all users instantly.
       </div>
@@ -653,11 +653,11 @@ export function SystemSettingsPanel() {
               </div>
             )}
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleSalestrailSync}
                 disabled={salestrailSyncing}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {salestrailSyncing ? (
                   <>
@@ -672,7 +672,7 @@ export function SystemSettingsPanel() {
               <button
                 onClick={handleSalestrailDebugDryRun}
                 disabled={debugDryRunLoading || salestrailSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 text-xs font-semibold text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30"
                 title="Dry-run sync for last 7 days — does not write to Firestore"
               >
                 {debugDryRunLoading ? (
@@ -699,11 +699,11 @@ export function SystemSettingsPanel() {
             {/* ── Dry Run ── */}
             <div className="border-b border-gray-100 dark:border-white/[0.06] pb-3">
               <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Step 1: Dry Run</p>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <button
                   onClick={handleDryRun}
                   disabled={dryRunLoading}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {dryRunLoading ? (
                     <><Loader size={12} className="animate-spin" /> Scanning…</>
@@ -763,7 +763,7 @@ export function SystemSettingsPanel() {
               {dryRunResult && !showLiveConfirm && (
                 <button
                   onClick={() => setShowLiveConfirm(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-500 transition"
+                  className="flex min-h-11 items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
                 >
                   <Database size={12} /> Run Live Migration
                 </button>
@@ -783,11 +783,11 @@ export function SystemSettingsPanel() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={handleLiveRun}
                       disabled={liveRunLoading}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex min-h-11 items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {liveRunLoading ? (
                         <><Loader size={12} className="animate-spin" /> Running…</>
@@ -798,7 +798,7 @@ export function SystemSettingsPanel() {
                     <button
                       onClick={() => setShowLiveConfirm(false)}
                       disabled={liveRunLoading}
-                      className="px-4 py-2 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="min-h-11 rounded-lg border border-gray-200 px-4 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.08] dark:text-gray-400 dark:hover:bg-[var(--hover)]"
                     >
                       Cancel
                     </button>
