@@ -833,10 +833,13 @@ export function DashboardPage({
       {/* ── Today's Focus ── */}
       <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4 sm:p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-[var(--text)] flex items-center gap-1.5">
-            <Zap size={14} className="text-[#b8933a]" />
-            Today's Focus
-          </h3>
+          <div>
+            <h3 className="text-sm font-bold text-[var(--text)] flex items-center gap-1.5">
+              <Zap size={14} className="text-[#b8933a]" />
+              Today's Focus
+            </h3>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Action queues to clear before reviewing performance.</p>
+          </div>
           {todayFocus.length > 0 && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#b8933a]/10 text-[#b8933a]">
               {todayFocus.length} action{todayFocus.length !== 1 ? "s" : ""}
