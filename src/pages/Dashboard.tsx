@@ -27,6 +27,8 @@ import {
   CheckCircle2,
   PhoneCall,
   Zap,
+  BarChart3,
+  Briefcase,
   ClipboardList,
   MapPin,
   FileText,
@@ -253,16 +255,20 @@ function QuickAction({
   color,
   onClick,
   badge,
+  ariaLabel,
 }: {
   label: string;
   icon: React.ReactNode;
   color: string;
   onClick?: () => void;
   badge?: number;
+  ariaLabel?: string;
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-label={ariaLabel ?? label}
       className={`flex min-h-11 min-w-[5.75rem] flex-col items-center justify-center gap-2 rounded-xl border px-4 py-3 transition hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#121214] cursor-pointer select-none ${color}`}
     >
       <div className="relative">
@@ -690,15 +696,31 @@ export function DashboardPage({
             Quick
           </span>
           <QuickAction
-            label="Add Lead"
+            label="Lead List"
             icon={<Users size={16} className="text-amber-400" />}
             color="bg-amber-500/10 border-amber-500/20 text-amber-300 hover:bg-amber-500/20"
+            ariaLabel="Open lead list"
             onClick={() => onNavigate?.("leads")}
+          />
+          <QuickAction
+            label="Clients"
+            icon={<Briefcase size={16} className="text-cyan-400" />}
+            color="bg-cyan-500/10 border-cyan-500/20 text-cyan-300 hover:bg-cyan-500/20"
+            ariaLabel="Open client hub"
+            onClick={() => onNavigate?.("client-hub")}
+          />
+          <QuickAction
+            label="Calendar"
+            icon={<Calendar size={16} className="text-violet-400" />}
+            color="bg-violet-500/10 border-violet-500/20 text-violet-300 hover:bg-violet-500/20"
+            ariaLabel="Open appointment calendar"
+            onClick={() => onNavigate?.("calendar")}
           />
           <QuickAction
             label="DQ Import"
             icon={<ClipboardList size={16} className="text-gray-400" />}
             color="bg-gray-500/10 border-gray-500/20 text-gray-300 hover:bg-gray-500/20"
+            ariaLabel="Open DQ lead import"
             onClick={() => onNavigate?.("dq-import")}
           />
           {queueShortcuts.map((shortcut) => (
@@ -708,6 +730,7 @@ export function DashboardPage({
               icon={shortcut.icon}
               color={shortcut.color}
               badge={shortcut.badge}
+              ariaLabel={`Open ${shortcut.label.toLowerCase()}`}
               onClick={() => onNavigate?.("leads", leadQueueFilter(shortcut.filter))}
             />
           ))}
@@ -716,24 +739,35 @@ export function DashboardPage({
             icon={<Phone size={16} className="text-emerald-400" />}
             color="bg-emerald-500/10 border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20"
             badge={stats.overdueCount}
+            ariaLabel="Open callback queue"
             onClick={() => onNavigate?.("leads", leadQueueFilter(stats.overdueCount > 0 ? "overdue-callbacks" : "callbacks"))}
           />
           <QuickAction
             label="Map"
             icon={<MapPin size={16} className="text-purple-400" />}
             color="bg-purple-500/10 border-purple-500/20 text-purple-300 hover:bg-purple-500/20"
+            ariaLabel="Open field map"
             onClick={() => onNavigate?.("map")}
           />
           <QuickAction
-            label="DRAPS"
-            icon={<Zap size={16} className="text-gray-400" />}
-            color="bg-gray-500/10 border-gray-500/20 text-gray-300 hover:bg-gray-500/20"
+            label="Lead Stats"
+            icon={<Zap size={16} className="text-lime-400" />}
+            color="bg-lime-500/10 border-lime-500/20 text-lime-300 hover:bg-lime-500/20"
+            ariaLabel="Open lead statistics"
             onClick={() => onNavigate?.("draps")}
+          />
+          <QuickAction
+            label="Reports"
+            icon={<BarChart3 size={16} className="text-blue-400" />}
+            color="bg-blue-500/10 border-blue-500/20 text-blue-300 hover:bg-blue-500/20"
+            ariaLabel="Open reports"
+            onClick={() => onNavigate?.("reports")}
           />
           <QuickAction
             label="Documents"
             icon={<FileText size={16} className="text-rose-400" />}
             color="bg-rose-500/10 border-rose-500/20 text-rose-300 hover:bg-rose-500/20"
+            ariaLabel="Open document centre"
             onClick={() => onNavigate?.("document-centre")}
           />
         </div>
