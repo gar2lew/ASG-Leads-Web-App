@@ -34,6 +34,48 @@ function shouldShowNotificationBlockedBanner(): boolean {
   return Notification.permission === "denied";
 }
 
+function getLeadQueueCopy(filter?: string | null) {
+  switch (filter) {
+    case "no-contact":
+      return {
+        label: "Leads with no contact yet",
+        description: "Start with the first lead, log the call outcome, then move through the queue.",
+      };
+    case "clients-no-fc":
+      return {
+        label: "Clients needing FC booking",
+        description: "Review each client and book the next appointment when ready.",
+      };
+    case "overdue-callbacks":
+      return {
+        label: "Overdue callbacks",
+        description: "Oldest missed callbacks should be handled first.",
+      };
+    case "overdue-followups":
+      return {
+        label: "Overdue follow-ups",
+        description: "Clear overdue follow-ups before moving to future work.",
+      };
+    case "callbacks":
+      return {
+        label: "Actionable callbacks",
+        description: "Log each callback and keep the next action current.",
+      };
+    case "followups":
+      return {
+        label: "Actionable follow-ups",
+        description: "Work due follow-ups and set the next contact date where needed.",
+      };
+    case "actionable-queue":
+      return {
+        label: "Actionable queue",
+        description: "Call, update, or schedule the highest-priority lead, then continue to the next one.",
+      };
+    default:
+      return null;
+  }
+}
+
 export function LeadsPage({
   addLeadOpen = false,
   onAddLeadOpenChange,
@@ -107,6 +149,7 @@ export function LeadsPage({
   const filteredLeads = useMemo(() => {
     return filterOperationalLeads(leads, initialFilter);
   }, [leads, initialFilter]);
+  const queueCopy = getLeadQueueCopy(initialFilter);
 
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showCallLogger, setShowCallLogger] = useState(false);
@@ -434,20 +477,19 @@ export function LeadsPage({
       )}
 
       {/* Filter indicator banner */}
-      {initialFilter && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
-          <span className="font-semibold">
-            {initialFilter === "no-contact" && "Filter: Leads with no contact yet"}
-            {initialFilter === "clients-no-fc" && "Filter: Clients needing FC booking"}
-            {initialFilter === "overdue-callbacks" && "Filter: Overdue callbacks"}
-            {initialFilter === "overdue-followups" && "Filter: Overdue follow-ups"}
-            {initialFilter === "callbacks" && "Filter: Actionable callbacks"}
-            {initialFilter === "followups" && "Filter: Actionable follow-ups"}
-            {initialFilter === "actionable-queue" && "Filter: Actionable queue"}
-          </span>
+      {queueCopy && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200 flex-shrink-0">
+          <div className="min-w-0">
+            <p className="font-semibold">
+              {queueCopy.label} · {filteredLeads.length.toLocaleString()} lead{filteredLeads.length === 1 ? "" : "s"}
+            </p>
+            <p className="mt-0.5 text-amber-700 dark:text-amber-300">{queueCopy.description}</p>
+          </div>
           <button
+            type="button"
             onClick={onFilterCleared}
-            className="flex min-h-9 items-center gap-1 rounded px-2 py-1 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:hover:bg-amber-900/30"
+            aria-label={`Clear ${queueCopy.label.toLowerCase()} filter`}
+            className="flex min-h-9 items-center gap-1 rounded px-2 py-1 font-semibold transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:hover:bg-amber-900/30"
           >
             <span>Clear filter</span>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
