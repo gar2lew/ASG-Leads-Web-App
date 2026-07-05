@@ -406,6 +406,27 @@ export function SystemSettingsPanel() {
         Real-time sync active — changes propagate to all users instantly.
       </div>
 
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="rounded-xl border border-gray-200 bg-white p-4 text-xs shadow-sm dark:border-white/[0.06] dark:bg-[var(--surface)]">
+          <div className="mb-1 flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-100">
+            <Settings size={13} className="text-amber-500" />
+            Routine Settings
+          </div>
+          <p className="text-gray-500 dark:text-gray-400">
+            Deal thresholds, training targets, AI timing, and feature flags are saved only after pressing Save Changes.
+          </p>
+        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs shadow-sm dark:border-red-800/50 dark:bg-red-900/20">
+          <div className="mb-1 flex items-center gap-2 font-semibold text-red-700 dark:text-red-300">
+            <ShieldAlert size={13} />
+            Governed Actions
+          </div>
+          <p className="text-red-600 dark:text-red-300">
+            Salestrail live sync and phone live migration are controlled actions. Run dry-run checks first and use only with approval.
+          </p>
+        </div>
+      </div>
+
       {/* ── 1. Deal Settings ── */}
       <Section
         icon={<Target size={14} />}
@@ -585,9 +606,13 @@ export function SystemSettingsPanel() {
         <Section
           icon={<Database size={14} />}
           title="Salestrail Call Sync"
-          description="Import call records from Salestrail. Synced calls are matched to leads by phone number and stored for future reporting."
+          description="Dry-run first. Live sync imports call records from Salestrail, matches them to leads by phone number, and stores them for future reporting."
         >
           <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+              <Info size={12} className="mt-0.5 flex-shrink-0" />
+              <span>Use 7d Dry Run to verify counts before any live sync. The dry run does not write to Firestore.</span>
+            </div>
             {salestrailSyncError && (
               <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg border border-red-200 dark:border-red-800">
                 <AlertCircle size={12} />
@@ -657,7 +682,8 @@ export function SystemSettingsPanel() {
               <button
                 onClick={handleSalestrailSync}
                 disabled={salestrailSyncing}
-                className="flex min-h-11 items-center gap-1.5 rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 disabled:cursor-not-allowed disabled:opacity-50"
+                title="Live Salestrail sync writes matched call records to Firestore"
+                className="flex min-h-11 items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {salestrailSyncing ? (
                   <>
@@ -665,7 +691,7 @@ export function SystemSettingsPanel() {
                   </>
                 ) : (
                   <>
-                    <Play size={12} /> Sync Now
+                    <Play size={12} /> Live Sync Now
                   </>
                 )}
               </button>

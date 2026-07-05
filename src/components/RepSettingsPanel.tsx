@@ -185,11 +185,18 @@ export function RepSettingsPanel() {
       <div className="mx-auto max-w-3xl space-y-5">
         {/* Header */}
         <div className="mb-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/[0.06] dark:bg-[#16161A]">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Settings size={22} className="text-[#b8933a]" />
-            My Settings
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">Personalise your experience. Changes apply instantly.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Settings size={22} className="text-[#b8933a]" />
+                My Settings
+              </h1>
+              <p className="text-sm text-gray-400 mt-1">Personalise your experience. Changes apply instantly.</p>
+            </div>
+            <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-900/20 dark:text-emerald-300">
+              Personal profile only
+            </span>
+          </div>
         </div>
 
         {/* A. Theme */}
