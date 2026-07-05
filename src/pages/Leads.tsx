@@ -390,10 +390,10 @@ export function LeadsPage({
   // â”€â”€ Loading / Error â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   if (leadsLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[var(--surface)]">
-        <div className="text-center">
+      <div className="flex-1 flex items-center justify-center bg-[var(--bg)] px-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-5 text-center shadow-sm">
           <Loader size={40} className="animate-spin mx-auto mb-3 text-amber-500" />
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading leads...</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Loading leads...</p>
         </div>
       </div>
     );
@@ -401,8 +401,8 @@ export function LeadsPage({
 
   if (leadsError) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[var(--surface)]">
-        <div className="text-center max-w-md px-6">
+      <div className="flex-1 flex items-center justify-center bg-[var(--bg)] px-4">
+        <div className="max-w-md rounded-xl border border-red-200 bg-white px-6 py-5 text-center shadow-sm dark:border-red-900/50 dark:bg-[var(--surface)]">
           <div className="text-4xl mb-4">!</div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Failed to load leads</h2>
           <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
@@ -410,7 +410,7 @@ export function LeadsPage({
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-5 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-400 transition font-medium"
+            className="min-h-11 rounded-lg bg-amber-500 px-5 py-2 font-medium text-white transition hover:bg-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
             Retry
           </button>
@@ -421,10 +421,10 @@ export function LeadsPage({
 
   // Main layout
   return (
-    <div className="flex-1 flex flex-col bg-[var(--surface)] overflow-hidden">
+    <div className="flex-1 flex flex-col bg-[var(--bg)] overflow-hidden">
       {/* Notification permission hint */}
       {shouldShowNotificationBlockedBanner() && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 flex-shrink-0">
+        <div className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
           <span>ðŸ””</span>
           <span>
             Browser notifications are blocked, so callback reminders won't fire. To enable: open your browser settings,
@@ -435,7 +435,7 @@ export function LeadsPage({
 
       {/* Filter indicator banner */}
       {initialFilter && (
-        <div className="flex items-center justify-between gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-300 flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300 flex-shrink-0">
           <span className="font-semibold">
             {initialFilter === "no-contact" && "Filter: Leads with no contact yet"}
             {initialFilter === "clients-no-fc" && "Filter: Clients needing FC booking"}
@@ -447,7 +447,7 @@ export function LeadsPage({
           </span>
           <button
             onClick={onFilterCleared}
-            className="flex items-center gap-1 px-2 py-1 rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 transition"
+            className="flex min-h-9 items-center gap-1 rounded px-2 py-1 transition hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:hover:bg-amber-900/30"
           >
             <span>Clear filter</span>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
