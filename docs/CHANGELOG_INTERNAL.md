@@ -8,6 +8,12 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Added operational documentation layer for known issues, pending decisions, ideas, feature backlog, product releases, v1.0 planning, documentation discovery, and current project state.
 - Updated roadmap and goals to prefer version-based planning from v1.0 onward.
 - Documented release-tag verification risk because release tags exist while Sprint 1 and Sprint 2 PRs still require merge confirmation.
+- Added AI foundation data audit covering lead timeline, history, notes, calls, appointments, status history, documents, tasks, and recommendations.
+- Added internal production readiness Go/No-Go report.
+- Added staff UAT plan with scripts, checklists, feedback forms, issue tracking, and success criteria.
+- Prepared v1.0 release candidate docs for release notes, known issues, upgrade guide, deployment checklist, rollback checklist, and final risk assessment.
+- Ran weekly maintenance validation and added `docs/WEEKLY_HEALTH_REPORT.md`.
+- Updated project state and risk register with dependency advisory counts, UAT status, open PRs, stale branch notes, and production deployment blockers.
 
 ## 2026-07-04
 
