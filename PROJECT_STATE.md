@@ -34,6 +34,11 @@ Weekly maintenance created:
 
 - `docs/WEEKLY_HEALTH_REPORT.md`: validation results, dependency advisories, bundle size review, technical debt status, documentation freshness, stale branches, open PRs, and TODO/FIXME review.
 
+Dependency security review created:
+
+- `docs/dependency-security-review.md`: root and Functions audit findings, exposure assessment, direct and transitive dependency risk, and release recommendation.
+- `docs/dependency-remediation-plan.md`: staged dependency remediation plan for PDF runtime, Firebase web SDK, Functions runtime, dev tooling, and audit closure.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -84,7 +89,7 @@ Known validation notes:
 ## Active Operating Priorities
 
 1. Complete staff UAT before production rollout.
-2. Run a targeted dependency audit remediation goal.
+2. Run targeted dependency remediation goals for PDF runtime, Firebase SDKs, Functions runtime, and dev tooling.
 3. Review and merge Sprint 1 before Sprint 2, or keep Sprint 2 as a stacked review.
 4. Verify release tags after actual merges.
 5. Keep Firebase and data actions approval-gated.
@@ -95,7 +100,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories need targeted review.
+- Dependency audit advisories have been reviewed, but remediation remains open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.

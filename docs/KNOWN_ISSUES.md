@@ -26,7 +26,7 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 | KI-006 | Production Firebase actions remain approval-gated. | Hosting, Functions, rules, indexes, and data changes require explicit release approval. | Release Manager | Active | v1.0 |
 | KI-007 | Phone backfill writes remain blocked without approval. | `dryRun:false` phone normalisation can update many lead records. | Release Manager | Active | v1.0 or later |
 | KI-008 | Live migrations remain blocked without approval. | Migration scripts can affect live lead data and must use runbooks. | Release Manager | Active | v1.0 or later |
-| KI-009 | Dependency audit vulnerabilities require targeted review. | `npm install` previously reported audit vulnerabilities requiring a separate dependency goal. | Engineering | Active | Dependency Audit |
+| KI-009 | Dependency audit vulnerabilities require targeted remediation. | Root audit reports 29 advisories including 2 critical and 5 high. Functions audit reports 16 advisories including 3 high. Review docs now exist, but remediation is still required. | Engineering | Active | Dependency Remediation |
 | KI-010 | Full staff UAT is still required before production rollout. | Local validation does not prove staff workflow acceptance. | Product Owner | Active | v1.0 |
 
 ## Build And Performance Warnings
@@ -76,9 +76,10 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 
 ## Dependency And Audit Notes
 
-- Dependency audit vulnerabilities require targeted review.
+- Dependency audit vulnerabilities have been reviewed in `docs/dependency-security-review.md`.
 - Broad dependency updates should not be mixed into release preparation.
-- Firebase Functions SDK update needs a specific compatibility plan and emulator validation.
+- Direct `jspdf` critical advisories are app runtime release blockers unless remediated or risk-accepted.
+- Firebase Functions SDK and Admin SDK updates need specific compatibility plans and emulator validation.
 - Audit fixes must not weaken tests or change production data behaviour casually.
 
 ## Issue Lifecycle
