@@ -16,6 +16,8 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Updated project state and risk register with dependency advisory counts, UAT status, open PRs, stale branch notes, and production deployment blockers.
 - Added dependency security review and staged remediation plan for root and Functions audit advisories.
 - Updated project state, risk register, and known issues to track dependency remediation as an active release blocker.
+- Updated `jspdf` from `4.2.0` to `4.2.1` to remove the direct critical app runtime PDF advisory.
+- Added PDF workflow validation checklist for commissions, Document Centre, form filler, O&A, and reporting PDF entry points.
 
 ## 2026-07-04
 

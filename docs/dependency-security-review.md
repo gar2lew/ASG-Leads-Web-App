@@ -107,3 +107,16 @@ At minimum, remediate or accept:
 - Direct `jspdf` critical app runtime advisories.
 - Functions high transitive advisories under `firebase-admin` and Google libraries.
 - Vite and Vitest dev-tooling advisories with clear local development exposure controls.
+
+## PDF Remediation Update
+
+Date: 2026-07-06
+Branch: `security/pdf-dependency-remediation`
+
+- `jspdf` was updated from `4.2.0` to `4.2.1`.
+- `4.2.1` was the smallest same-major patched version available from npm during this goal.
+- The direct `jspdf` audit advisory no longer appears in root audit output.
+- Root audit changed from 29 advisories to 28 advisories.
+- Root critical count changed from 2 to 1.
+- Remaining root critical advisory is `vitest`, which is dev tooling and remains deferred to the tooling remediation stage.
+- Transitive `dompurify@3.3.3` moderate advisories remain under `jspdf` and need a separate targeted review.
