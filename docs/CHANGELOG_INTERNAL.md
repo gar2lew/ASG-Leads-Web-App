@@ -2,6 +2,13 @@
 
 This changelog tracks engineering process and internal operating changes. Product-facing release notes belong elsewhere.
 
+## 2026-07-06
+
+- Added Master Architect documentation as the product and engineering north star.
+- Added operational documentation layer for known issues, pending decisions, ideas, feature backlog, product releases, v1.0 planning, documentation discovery, and current project state.
+- Updated roadmap and goals to prefer version-based planning from v1.0 onward.
+- Documented release-tag verification risk because release tags exist while Sprint 1 and Sprint 2 PRs still require merge confirmation.
+
 ## 2026-07-04
 
 - Established the validation baseline on `fix/validation-baseline`.
