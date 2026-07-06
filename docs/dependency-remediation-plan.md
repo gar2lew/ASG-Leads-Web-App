@@ -55,8 +55,10 @@ Current result:
 - `jspdf` updated from `4.2.0` to `4.2.1`, the smallest same-major patched version available from npm on 2026-07-06.
 - The direct `jspdf` audit advisory no longer appears after the update.
 - The root audit total reduced from 29 advisories to 28 advisories, with critical count reduced from 2 to 1.
-- `dompurify@3.3.3` remains as a transitive moderate advisory under `jspdf` and needs a separate review unless a later `jspdf` patch updates it safely.
-- No PDF business logic was changed.
+- `dompurify@3.3.3` remained as a transitive moderate advisory under `jspdf` after the direct `jspdf` update.
+- The DOMPurify transitive review updated the lockfile-only optional dependency to `dompurify@3.4.11`, which is inside `jspdf@4.2.1`'s declared `^3.3.1` optional dependency range.
+- The root audit total reduced again from 28 advisories to 27 advisories, with moderate count reduced from 21 to 20.
+- No `package.json` override was required and no PDF business logic was changed.
 - Manual PDF validation is tracked in `docs/pdf-workflow-validation-checklist.md`.
 
 Why first:
@@ -220,7 +222,6 @@ Potential low-risk candidates for isolated remediation:
 
 - Patch-level `postcss` update, if it remains within the current major version and validation passes.
 - Patch or minor Firebase SDK updates, if release notes confirm compatibility and emulator validation passes.
-- Follow-up review for transitive `dompurify`, because the `jspdf@4.2.1` update does not remove the moderate advisory.
 
 These are candidates only, not approvals.
 
