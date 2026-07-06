@@ -120,3 +120,19 @@ Branch: `security/pdf-dependency-remediation`
 - Root critical count changed from 2 to 1.
 - Remaining root critical advisory is `vitest`, which is dev tooling and remains deferred to the tooling remediation stage.
 - Transitive `dompurify@3.3.3` moderate advisories remain under `jspdf` and need a separate targeted review.
+
+## DOMPurify PDF Transitive Update
+
+Date: 2026-07-06
+Branch: `security/dompurify-pdf-transitive-review`
+
+- `dompurify` was introduced as an optional dependency of `jspdf@4.2.1`.
+- The current ASG CRM code does not import `dompurify` directly.
+- Runtime reachability is indirect through `jspdf` HTML and sanitisation paths. The current PDF workflows mainly use jsPDF text, drawing, image, blob, arraybuffer, and save APIs, but the optional dependency is still bundled as part of the PDF dependency surface.
+- `jspdf@4.2.1` declares `dompurify` as optional with range `^3.3.1`.
+- `dompurify@3.4.11` is within that range and is the patched version available from npm during this goal.
+- `npm update dompurify` changed only the transitive lockfile entry from `3.3.3` to `3.4.11`.
+- No override was required because the patched version satisfies `jspdf`'s optional dependency range.
+- The `dompurify` advisory no longer appears in root audit output.
+- Root audit changed from 28 advisories to 27 advisories.
+- Root moderate count changed from 21 to 20.

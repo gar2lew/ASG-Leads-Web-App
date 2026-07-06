@@ -43,8 +43,8 @@ PDF dependency remediation created:
 
 - `docs/pdf-workflow-validation-checklist.md`: manual validation checklist for every `jspdf` PDF generation and export workflow.
 - Root `jspdf` was updated from `4.2.0` to `4.2.1`, removing the direct `jspdf` audit advisory.
-- Root audit now reports 28 advisories, including 1 critical and 5 high.
-- Transitive `dompurify` moderate advisories remain under `jspdf` and need targeted follow-up.
+- Transitive optional `dompurify` under `jspdf` was updated from `3.3.3` to `3.4.11` through the lockfile, removing the remaining PDF sanitisation advisory.
+- Root audit now reports 27 advisories, including 1 critical and 5 high.
 
 ## Release Tags
 
@@ -90,13 +90,13 @@ Known validation notes:
 - Vite still reports large Firebase and PDF vendor chunks.
 - Callable emulator output still reports the `firebase-functions` outdated SDK advisory.
 - Emulator tests use `demo-asg-crm-emulator`.
-- Root `npm audit` reports 28 advisories, including 1 critical and 5 high, after the direct `jspdf` update.
+- Root `npm audit` reports 27 advisories, including 1 critical and 5 high, after the direct `jspdf` update and transitive `dompurify` lockfile update.
 - Functions `npm audit` reports 16 advisories, including 3 high.
 
 ## Active Operating Priorities
 
 1. Complete staff UAT before production rollout.
-2. Run targeted dependency remediation goals for DOMPurify/PDF transitive risk, Firebase SDKs, Functions runtime, and dev tooling.
+2. Run targeted dependency remediation goals for Firebase SDKs, Functions runtime, and dev tooling.
 3. Review and merge Sprint 1 before Sprint 2, or keep Sprint 2 as a stacked review.
 4. Verify release tags after actual merges.
 5. Keep Firebase and data actions approval-gated.
@@ -107,7 +107,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories have been reviewed. Direct `jspdf` remediation is complete, but transitive PDF, Firebase, Functions, and tooling remediation remains open.
+- Dependency audit advisories have been reviewed. PDF runtime and transitive PDF sanitisation remediation are complete, but Firebase, Functions, and tooling remediation remains open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.
