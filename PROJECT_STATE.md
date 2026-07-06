@@ -44,7 +44,14 @@ PDF dependency remediation created:
 - `docs/pdf-workflow-validation-checklist.md`: manual validation checklist for every `jspdf` PDF generation and export workflow.
 - Root `jspdf` was updated from `4.2.0` to `4.2.1`, removing the direct `jspdf` audit advisory.
 - Transitive optional `dompurify` under `jspdf` was updated from `3.3.3` to `3.4.11` through the lockfile, removing the remaining PDF sanitisation advisory.
-- Root audit now reports 27 advisories, including 1 critical and 5 high.
+- Root audit then reported 27 advisories, including 1 critical and 5 high.
+
+Firebase web SDK dependency remediation created:
+
+- Transitive `@grpc/grpc-js` under the root Firebase Firestore SDK path was updated from `1.9.15` to `1.9.16` through the lockfile.
+- No direct `firebase` package update was available inside Firebase 10.x. The installed direct SDK remains `firebase@10.14.1`, which was the latest Firebase 10.x version checked during this goal.
+- Firebase subpackages under `firebase@10.14.1` pin `undici@6.19.7` exactly, so the `undici` advisory remains deferred rather than forced through an override.
+- Root audit now reports 26 advisories, including 1 critical and 4 high.
 
 ## Release Tags
 
@@ -90,7 +97,7 @@ Known validation notes:
 - Vite still reports large Firebase and PDF vendor chunks.
 - Callable emulator output still reports the `firebase-functions` outdated SDK advisory.
 - Emulator tests use `demo-asg-crm-emulator`.
-- Root `npm audit` reports 27 advisories, including 1 critical and 5 high, after the direct `jspdf` update and transitive `dompurify` lockfile update.
+- Root `npm audit` reports 26 advisories, including 1 critical and 4 high, after the direct `jspdf` update, transitive `dompurify` lockfile update, and Firebase Firestore `@grpc/grpc-js` lockfile patch.
 - Functions `npm audit` reports 16 advisories, including 3 high.
 
 ## Active Operating Priorities
@@ -107,7 +114,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories have been reviewed. PDF runtime and transitive PDF sanitisation remediation are complete, but Firebase, Functions, and tooling remediation remains open.
+- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete, but Firebase `undici`, Functions, and tooling remediation remains open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.

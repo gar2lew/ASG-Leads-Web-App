@@ -26,7 +26,7 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 | KI-006 | Production Firebase actions remain approval-gated. | Hosting, Functions, rules, indexes, and data changes require explicit release approval. | Release Manager | Active | v1.0 |
 | KI-007 | Phone backfill writes remain blocked without approval. | `dryRun:false` phone normalisation can update many lead records. | Release Manager | Active | v1.0 or later |
 | KI-008 | Live migrations remain blocked without approval. | Migration scripts can affect live lead data and must use runbooks. | Release Manager | Active | v1.0 or later |
-| KI-009 | Dependency audit vulnerabilities require targeted remediation. | Root audit reports 27 advisories including 1 critical and 5 high after `jspdf` and transitive `dompurify` remediation. Functions audit reports 16 advisories including 3 high. | Engineering | Active | Dependency Remediation |
+| KI-009 | Dependency audit vulnerabilities require targeted remediation. | Root audit reports 26 advisories including 1 critical and 4 high after `jspdf`, transitive `dompurify`, and Firebase Firestore `@grpc/grpc-js` remediation. Functions audit reports 16 advisories including 3 high. | Engineering | Active | Dependency Remediation |
 | KI-010 | Full staff UAT is still required before production rollout. | Local validation does not prove staff workflow acceptance. | Product Owner | Active | v1.0 |
 
 ## Build And Performance Warnings
@@ -78,7 +78,8 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 
 - Dependency audit vulnerabilities have been reviewed in `docs/dependency-security-review.md`.
 - Broad dependency updates should not be mixed into release preparation.
-- Direct `jspdf` and transitive `dompurify` PDF advisories have been remediated.
+- Direct `jspdf`, transitive `dompurify`, and Firebase Firestore `@grpc/grpc-js` advisories have been remediated.
+- Firebase web SDK `undici` risk remains deferred because Firebase 10.14.1 pins `undici@6.19.7` exactly.
 - Firebase Functions SDK and Admin SDK updates need specific compatibility plans and emulator validation.
 - Audit fixes must not weaken tests or change production data behaviour casually.
 

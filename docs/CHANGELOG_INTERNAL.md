@@ -19,6 +19,10 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Updated `jspdf` from `4.2.0` to `4.2.1` to remove the direct critical app runtime PDF advisory.
 - Added PDF workflow validation checklist for commissions, Document Centre, form filler, O&A, and reporting PDF entry points.
 - Updated transitive optional `dompurify` under `jspdf` from `3.3.3` to `3.4.11` through the lockfile to remove the remaining PDF sanitisation advisory.
+- Updated the root Firebase Firestore transitive `@grpc/grpc-js` lockfile entry from `1.9.15` to `1.9.16`.
+- Confirmed no same-major Firebase 10.x SDK update is available beyond the installed `firebase@10.14.1`.
+- Deferred Firebase `undici` remediation because Firebase 10.14.1 pins `undici@6.19.7` exactly and an override needs separate compatibility approval.
+- Reduced root `npm audit` from 27 to 26 advisories and high severity from 5 to 4.
 
 ## 2026-07-04
 

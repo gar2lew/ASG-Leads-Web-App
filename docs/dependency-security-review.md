@@ -53,7 +53,7 @@ Review root and Functions dependency advisories and define safe remediation with
 | `vitest` | Yes | Critical | Dev tooling | Test runner and Vitest UI server only. App runtime is not directly exposed. | Do not auto-fix. | High | Fix available is `vitest@4.1.10`, a semver-major upgrade from `1.6.1`. Requires test harness compatibility review. |
 | `vite` | Yes | High | Dev and build tooling | Local dev server and build pipeline. Production static bundle is not the same exposure as an exposed dev server. | Do not auto-fix. | High | Fix available is `vite@8.1.3`, a semver-major upgrade from resolved `5.4.21`. Requires Vite, plugin, build, and emulator workflow validation. |
 | `undici` | No | High | Transitive Firebase dependency | Root Firebase SDK tree. Browser app exposure is indirect, but Node-based tooling and emulator paths may use it. | Target through Firebase SDK update only. | Medium | Path includes Firebase Auth, Firestore, Functions, and Storage packages under root `firebase@10.14.1`. |
-| `@grpc/grpc-js` | No | High | Transitive Firebase and Google dependency | Root Firebase Admin and Firestore dependency paths. | Target through Firebase or Google dependency updates only. | Medium | Root tree includes older `@grpc/grpc-js@1.9.15` under Firebase Firestore and `1.14.4` under Admin SDK dependencies. |
+| `@grpc/grpc-js` | No | High | Transitive Firebase and Google dependency | Root Firebase Admin and Firestore dependency paths. | Remediated for the root Firebase Firestore path. Functions path remains separate. | Low | Root Firebase Firestore path was updated from `1.9.15` to `1.9.16` through the lockfile. Admin SDK and Functions dependency paths remain out of scope for this goal. |
 | `flatted` | No | High | Dev tooling | ESLint cache dependency path. | Target through ESLint tooling update only. | Medium | Path is `eslint` to `file-entry-cache` to `flat-cache` to `flatted`. |
 | `picomatch` | No | High | Dev tooling | Tailwind, glob, and build tooling paths. | Target through toolchain updates only. | Medium | Paths include Tailwind and glob dependencies. |
 
@@ -136,3 +136,19 @@ Branch: `security/dompurify-pdf-transitive-review`
 - The `dompurify` advisory no longer appears in root audit output.
 - Root audit changed from 28 advisories to 27 advisories.
 - Root moderate count changed from 21 to 20.
+
+## Firebase Web SDK Remediation Update
+
+Date: 2026-07-06
+Branch: `security/firebase-web-sdk-remediation`
+
+- Direct root Firebase SDK remains `firebase@10.14.1`.
+- `10.14.1` was the latest Firebase 10.x version available when checked during this goal, so no same-major Firebase SDK update was available.
+- Root Firebase subpackages under `firebase@10.14.1` still pin `undici@6.19.7` exactly through Auth, Firestore, Functions, and Storage packages.
+- A patched `undici` 6.x line exists, but forcing it would require an override against exact Firebase subpackage dependency declarations. That is deferred to a separate explicit Firebase compatibility goal.
+- Root Firebase Firestore's `@grpc/grpc-js` dependency accepts the patched `1.9.16` release through its declared `~1.9.0` range.
+- `package-lock.json` was updated from `@grpc/grpc-js@1.9.15` to `@grpc/grpc-js@1.9.16` for the root Firebase Firestore path.
+- No direct root dependency was added, no Firebase config changed, and no Functions Admin SDK dependency was upgraded.
+- Root audit changed from 27 advisories to 26 advisories.
+- Root high count changed from 5 to 4.
+- Remaining Firebase web SDK audit risk is the `undici` path under `firebase@10.14.1`.
