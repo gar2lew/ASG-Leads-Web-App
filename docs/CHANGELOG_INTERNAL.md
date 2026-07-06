@@ -14,6 +14,8 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Prepared v1.0 release candidate docs for release notes, known issues, upgrade guide, deployment checklist, rollback checklist, and final risk assessment.
 - Ran weekly maintenance validation and added `docs/WEEKLY_HEALTH_REPORT.md`.
 - Updated project state and risk register with dependency advisory counts, UAT status, open PRs, stale branch notes, and production deployment blockers.
+- Added dependency security review and staged remediation plan for root and Functions audit advisories.
+- Updated project state, risk register, and known issues to track dependency remediation as an active release blocker.
 
 ## 2026-07-04
 
