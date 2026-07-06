@@ -4,18 +4,29 @@ Last updated: 6 July 2026
 
 ## Current Branch Context
 
-- Current working branch for this documentation goal: `docs/operational-documentation-layer`.
-- Parent context: Sprint 2 validation branch with Master Architect documentation committed locally.
-- Sprint 1 PR: `#17`, open draft at last check, targeting `codex-foundation`.
-- Sprint 2 PR: `#18`, open draft at last check, stacked on Sprint 1.
+- Current working branch for this documentation goal: `docs/repository-intelligence`.
+- Savepoint for this goal: `savepoint-before-repository-intelligence`.
+- Parent context: operational documentation layer completed on `docs/operational-documentation-layer`.
+- Sprint 1 PR: `#17`, open draft at last documented check, targeting `codex-foundation`.
+- Sprint 2 PR: `#18`, open draft at last documented check, stacked behind Sprint 1.
 
 ## Current Product State
 
-- Sprint 1 is locally validated and review-ready, but not confirmed merged by this file.
-- Sprint 2 is locally validated and review-ready, but not confirmed merged by this file.
-- v1.0 Internal Production Release is planned, not production-ready.
+- The CRM is locally stabilised, documented, and review-ready for the Sprint 1 and Sprint 2 stacked PR sequence.
+- It is not yet documented as production-ready because PR merge state, release tags, staff UAT, and production Firebase approvals still require human confirmation.
+- v1.0 Internal Production Release is planned through `docs/VERSION_PLAN_V1.md`.
 - Salestrail remains dry-run-first and approval-gated.
 - Production Firebase deploys, Functions deploys, rules deploys, migrations, phone backfill writes, and live Salestrail sync remain blocked without explicit approval.
+
+## Repository Intelligence Layer
+
+This goal adds the root repository intelligence layer:
+
+- `PROJECT_HEALTH.md`: current health, biggest risks, biggest wins, critical workflows, and readiness view.
+- `TECHNICAL_DEBT.md`: largest debt areas, largest components, highest-risk files, and recommended cleanup order.
+- `CODE_OWNERSHIP.md`: ownership map, review gates, and critical workflow stewardship.
+- `DEPENDENCY_MAP.md`: external dependencies, internal module map, deployable surfaces, and dependency risks.
+- `PROJECT_STATE.md`: current state and pointers to the intelligence layer.
 
 ## Release Tags
 
@@ -51,12 +62,12 @@ Known validation notes:
 
 ## Active Operating Priorities
 
-1. Complete and review the operational documentation layer.
-2. Merge Sprint 1 before Sprint 2, or keep Sprint 2 as a stacked review.
-3. Verify release tags after actual merges.
-4. Plan v1.0 Internal Production Release.
-5. Complete staff UAT before production rollout.
-6. Keep Firebase and data actions approval-gated.
+1. Review and merge Sprint 1 before Sprint 2, or keep Sprint 2 as a stacked review.
+2. Verify release tags after actual merges.
+3. Complete staff UAT before production rollout.
+4. Keep Firebase and data actions approval-gated.
+5. Close Salestrail, phone normalisation, migration, and dependency audit risks before production release.
+6. Use the repository intelligence layer to select the next goal.
 
 ## Current Blockers
 
@@ -65,6 +76,7 @@ Known validation notes:
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit vulnerabilities need targeted review.
 - Existing release tags need verification against merged commits.
+- Production Firebase remains blocked without explicit approval and release manager sign-off.
 
 ## Next Recommended Goal
 
