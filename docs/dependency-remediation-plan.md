@@ -108,6 +108,18 @@ Target:
 - Transitive `undici`
 - Transitive `@grpc/grpc-js` under Firebase paths
 
+Status: partially complete on `security/firebase-web-sdk-remediation`.
+
+Current result:
+
+- Direct root Firebase SDK remains `firebase@10.14.1`.
+- No same-major Firebase 10.x update was available during this goal because `10.14.1` was the latest Firebase 10.x version checked.
+- Transitive `@grpc/grpc-js` under the root Firebase Firestore SDK path was updated from `1.9.15` to `1.9.16` through `package-lock.json`.
+- The `@grpc/grpc-js` patch was allowed by Firestore's declared `~1.9.0` dependency range and did not require a direct root dependency.
+- Root audit reduced from 27 advisories to 26 advisories, with high severity reduced from 5 to 4.
+- Transitive `undici@6.19.7` remains under Firebase Auth, Firestore, Functions, and Storage because Firebase 10.14.1 pins that dependency exactly.
+- Do not force an `undici` override without a separate Firebase compatibility review and emulator validation plan.
+
 Why separate:
 
 - Firebase touches authentication, Firestore listeners, callable Functions, Storage, emulator tests, and app startup.
