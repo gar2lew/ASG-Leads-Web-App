@@ -1,7 +1,7 @@
 # v1.0 UAT Results
 
 Release: v1.0 Internal Production Release
-Status: Not started
+Status: Issue intake recorded
 Prepared: 2026-07-07
 
 ## Use Rules
@@ -145,9 +145,15 @@ Prepared: 2026-07-07
 | Test cases failed | 0 |
 | Test cases blocked | 0 |
 | Critical defects | 0 |
-| High defects | 0 |
+| High defects | 1 |
 | Medium defects | 0 |
 | Low defects | 0 |
+
+## Issue Intake
+
+| Issue ID | Role | Workflow | Summary | Tester | Date | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| UAT-ISS-001 | Sales Representative / Admin | Lead loading / Quick Pull / Google Sheets import | No leads were visible on initial app load. Quick Pull imported leads with missing dates and appeared to stop at 100 leads. | Not recorded | Not recorded | Remediated with validation passed, pending staff retest |
 
 ## Evidence Register
 

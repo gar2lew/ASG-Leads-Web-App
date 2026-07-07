@@ -14,6 +14,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Updated project state and risk register to treat the UAT execution pack as the next v1.0 quality gate.
 - Prepared live staff UAT tracking files for results, issue triage, UAT-driven changes, and release readiness summary.
 - Confirmed no live UAT feedback was invented or recorded during tracking preparation.
+- Recorded `UAT-ISS-001` for initial lead loading, Quick Pull date preservation, and 100-row reporting.
+- Updated lead loading to include legacy-compatible records without writing production data.
+- Updated Quick Pull to use a full paged lead index, preserve valid source dates, apply a clear fallback for missing or invalid dates, and report imported, updated, skipped, failed, fallback date, invalid date, and possible limit counts.
 
 ## 2026-07-06
 

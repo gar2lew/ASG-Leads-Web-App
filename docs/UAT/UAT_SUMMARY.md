@@ -1,7 +1,7 @@
 # v1.0 UAT Summary
 
 Release: v1.0 Internal Production Release
-Status: Not started
+Status: Issue intake recorded, staff sign-off still pending
 Prepared: 2026-07-07
 
 ## Summary Rule
@@ -47,7 +47,7 @@ Do not complete this summary until live staff UAT has been executed. This file i
 | Severity | Open | Accepted With Workaround | Closed | Notes |
 | --- | ---: | ---: | ---: | --- |
 | Critical | 0 | 0 | 0 | No live UAT defects recorded yet. |
-| High | 0 | 0 | 0 | No live UAT defects recorded yet. |
+| High | 1 | 0 | 0 | UAT-ISS-001 remediated in code with validation passed, pending staff retest. |
 | Medium | 0 | 0 | 0 | No live UAT defects recorded yet. |
 | Low | 0 | 0 | 0 | No live UAT defects recorded yet. |
 
@@ -59,6 +59,7 @@ Reason:
 
 - Live staff UAT has not been executed.
 - Sign-off has not been captured.
+- UAT-ISS-001 requires staff retest before release readiness can improve.
 - Chief Engineer blockers remain unresolved.
 
 ## Final Recommendation After UAT

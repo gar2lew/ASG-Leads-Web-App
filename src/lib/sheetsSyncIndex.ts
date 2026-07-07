@@ -17,6 +17,7 @@ export type SyncLeadIndexEntry = Pick<
   | "status"
   | "dqRep"
   | "updatedAt"
+  | "region"
 > & {
   leadId?: string | number;
   address?: string;
@@ -53,6 +54,7 @@ export function pickSyncLeadIndexFields(docId: string, data: Record<string, unkn
     postcode: data.postcode as string | undefined,
     status: normalizeLeadStatusForWrite(String(data.status ?? "")),
     dqRep: typeof data.dqRep === "number" ? data.dqRep : Number(data.dqRep ?? 0),
+    region: data.region as Lead["region"] | undefined,
     assignedRep: data.assignedRep as string | number | undefined,
     owner: data.owner as string | undefined,
     repName: data.repName as string | undefined,

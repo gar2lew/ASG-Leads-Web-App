@@ -1,7 +1,7 @@
 # v1.0 UAT Triage
 
 Release: v1.0 Internal Production Release
-Status: No live UAT issues recorded yet
+Status: UAT issue remediation in progress
 Prepared: 2026-07-07
 
 ## Triage Rules
@@ -24,7 +24,7 @@ Prepared: 2026-07-07
 
 | ID | Description | Reproduction steps | Expected behaviour | Actual behaviour | Severity | Owner | Status | Target version |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| UAT-ISS-001 | Not recorded | Not recorded | Not recorded | Not recorded | Not triaged | Not assigned | Placeholder | Not assigned |
+| UAT-ISS-001 | Initial lead list was empty. Quick Pull imported leads with missing dates and appeared to stop at 100 leads. | Open the CRM during staff UAT, observe no leads visible initially, run Quick Pull, then review imported leads and import totals. | CRM should load the current working lead set where possible. Quick Pull should not depend on the 100-lead UI window, should preserve valid lead dates, should use a clear fallback for missing or invalid dates, and should report imported, updated, skipped, failed, fallback date, and possible limit counts. | No leads appeared initially. Quick Pull was required, imported some leads without dates, and appeared to stop at 100 leads. | High | Engineering | Remediated with validation passed, pending staff retest | v1.0 |
 
 ## Critical Issues
 
@@ -36,7 +36,7 @@ Prepared: 2026-07-07
 
 | ID | Description | Owner | Status | Target version | Workaround |
 | --- | --- | --- | --- | --- | --- |
-| None recorded |  |  |  |  |  |
+| UAT-ISS-001 | Initial lead list empty and Quick Pull date/limit behaviour unreliable. | Engineering | Remediated with validation passed, pending staff retest | v1.0 | Manual Quick Pull remains available, but the branch now loads legacy-compatible leads and reports Quick Pull results clearly. |
 
 ## Medium Issues
 
@@ -66,4 +66,4 @@ Prepared: 2026-07-07
 
 | Date | Issue ID | Decision | Owner | Notes |
 | --- | --- | --- | --- | --- |
-|  |  |  |  |  |
+| 2026-07-07 | UAT-ISS-001 | Treat as High severity because it blocks staff confidence in lead availability and can create material risk of incorrect lead dates. | Engineering | Fix the import/load path first, then require staff retest before release sign-off. |
