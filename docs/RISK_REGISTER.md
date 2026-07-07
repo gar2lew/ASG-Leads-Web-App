@@ -31,6 +31,7 @@
 | R-018 | Staff UAT has a plan but no executed sign-off evidence yet. | Critical | Run `docs/staff-uat-plan.md`, capture tester feedback, triage issues, and obtain release-owner sign-off before production approval. | Active |
 | R-019 | Local branch list contains many historical merged goal branches. | Low | Do not delete branches during maintenance. Run separate branch hygiene after PRs and release tags are verified. | Active |
 | R-020 | v1.0 release candidate passed validation but remains blocked from production deployment. | Critical | Require human go/no-go, staff UAT, backup/recovery rehearsal, Firebase surface approval, and tag/merge verification before deployment. | Active |
+| R-021 | Firebase web SDK major upgrade is required to remove the remaining Firebase `undici` audit surface, but the upgrade can regress login, Firestore listeners, callable Functions, Storage, messaging, emulator tests, and bundle output. | High | Use `docs/firebase-web-sdk-major-upgrade-plan.md` and `docs/firebase-web-sdk-upgrade-risk-register.md`. Prefer post-v1.0 timing unless release owner rejects risk acceptance. Upgrade Firebase web SDK and rules-unit-testing together in a dedicated branch with full validation and manual smoke evidence. | Active |
 
 ## Risk Review Cadence
 

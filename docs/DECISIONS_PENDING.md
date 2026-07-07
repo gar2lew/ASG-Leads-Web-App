@@ -28,6 +28,7 @@ Pending decisions are not approvals. They are prompts for deliberate review befo
 | DP-006 | Whether the CRM should remain PWA-first or later become a native/mobile wrapper. | Product | Proposed | Future mobile planning |
 | DP-007 | How strict role visibility should be between reps, managers and directors. | Security | Proposed | v1.0 |
 | DP-008 | Whether to force-move old incorrect release tags or create corrected v2 tags only. | Release | Proposed | Release governance |
+| DP-009 | Whether the Firebase web SDK major upgrade should block v1.0 or run immediately after v1.0. | Dependency security | Proposed | v1.0 go/no-go |
 
 ## Product Decisions
 
@@ -46,6 +47,7 @@ Pending decisions are not approvals. They are prompts for deliberate review befo
 - Decide whether any v1.0 release needs Firestore rules changes or whether rules changes remain a later security goal.
 - Decide the required backup/export process before any live migration or backfill.
 - Decide whether phone normalisation becomes mandatory before Salestrail v1.1.
+- Decide whether the remaining Firebase `undici` advisory is accepted for v1.0 with documented mitigation, or whether Firebase 12 upgrade becomes a pre-v1.0 blocker.
 
 ## Salestrail Decisions
 
