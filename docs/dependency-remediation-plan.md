@@ -157,6 +157,17 @@ Next safe path:
 4. Run full validation, emulator suite, callable dry-run, and manual smoke checks for login, leads, settings, Storage/document workflows, and offline cache behaviour.
 5. Do not deploy until human review accepts the major SDK upgrade risk.
 
+Major upgrade planning result:
+
+- Planning completed on `plan/firebase-web-sdk-major-upgrade`.
+- Current npm metadata identifies `firebase@12.15.0` as the safest current target major for the future implementation branch.
+- Current npm metadata identifies `@firebase/rules-unit-testing@5.0.1` as the matching test package line because it peers on `firebase@^12.0.0`.
+- Planning docs:
+  - `docs/firebase-web-sdk-major-upgrade-plan.md`
+  - `docs/firebase-web-sdk-upgrade-risk-register.md`
+- Recommendation: run after v1.0 unless the release owner decides the deferred Firebase `undici` advisory blocks v1.0.
+- No package files were changed during planning.
+
 ## Stage 3 - Functions Runtime Remediation
 
 Target:

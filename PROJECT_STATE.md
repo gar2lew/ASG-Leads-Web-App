@@ -62,6 +62,14 @@ Firebase undici compatibility review created:
 - Firebase 11 and 12 remove the reviewed `undici` dependency paths, but they are semver-major Firebase web SDK upgrades and need a separate compatibility goal.
 - `undici` override was deferred because it would force exact Firebase dependency declarations outside the published Firebase 10 compatibility set.
 
+Firebase web SDK major upgrade planning created:
+
+- `docs/firebase-web-sdk-major-upgrade-plan.md`: plan for a future Firebase 12 web SDK migration.
+- `docs/firebase-web-sdk-upgrade-risk-register.md`: risk register for auth, Firestore, Functions, Storage, messaging, emulator, audit, build, and release impacts.
+- Current npm metadata identifies `firebase@12.15.0` and `@firebase/rules-unit-testing@5.0.1` as the future target package pair.
+- Recommendation is post-v1.0 unless the release owner decides the remaining Firebase `undici` advisory blocks v1.0.
+- No package files were changed during planning.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -123,7 +131,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and deferred to a Firebase major SDK upgrade goal. Functions and tooling remediation remain open.
+- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.

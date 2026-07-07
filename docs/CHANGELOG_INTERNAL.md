@@ -26,6 +26,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Reviewed Firebase `undici` compatibility and confirmed no safe Firebase 10 patch path exists.
 - Classified the `undici` advisory as not found in the built browser bundle but still present for Node, audit, local tooling, and emulator surfaces.
 - Deferred `undici` overrides because they would force exact Firebase dependency declarations; recommended a separate Firebase 11 or 12 upgrade compatibility goal.
+- Added Firebase web SDK major upgrade plan targeting Firebase 12 and matching rules-unit-testing migration.
+- Added Firebase web SDK upgrade risk register covering auth, Firestore, Functions, Storage, messaging, emulator tests, bundle output, audit, and release timing.
+- Recommended post-v1.0 timing for the Firebase 12 upgrade unless release ownership blocks v1.0 on the remaining `undici` advisory.
 
 ## 2026-07-04
 
