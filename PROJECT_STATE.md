@@ -4,8 +4,8 @@ Last updated: 7 July 2026
 
 ## Current Branch Context
 
-- Current working branch for this maintenance goal: `goal/weekly-maintenance`.
-- Savepoint for this goal: `savepoint-before-weekly-maintenance`.
+- Current working branch for this status goal: `goal/chief-engineer-status-review`.
+- Savepoint for this goal: `savepoint-before-chief-engineer-status-review`.
 - Parent context: v1.0 release candidate package completed on `goal/v1-release-candidate`.
 - Sprint 1 PR: `#17`, open draft at this maintenance check, targeting `codex-foundation`.
 - Sprint 2 PR: `#18`, open draft at this maintenance check, stacked on `goal/sprint-validation`.
@@ -91,6 +91,15 @@ Staff UAT execution pack created:
 - `docs/UAT/Signoff_Form.md`: tester, product owner, and release manager signoff form.
 - `docs/UAT/Test_Data_Guide.md`: safe test account, lead, activity, document, Salestrail, and phone normalisation data guide.
 
+Chief engineer status review created:
+
+- `docs/chief-engineer-status-review.md`: current project state, version, release milestone, release posture, blockers, and next recommended goal.
+- Current version target is `v1.0`.
+- Current release milestone is v1.0 UAT execution readiness.
+- Production posture is No-Go.
+- Release-candidate posture is Needs Review.
+- Single highest-value next goal is `Reach Goal: Staff UAT Run And Triage`.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -137,6 +146,7 @@ Known validation notes:
 - Emulator tests use `demo-asg-crm-emulator`.
 - Root `npm audit` reports 26 advisories, including 1 critical and 4 high, after the direct `jspdf` update, transitive `dompurify` lockfile update, and Firebase Firestore `@grpc/grpc-js` lockfile patch.
 - Functions `npm audit` reports 16 advisories, including 3 high.
+- Chief engineer status review used documentation review and `gh pr list`; it did not rerun the full validation baseline.
 
 ## Active Operating Priorities
 
@@ -151,6 +161,7 @@ Known validation notes:
 
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires execution of the UAT pack and release go/no-go.
+- Current production decision is No-Go until UAT signoff, merge and tag verification, backup/recovery rehearsal, Firebase approval, and risk acceptance are complete.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
