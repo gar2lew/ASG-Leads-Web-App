@@ -4,8 +4,8 @@ Last updated: 7 July 2026
 
 ## Current Branch Context
 
-- Current working branch for this status goal: `goal/chief-engineer-status-review`.
-- Savepoint for this goal: `savepoint-before-chief-engineer-status-review`.
+- Current working branch for this UAT tracking goal: `goal/staff-uat-run-and-triage`.
+- Savepoint for this goal: `savepoint-before-staff-uat-run-and-triage`.
 - Parent context: v1.0 release candidate package completed on `goal/v1-release-candidate`.
 - Sprint 1 PR: `#17`, open draft at this maintenance check, targeting `codex-foundation`.
 - Sprint 2 PR: `#18`, open draft at this maintenance check, stacked on `goal/sprint-validation`.
@@ -100,6 +100,15 @@ Chief engineer status review created:
 - Release-candidate posture is Needs Review.
 - Single highest-value next goal is `Reach Goal: Staff UAT Run And Triage`.
 
+Staff UAT live tracking prepared:
+
+- `docs/UAT/UAT_RESULTS.md`: live role result capture for Sales Representative, Manager, Admin, and Director testing.
+- `docs/UAT/UAT_TRIAGE.md`: issue register, severity matrix, and Chief Engineer blocker linkage.
+- `docs/UAT/UAT_CHANGELOG.md`: UAT-driven change log for real tester feedback and triaged fixes.
+- `docs/UAT/UAT_SUMMARY.md`: release readiness checklist and final UAT summary template.
+- No live UAT results have been recorded yet.
+- Current UAT summary remains No-Go until staff testing and sign-off are complete.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -147,6 +156,7 @@ Known validation notes:
 - Root `npm audit` reports 26 advisories, including 1 critical and 4 high, after the direct `jspdf` update, transitive `dompurify` lockfile update, and Firebase Firestore `@grpc/grpc-js` lockfile patch.
 - Functions `npm audit` reports 16 advisories, including 3 high.
 - Chief engineer status review used documentation review and `gh pr list`; it did not rerun the full validation baseline.
+- Staff UAT live tracking preparation used documentation review and `git diff --check`; it did not execute live staff UAT or record user feedback.
 
 ## Active Operating Priorities
 
@@ -160,7 +170,7 @@ Known validation notes:
 ## Current Blockers
 
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
-- v1.0 requires execution of the UAT pack and release go/no-go.
+- v1.0 requires execution of the UAT pack, completion of UAT tracking, and release go/no-go.
 - Current production decision is No-Go until UAT signoff, merge and tag verification, backup/recovery rehearsal, Firebase approval, and risk acceptance are complete.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
@@ -170,11 +180,11 @@ Known validation notes:
 
 ## Next Recommended Goal
 
-Reach Goal: Staff UAT Run And Triage
+Reach Goal: Conduct Live Staff UAT
 
 Objective:
 
-- Execute `docs/UAT/`, capture feedback, triage issues, and update release readiness status.
+- Run the role-specific UAT scripts with real staff testers, capture outcomes in `docs/UAT/UAT_RESULTS.md`, triage issues in `docs/UAT/UAT_TRIAGE.md`, and update `docs/UAT/UAT_SUMMARY.md`.
 
 Non-goals:
 
