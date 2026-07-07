@@ -17,6 +17,7 @@ describe("Sheets sync index helpers", () => {
         suburb: "Perth",
         status: "DQ",
         dqRep: 1,
+        region: "perth",
         houseNum: "10",
         street: "Hay Street",
         postcode: "6000",
@@ -28,6 +29,7 @@ describe("Sheets sync index helpers", () => {
 
     expect(index).toHaveLength(150);
     expect(index[149].phone).toBe("0400000149");
+    expect(index[0].region).toBe("perth");
     expect(index[0].address).toBe("10 Hay Street Perth 6000");
     expect(index[0]).not.toHaveProperty("ignoredLargeField");
     expect(isPartialSyncIndex(index.length, 150)).toBe(false);

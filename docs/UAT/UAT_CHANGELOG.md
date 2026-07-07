@@ -19,7 +19,7 @@ Do not use this file to invent test results. Add entries only after a real teste
 
 | Date | Issue ID | Change made | Files changed | Validation | Retest status |
 | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+| 2026-07-07 | UAT-ISS-001 | Updated lead loading to include legacy-compatible records, changed Quick Pull to build its duplicate index from the full paged lead index instead of the 100-lead UI window, added date parsing and fallback reporting, and expanded import result reporting. | `src/hooks/useFirebase.ts`, `src/App.tsx`, `src/lib/quickPullImport.ts`, `src/lib/sheetsSyncIndex.ts`, `scripts/test-quick-pull-import.mjs` | Full requested validation gate passed on 2026-07-07. | Pending staff retest. |
 
 ## Documentation Changes From UAT
 

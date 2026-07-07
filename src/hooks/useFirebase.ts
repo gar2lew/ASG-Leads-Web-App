@@ -135,6 +135,28 @@ function chunks<T>(values: T[], size: number) {
   return output;
 }
 
+function leadSortValue(lead: Lead): number {
+  if (typeof lead.updatedAt === "number") return lead.updatedAt;
+  if (typeof lead.createdAt === "number") return lead.createdAt;
+  if (lead.leadDate) {
+    const parsed = Date.parse(`${lead.leadDate}T00:00:00`);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
+
+function sortLeadsForDisplay(leads: Lead[]): Lead[] {
+  return [...leads].sort((a, b) => leadSortValue(b) - leadSortValue(a));
+}
+
+function mergeUniqueLeads(...leadGroups: Lead[][]): Lead[] {
+  const byId = new Map<number, Lead>();
+  leadGroups.flat().forEach((lead) => {
+    byId.set(lead.id, lead);
+  });
+  return sortLeadsForDisplay(Array.from(byId.values()));
+}
+
 async function countStatusAliases(aliases: string[]) {
   const base = collection(db, "leads");
   const uniqueAliases = uniqueValues(aliases);
@@ -167,9 +189,19 @@ export function useLeads() {
     () => query(
       collection(db, "leads"),
       where("region", "==", activeRegion),
-      orderBy("updatedAt", "desc"),
       limit(PAGE_SIZE),
     ),
+    [activeRegion],
+  );
+  const legacyBrisbaneQueryRef = useMemo(
+    () =>
+      activeRegion === "brisbane"
+        ? query(
+            collection(db, "leads"),
+            where("region", "==", null),
+            limit(PAGE_SIZE),
+          )
+        : null,
     [activeRegion],
   );
   const isReady = !authLoading && !!currentUser;
@@ -190,6 +222,16 @@ export function useLeads() {
     setLastDoc(null);
     setHasMore(true);
 
+    let primaryLeads: Lead[] = [];
+    let legacyLeads: Lead[] = [];
+
+    const publishLeads = () => {
+      const merged = mergeUniqueLeads(primaryLeads, legacyLeads);
+      setLeads(merged);
+      setStoreLeads(merged);
+      setLoading(false);
+    };
+
     const unsub = onSnapshot(
       queryRef,
       (snapshot) => {
@@ -199,10 +241,8 @@ export function useLeads() {
         })) as Lead[];
         // Server-side where("region","==",activeRegion) enforces strict isolation.
         // Client-side pass-through kept as a guard against any snapshot race.
-        const filtered = leadsData.filter((l) => l.region === activeRegion);
-        setLeads(filtered);
-        setStoreLeads(filtered);
-        setLoading(false);
+        primaryLeads = leadsData.filter((l) => effectiveRegion(l.region) === activeRegion);
+        publishLeads();
         setLastDoc(snapshot.docs[snapshot.docs.length - 1] ?? null);
         setHasMore(snapshot.size === PAGE_SIZE);
         // Phase 5.3 — surface pending-writes (offline queue) via network status
@@ -216,8 +256,29 @@ export function useLeads() {
       },
     );
 
-    return () => unsub();
-  }, [authLoading, isReady, queryRef, setStoreLeads, activeRegion]);
+    const unsubLegacy =
+      legacyBrisbaneQueryRef
+        ? onSnapshot(
+            legacyBrisbaneQueryRef,
+            (snapshot) => {
+              legacyLeads = snapshot.docs.map((d) => ({
+                id: Number(d.id),
+                ...d.data(),
+                region: "brisbane",
+              })) as Lead[];
+              publishLeads();
+            },
+            (err) => {
+              console.warn("[useLeads] legacy Brisbane lead fallback error:", err);
+            },
+          )
+        : null;
+
+    return () => {
+      unsub();
+      unsubLegacy?.();
+    };
+  }, [authLoading, isReady, queryRef, legacyBrisbaneQueryRef, setStoreLeads, activeRegion]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !lastDoc) return;
@@ -226,7 +287,6 @@ export function useLeads() {
       const nextQuery = query(
         collection(db, "leads"),
         where("region", "==", activeRegion),
-        orderBy("updatedAt", "desc"),
         startAfter(lastDoc),
         limit(PAGE_SIZE),
       );
@@ -241,7 +301,7 @@ export function useLeads() {
       setLeads((prev) => {
         const existingIds = new Set(prev.map((l) => l.id));
         const unique = filtered.filter((l) => !existingIds.has(l.id));
-        const merged = [...prev, ...unique];
+        const merged = mergeUniqueLeads(prev, unique);
         setStoreLeads(merged);
         return merged;
       });

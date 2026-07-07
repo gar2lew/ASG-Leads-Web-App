@@ -109,6 +109,13 @@ Staff UAT live tracking prepared:
 - No live UAT results have been recorded yet.
 - Current UAT summary remains No-Go until staff testing and sign-off are complete.
 
+UAT lead import and date remediation in progress:
+
+- `UAT-ISS-001` records the first real UAT issue: no leads visible initially, Quick Pull importing leads with missing dates, and Quick Pull appearing to stop at 100 leads.
+- Engineering found that the lead list path could hide legacy records when metadata used by the UI query was missing, and Quick Pull built its duplicate index from the 100-lead UI window instead of the full paged lead index.
+- The remediation keeps production data untouched, preserves workflow behaviour, uses legacy-compatible lead loading, preserves valid imported lead dates, applies a clear fallback date for missing or invalid source dates, and reports imported, updated, skipped, failed, fallback date, invalid date, and possible limit counts.
+- Full requested validation passed for the engineering fix. Staff retest and release sign-off remain required before this issue can be closed for v1.0.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -172,6 +179,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires execution of the UAT pack, completion of UAT tracking, and release go/no-go.
 - Current production decision is No-Go until UAT signoff, merge and tag verification, backup/recovery rehearsal, Firebase approval, and risk acceptance are complete.
+- `UAT-ISS-001` requires staff retest before v1.0 readiness can improve.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
