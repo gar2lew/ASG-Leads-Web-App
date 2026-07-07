@@ -80,6 +80,17 @@ Functions runtime dependency remediation planning created:
 - Recommendation is post-v1.0 unless the release owner decides unresolved Functions advisories block v1.0 or a Functions deploy is required before v1.0.
 - No Functions package files were changed during planning.
 
+Staff UAT execution pack created:
+
+- `docs/UAT/Sales_Rep_Test_Plan.md`: sales rep role script for login, dashboard, lead work, search, notes, appointments, documents, reports, Salestrail visibility, settings, and logout.
+- `docs/UAT/Manager_Test_Plan.md`: manager role script for team workflow, reporting, lead review, Salestrail context, settings, and logout.
+- `docs/UAT/Admin_Test_Plan.md`: admin role script for safe settings, roster, system health, Salestrail controls, document workflow, reports, and blocked actions.
+- `docs/UAT/Director_Test_Plan.md`: director review script for dashboard, pipeline, reports, release posture, Salestrail decision context, and sign-off confidence.
+- `docs/UAT/UAT_Checklist.md`: role coverage checklist, issue severity matrix, and v1.0 exit criteria.
+- `docs/UAT/Issue_Report_Template.md`: standard defect and feedback capture template.
+- `docs/UAT/Signoff_Form.md`: tester, product owner, and release manager signoff form.
+- `docs/UAT/Test_Data_Guide.md`: safe test account, lead, activity, document, Salestrail, and phone normalisation data guide.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -129,7 +140,7 @@ Known validation notes:
 
 ## Active Operating Priorities
 
-1. Complete staff UAT before production rollout.
+1. Execute the staff UAT pack before production rollout.
 2. Run targeted dependency remediation goals for Firebase SDKs, Functions runtime, and dev tooling.
 3. Review and merge Sprint 1 before Sprint 2, or keep Sprint 2 as a stacked review.
 4. Verify release tags after actual merges.
@@ -139,7 +150,7 @@ Known validation notes:
 ## Current Blockers
 
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
-- v1.0 requires staff UAT and release go/no-go.
+- v1.0 requires execution of the UAT pack and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
@@ -148,11 +159,11 @@ Known validation notes:
 
 ## Next Recommended Goal
 
-Reach Goal: Staff UAT Execution
+Reach Goal: Staff UAT Run And Triage
 
 Objective:
 
-- Execute `docs/staff-uat-plan.md`, capture feedback, triage issues, and update release readiness status.
+- Execute `docs/UAT/`, capture feedback, triage issues, and update release readiness status.
 
 Non-goals:
 
