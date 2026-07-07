@@ -2,6 +2,13 @@
 
 This changelog tracks engineering process and internal operating changes. Product-facing release notes belong elsewhere.
 
+## 2026-07-07
+
+- Added Functions runtime dependency remediation plan for `firebase-admin`, `firebase-functions`, Google Cloud transitive packages, and deployable callable surfaces.
+- Added Functions runtime upgrade risk register covering Admin SDK, Functions SDK, callable auth, timestamp compatibility, Salestrail, phone normalisation, DocuSign, SMSF, scheduled jobs, emulator compatibility, and deploy gating.
+- Documented that current Functions audit remains 16 advisories with 3 high advisories and no Functions package files changed during planning.
+- Recommended post-v1.0 timing for Functions runtime package remediation unless the release owner blocks v1.0 on unresolved Functions advisories or requires a Functions deploy before v1.0.
+
 ## 2026-07-06
 
 - Added Master Architect documentation as the product and engineering north star.

@@ -29,6 +29,7 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 | KI-009 | Dependency audit vulnerabilities require targeted remediation. | Root audit reports 26 advisories including 1 critical and 4 high after `jspdf`, transitive `dompurify`, and Firebase Firestore `@grpc/grpc-js` remediation. Functions audit reports 16 advisories including 3 high. | Engineering | Active | Dependency Remediation |
 | KI-010 | Full staff UAT is still required before production rollout. | Local validation does not prove staff workflow acceptance. | Product Owner | Active | v1.0 |
 | KI-011 | Firebase web SDK major upgrade requires a controlled migration plan. | Firebase 12 should remove the reviewed Firebase `undici` path, but it affects auth, Firestore, Functions, Storage, messaging, emulator tests, and bundle output. | Engineering | Active | Post-v1.0 or release-owner decision |
+| KI-012 | Functions runtime dependency remediation needs a controlled backend upgrade plan. | `firebase-admin@14.1.0` is the audit-indicated Admin SDK remediation path, but it is semver-major and `firebase-functions@7.2.5` should be evaluated separately because callable, scheduled, trigger, emulator, and peer compatibility can change. | Engineering | Active | Post-v1.0 or release-owner decision |
 
 ## Build And Performance Warnings
 
@@ -84,7 +85,8 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 - The reviewed browser build did not contain `undici`, but Node, audit, local tooling, and emulator surfaces still install it through Firebase 10 package metadata.
 - Do not force an `undici` override without explicit approval because it would override exact Firebase dependency declarations.
 - Firebase major upgrade planning now recommends `firebase@12.15.0` with `@firebase/rules-unit-testing@5.0.1` in a dedicated branch after v1.0 unless the release owner blocks v1.0 on the advisory.
-- Firebase Functions SDK and Admin SDK updates need specific compatibility plans and emulator validation.
+- Firebase Functions SDK and Admin SDK updates now have a planning document in `docs/functions-runtime-dependency-remediation-plan.md`.
+- Do not combine `firebase-admin` and `firebase-functions` major updates casually. Evaluate them separately unless release notes prove a required package pair.
 - Audit fixes must not weaken tests or change production data behaviour casually.
 
 ## Issue Lifecycle
