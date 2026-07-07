@@ -8,6 +8,8 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Added Functions runtime upgrade risk register covering Admin SDK, Functions SDK, callable auth, timestamp compatibility, Salestrail, phone normalisation, DocuSign, SMSF, scheduled jobs, emulator compatibility, and deploy gating.
 - Documented that current Functions audit remains 16 advisories with 3 high advisories and no Functions package files changed during planning.
 - Recommended post-v1.0 timing for Functions runtime package remediation unless the release owner blocks v1.0 on unresolved Functions advisories or requires a Functions deploy before v1.0.
+- Added v1.0 UAT execution pack with role-specific scripts for sales reps, managers, admins, and directors.
+- Added UAT checklist, issue report template, signoff form, test data guide, severity matrix, and v1.0 exit criteria.
 
 ## 2026-07-06
 

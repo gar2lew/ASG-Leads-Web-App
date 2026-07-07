@@ -76,6 +76,14 @@ v1.0 does not mean:
 - `docs/FEATURE_BACKLOG.md`
 - `docs/PRODUCT_RELEASES.md`
 - Staff onboarding guide or user manual update.
+- `docs/UAT/Sales_Rep_Test_Plan.md`
+- `docs/UAT/Manager_Test_Plan.md`
+- `docs/UAT/Admin_Test_Plan.md`
+- `docs/UAT/Director_Test_Plan.md`
+- `docs/UAT/UAT_Checklist.md`
+- `docs/UAT/Issue_Report_Template.md`
+- `docs/UAT/Signoff_Form.md`
+- `docs/UAT/Test_Data_Guide.md`
 
 ## Required Validation
 
@@ -171,6 +179,8 @@ Firebase rollback must be planned by surface before any deploy:
 
 ## UAT Checklist
 
+The executable UAT pack lives in `docs/UAT/` and is the source of truth for staff testing.
+
 | Area | Check | Owner | Status |
 | --- | --- | --- | --- |
 | Login | Staff can sign in and verify access. | Product | Pending |
@@ -182,6 +192,18 @@ Firebase rollback must be planned by surface before any deploy:
 | Admin | Admin can review roster and safe settings. | Product | Pending |
 | System Controls | Risky controls are understood and not run accidentally. | Release Manager | Pending |
 | Mobile | Key rep workflows are usable on mobile. | Product | Pending |
+
+## UAT Exit Criteria
+
+v1.0 can proceed to release go/no-go only when:
+
+- Sales rep, manager, admin, and director UAT scripts are run or formally marked not applicable by the release owner.
+- Zero unresolved Critical issues remain.
+- Zero unresolved High issues remain without approved workaround.
+- Any Medium issues have accepted workarounds or backlog entries.
+- Any documentation mismatch affecting core staff workflow is fixed or tracked before release.
+- No production Firebase deploy, live Salestrail sync, migration, phone write backfill, or unapproved production data action occurred during UAT.
+- Product owner and release manager sign off using `docs/UAT/Signoff_Form.md`.
 
 ## Go/No-Go Checklist
 
