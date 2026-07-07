@@ -1,6 +1,6 @@
 # ASG CRM Project State
 
-Last updated: 6 July 2026
+Last updated: 7 July 2026
 
 ## Current Branch Context
 
@@ -70,6 +70,16 @@ Firebase web SDK major upgrade planning created:
 - Recommendation is post-v1.0 unless the release owner decides the remaining Firebase `undici` advisory blocks v1.0.
 - No package files were changed during planning.
 
+Functions runtime dependency remediation planning created:
+
+- `docs/functions-runtime-dependency-remediation-plan.md`: plan for future Firebase Functions runtime dependency remediation.
+- `docs/functions-runtime-upgrade-risk-register.md`: risk register for Admin SDK, Functions SDK, callable, scheduled job, Storage, emulator, and deploy impacts.
+- Current Functions direct runtime packages remain unchanged: `firebase-admin@13.7.0` and `firebase-functions@6.6.0`.
+- Functions `npm audit` still reports 16 advisories, including 3 high.
+- High Functions advisories are transitive runtime paths through `@grpc/grpc-js`, `form-data`, and `fast-xml-builder`.
+- Recommendation is post-v1.0 unless the release owner decides unresolved Functions advisories block v1.0 or a Functions deploy is required before v1.0.
+- No Functions package files were changed during planning.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -131,7 +141,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions and tooling remediation remain open.
+- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.

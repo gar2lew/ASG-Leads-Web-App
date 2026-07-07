@@ -182,6 +182,20 @@ Why separate:
 
 - This affects deployable Firebase Functions and server-authoritative callables.
 
+Planning result:
+
+- Planning completed on `plan/functions-runtime-dependency-remediation`.
+- Planning docs:
+  - `docs/functions-runtime-dependency-remediation-plan.md`
+  - `docs/functions-runtime-upgrade-risk-register.md`
+- Current Functions audit reports 16 advisories, including 3 high.
+- High advisories are transitive runtime paths: `@grpc/grpc-js`, `form-data`, and `fast-xml-builder`.
+- Current direct runtime versions are `firebase-admin@13.7.0` and `firebase-functions@6.6.0`.
+- npm audit points the Admin SDK advisory path to `firebase-admin@14.1.0`, which is semver-major from the declared `^13.0.2` range and requires dedicated backend validation.
+- `firebase-functions@7.2.5` is latest, but its peer metadata does not currently include `firebase-admin@14.x`, so the Functions SDK and Admin SDK should be evaluated separately unless release notes prove a required pair.
+- Recommendation: run after v1.0 unless the release owner decides unresolved Functions advisories block v1.0 or a Functions deploy is required before v1.0.
+- No Functions package files were changed during planning.
+
 Proposed approach:
 
 1. Create branch `security/functions-dependency-remediation`.
