@@ -52,7 +52,7 @@ Review root and Functions dependency advisories and define safe remediation with
 | `jspdf` | Yes | Critical | App runtime | PDF generation and document workflows can load user or CRM data into generated PDFs. | Do not auto-fix in release work. | Medium | Installed `jspdf@4.2.0`; advisory range is `<=4.2.0`. Fix is reported available, but PDF output and document workflows require compatibility checks. |
 | `vitest` | Yes | Critical | Dev tooling | Test runner and Vitest UI server only. App runtime is not directly exposed. | Do not auto-fix. | High | Fix available is `vitest@4.1.10`, a semver-major upgrade from `1.6.1`. Requires test harness compatibility review. |
 | `vite` | Yes | High | Dev and build tooling | Local dev server and build pipeline. Production static bundle is not the same exposure as an exposed dev server. | Do not auto-fix. | High | Fix available is `vite@8.1.3`, a semver-major upgrade from resolved `5.4.21`. Requires Vite, plugin, build, and emulator workflow validation. |
-| `undici` | No | High | Transitive Firebase dependency | Root Firebase SDK tree. Browser app exposure is indirect, but Node-based tooling and emulator paths may use it. | Target through Firebase SDK update only. | Medium | Path includes Firebase Auth, Firestore, Functions, and Storage packages under root `firebase@10.14.1`. |
+| `undici` | No | High | Transitive Firebase dependency | Root Firebase SDK tree. Browser app bundle exposure was not found, but Node, local tooling, and emulator paths keep the package installed. | Defer. Target through Firebase major SDK upgrade only. | High | Path includes Firebase Auth, Firestore, Functions, and Storage packages under root `firebase@10.14.1`. Firebase 10.14.1 pins `undici@6.19.7` exactly. |
 | `@grpc/grpc-js` | No | High | Transitive Firebase and Google dependency | Root Firebase Admin and Firestore dependency paths. | Remediated for the root Firebase Firestore path. Functions path remains separate. | Low | Root Firebase Firestore path was updated from `1.9.15` to `1.9.16` through the lockfile. Admin SDK and Functions dependency paths remain out of scope for this goal. |
 | `flatted` | No | High | Dev tooling | ESLint cache dependency path. | Target through ESLint tooling update only. | Medium | Path is `eslint` to `file-entry-cache` to `flat-cache` to `flatted`. |
 | `picomatch` | No | High | Dev tooling | Tailwind, glob, and build tooling paths. | Target through toolchain updates only. | Medium | Paths include Tailwind and glob dependencies. |
@@ -152,3 +152,24 @@ Branch: `security/firebase-web-sdk-remediation`
 - Root audit changed from 27 advisories to 26 advisories.
 - Root high count changed from 5 to 4.
 - Remaining Firebase web SDK audit risk is the `undici` path under `firebase@10.14.1`.
+
+## Firebase Undici Compatibility Review
+
+Date: 2026-07-07
+Branch: `security/firebase-undici-compatibility-review`
+
+- `undici@6.19.7` is introduced by exact dependency declarations in Firebase 10.14.1 subpackages:
+  - `@firebase/auth@1.7.9`
+  - `@firebase/auth-compat@0.5.14`
+  - `@firebase/firestore@4.7.3`
+  - `@firebase/functions@0.11.8`
+  - `@firebase/storage@0.13.2`
+- `@firebase/rules-unit-testing@3.0.4` peers on `firebase@^10.0.0`, so the emulator rules test surface also retains the Firebase 10 dependency graph.
+- The Vite build uses Firebase browser export conditions. No built `dist/assets` JavaScript or module asset contained the string `undici` during this review, so direct browser bundle reachability was not found.
+- Node, package-install, audit, and emulator surfaces remain exposed because `undici` is installed in `node_modules` and selected by Firebase node export conditions.
+- `firebase@10.14.1` remains the final stable Firebase 10.x release found during this review.
+- Firebase 11 and Firebase 12 package metadata no longer lists `undici` in the reviewed Auth, Firestore, Functions, and Storage subpackage dependencies, but adopting either line is a semver-major Firebase web SDK upgrade.
+- A direct npm override to `undici@6.27.0` would force a different package version than the exact Firebase 10.14.1 declarations. That is not classified as clearly safe for this production-like CRM because it changes Firebase's Node and emulator transport dependency outside Firebase's published compatibility set.
+- No package files were changed in this review.
+- Root audit remains at 26 advisories, including 1 critical and 4 high.
+- The remaining Firebase web SDK `undici` risk is accepted as deferred until a dedicated Firebase 11 or 12 upgrade compatibility goal runs full auth, Firestore, Functions callable, Storage, and emulator validation.

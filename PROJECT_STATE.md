@@ -53,6 +53,15 @@ Firebase web SDK dependency remediation created:
 - Firebase subpackages under `firebase@10.14.1` pin `undici@6.19.7` exactly, so the `undici` advisory remains deferred rather than forced through an override.
 - Root audit now reports 26 advisories, including 1 critical and 4 high.
 
+Firebase undici compatibility review created:
+
+- No package files were changed.
+- `undici@6.19.7` remains installed through exact Firebase 10.14.1 subpackage declarations.
+- Direct browser bundle reachability was not found in built `dist/assets` files during the review.
+- Node, audit, local tooling, and emulator surfaces remain affected because Firebase node export conditions can use the installed package.
+- Firebase 11 and 12 remove the reviewed `undici` dependency paths, but they are semver-major Firebase web SDK upgrades and need a separate compatibility goal.
+- `undici` override was deferred because it would force exact Firebase dependency declarations outside the published Firebase 10 compatibility set.
+
 ## Release Tags
 
 Observed release tags exist locally and/or remotely:
@@ -114,7 +123,7 @@ Known validation notes:
 - Sprint 1 and Sprint 2 remain open draft PRs at this maintenance check.
 - v1.0 requires staff UAT and release go/no-go.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
-- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete, but Firebase `undici`, Functions, and tooling remediation remains open.
+- Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and deferred to a Firebase major SDK upgrade goal. Functions and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.

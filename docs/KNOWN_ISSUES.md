@@ -79,7 +79,9 @@ It is not a bug tracker replacement. It is the durable operating view for issues
 - Dependency audit vulnerabilities have been reviewed in `docs/dependency-security-review.md`.
 - Broad dependency updates should not be mixed into release preparation.
 - Direct `jspdf`, transitive `dompurify`, and Firebase Firestore `@grpc/grpc-js` advisories have been remediated.
-- Firebase web SDK `undici` risk remains deferred because Firebase 10.14.1 pins `undici@6.19.7` exactly.
+- Firebase web SDK `undici` risk remains deferred because Firebase 10.14.1 pins `undici@6.19.7` exactly and no safe Firebase 10 patch path exists.
+- The reviewed browser build did not contain `undici`, but Node, audit, local tooling, and emulator surfaces still install it through Firebase 10 package metadata.
+- Do not force an `undici` override without explicit approval because it would override exact Firebase dependency declarations.
 - Firebase Functions SDK and Admin SDK updates need specific compatibility plans and emulator validation.
 - Audit fixes must not weaken tests or change production data behaviour casually.
 

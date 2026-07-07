@@ -120,6 +120,17 @@ Current result:
 - Transitive `undici@6.19.7` remains under Firebase Auth, Firestore, Functions, and Storage because Firebase 10.14.1 pins that dependency exactly.
 - Do not force an `undici` override without a separate Firebase compatibility review and emulator validation plan.
 
+Undici compatibility review result:
+
+- Reviewed on `security/firebase-undici-compatibility-review`.
+- No package change was made.
+- `undici@6.19.7` is exact-pinned by Firebase 10.14.1 Auth, Auth Compat, Firestore, Functions, and Storage packages.
+- No stable Firebase 10.x patch or minor update exists beyond `10.14.1`.
+- Firebase 11 and 12 package metadata removes the reviewed `undici` dependency paths, but those are semver-major Firebase web SDK upgrades and must be planned separately.
+- The current Vite browser build did not contain `undici`, so direct browser bundle reachability was not found.
+- Node, local tooling, audit, and emulator surfaces remain affected because the package is installed and used by Firebase node export conditions.
+- `undici` overrides are not approved in this stage because they would override exact Firebase dependency declarations and change Firebase's Node/emulator transport surface outside the published Firebase 10 compatibility set.
+
 Why separate:
 
 - Firebase touches authentication, Firestore listeners, callable Functions, Storage, emulator tests, and app startup.
@@ -137,6 +148,14 @@ Required validation:
 - Full root validation.
 - Full emulator suite.
 - Manual smoke review of login, lead list, lead details, settings, and document workflows if app code behaviour changes.
+
+Next safe path:
+
+1. Create a dedicated Firebase 11 or 12 upgrade branch.
+2. Review Firebase migration notes and peer dependencies, including `@firebase/rules-unit-testing`.
+3. Upgrade only Firebase web SDK and matching test tooling dependencies needed for compatibility.
+4. Run full validation, emulator suite, callable dry-run, and manual smoke checks for login, leads, settings, Storage/document workflows, and offline cache behaviour.
+5. Do not deploy until human review accepts the major SDK upgrade risk.
 
 ## Stage 3 - Functions Runtime Remediation
 

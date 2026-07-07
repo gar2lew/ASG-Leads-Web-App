@@ -23,6 +23,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Confirmed no same-major Firebase 10.x SDK update is available beyond the installed `firebase@10.14.1`.
 - Deferred Firebase `undici` remediation because Firebase 10.14.1 pins `undici@6.19.7` exactly and an override needs separate compatibility approval.
 - Reduced root `npm audit` from 27 to 26 advisories and high severity from 5 to 4.
+- Reviewed Firebase `undici` compatibility and confirmed no safe Firebase 10 patch path exists.
+- Classified the `undici` advisory as not found in the built browser bundle but still present for Node, audit, local tooling, and emulator surfaces.
+- Deferred `undici` overrides because they would force exact Firebase dependency declarations; recommended a separate Firebase 11 or 12 upgrade compatibility goal.
 
 ## 2026-07-04
 
