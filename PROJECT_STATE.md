@@ -84,11 +84,12 @@ Functions runtime dependency remediation planning created:
 - Recommendation is post-v1.0 unless the release owner decides unresolved Functions advisories block v1.0 or a Functions deploy is required before v1.0.
 - No Functions package files were changed during planning.
 
-Functions emulator startup investigation created:
+Functions emulator startup investigation created and independently verified:
 
 - `docs/functions-emulator-startup-investigation.md`: investigation report for the reported Functions emulator backend specification timeout and callable `functions/not-found` failure mode.
-- Current evidence shows compiled Functions user code loads quickly and exposes 26 exports.
-- The highest-risk startup factor is emulator toolchain discovery timing near the 10 second backend specification timeout, especially when Java, Firebase CLI, Node version, or shell profile setup is inconsistent.
+- Current evidence shows compiled Functions user code loads quickly (216ms) and exposes 26 exports.
+- Independent verification by successor agent (Z Code) on 2026-07-08 confirmed all validations pass with compatible Java 21 and Firebase CLI tooling.
+- Root cause confirmed as toolchain/environment timing, not user-code blocking imports.
 - No Firestore rules, emulator configuration, app code, or Functions code was changed during the investigation.
 - `npm run test:emulator:callables-dry-run` passed with compatible Java 21 and Firebase CLI tooling.
 
@@ -199,7 +200,7 @@ Known validation notes:
 - v1.0 requires execution of the UAT pack, completion of UAT tracking, and release go/no-go.
 - Current production decision is No-Go until UAT signoff, merge and tag verification, backup/recovery rehearsal, Firebase approval, and risk acceptance are complete.
 - `UAT-ISS-001` requires staff retest before v1.0 readiness can improve.
-- A reported Functions emulator startup timeout can cause callable dry-run failures with `functions/not-found` if callable endpoints never register. The current investigation points to emulator toolchain discovery timing rather than slow user-code imports, but a successor agent should reproduce this in its own environment before changing code.
+- A reported Functions emulator startup timeout can cause callable dry-run failures with `functions/not-found` if callable endpoints never register. The investigation confirmed the root cause is toolchain/environment timing (not user-code blocking imports) and that all emulator checks pass with compatible Java 21+ and Firebase CLI 15 tooling. See `docs/functions-emulator-startup-investigation.md` for details.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.

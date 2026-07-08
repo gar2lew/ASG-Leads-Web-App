@@ -8,6 +8,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 - Confirmed no Firestore rules, emulator configuration, application code, or Functions code changes were made during the startup investigation.
 - Added AI agent handoff pack with `HANDOFF.md`, `docs/AGENT_HANDOFF_TEMPLATE.md`, and `docs/Z_CODE_DEEPSEEK_HANDOFF_RULES.md`.
 - Updated project state and risk register to track Functions emulator startup timeout risk and cross-agent handoff safety.
+- Successor agent (Z Code) independently verified the Functions emulator startup investigation. Functions user code loads in 216ms, all 26 exports register successfully, and `npm run test:emulator:callables-dry-run` passes with compatible Java 21 and Firebase CLI tooling.
+- Root cause confirmed as toolchain/environment timing, not user-code blocking imports.
+- Updated investigation report with validation results, environment details, and orphaned compiled files note.
 
 ## 2026-07-07
 

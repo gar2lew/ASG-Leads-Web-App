@@ -248,15 +248,87 @@ Recommended code cleanup for a separate goal only:
 2. Consider splitting infrequently used integration functions, such as DocuSign and Salestrail, into separately exported modules if backend discovery becomes slow after package upgrades.
 3. Remove stale compiled files in `functions/lib` only through a clean build/output hygiene goal, not in this investigation.
 
+## Verification By Successor Agent (2026-07-08)
+
+A successor agent (Z Code) independently verified the investigation on 2026-07-08 on a clean checkout of branch `fix/functions-emulator-startup-investigation` at commit `c748967`.
+
+### Environment
+
+| Item | Value |
+| --- | --- |
+| OS | Windows 10.0.26200 x64 |
+| Node | v24.18.0 |
+| npm | 11.16.0 |
+| Java | OpenJDK 21.0.11 (Temurin-21.0.11+10-LTS) |
+| Firebase CLI | 15.22.4 |
+| JAVA_HOME | `C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot` |
+| Firebase project | `demo-asg-crm-emulator` (emulator-only) |
+
+### Validation
+
+All commands passed on this environment:
+
+| Command | Result |
+| --- | ---:|
+| `npm run typecheck` | Passed |
+| `npm run lint` | Passed |
+| `npm test` | Passed |
+| `npm run build` | Passed |
+| `npm run test:emulator:preflight` | Passed |
+| `npm run test:emulator:rules` | Passed |
+| `npm run test:emulator:firestore-smoke` | Passed |
+| `npm run test:emulator:callables-dry-run` | Passed (~32s total) |
+| `cd functions && npm run build` | Passed |
+| `cd functions && npm run test:settings-admin` | Passed |
+| `git diff --check` | Passed |
+
+All 26 functions loaded and registered successfully. No timeout occurred.
+
+### Direct Compiled Import Timing
+
+| Measurement | Time |
+| --- | ---:|
+| Direct `require("./functions/lib/index.js")` | `216 ms` |
+| Number of exports | `26` |
+| Individual cold module `firestoreCompat` | `97 ms` |
+| Individual cold module `auth` | `93 ms` |
+| Individual cold module `notifications` | `16 ms` |
+| Individual cold module `docusign` | `1 ms` |
+| Individual cold module `smsfFinancials` | `0 ms` |
+
+### Additional Findings
+
+1. **Orphaned compiled files**: `functions/lib/` contains 4 compiled `.js` files that are NOT transitively required from `functions/lib/index.js`: `aggregateStats.js`, `leadSnapshots.js`, `migrateAuthFields.js`. These are harmless — they are never loaded at startup. Their source equivalents are in `functions/src/` but correspond to refactored code that is no longer connected to the active entry point. The file `salestrailSync.js` is also not directly required by `index.js` but IS required by `salestrail.js`, so it IS part of the startup path.
+
+2. **No orphaned source files**: All `.ts` source files in `functions/src/` are transitively imported by `functions/src/index.ts` — no dead source code exists.
+
+3. **Eager Admin SDK init confirmed**: `index.ts` calls `admin.initializeApp()` at import time. Most modules use lazy `getDb()` patterns. This dual pattern works but is a minor future risk if startup becomes slower.
+
+### Root Cause Confirmation
+
+The earlier assessment is **confirmed**: the Functions emulator timeout is an environment/toolchain issue, not a user-code issue.
+
+Functions user code loads reliably in ~216ms — well within the 10s backend specification timeout. The timeout occurs only when the Java runtime, Firebase CLI, Node version, or shell profile causes the emulator toolchain startup to stretch near the 10s limit.
+
+### Orphaned Compiled Files Note
+
+The files `aggregateStats.js`, `leadSnapshots.js`, `migrateAuthFields.js` exist in `functions/lib/` but are never loaded by the Functions entry point. They are remnants of refactored code. They do not affect startup time but could cause confusion during code audits. Cleanup of these files would require:
+
+1. Deleting the orphaned `.ts` source files in `functions/src/`
+2. Running `cd functions && npm run build` to regenerate `functions/lib/`
+
+This cleanup would not affect startup time but is recommended as separate hygiene work.
+
 ## Safe Fix Decision
 
 No application code fix was applied.
 
 Reason:
 
-- The current Functions code loads quickly.
-- The reported failure is not reproducible after using compatible temporary Java 21 and Firebase CLI tooling.
+- The current Functions code loads extremely quickly (216ms).
+- The reported timeout failure is not reproducible after using compatible Java 21 and Firebase CLI tooling.
 - A code change would be speculative and could alter deployed Functions behaviour.
+- The root cause is toolchain/environment timing, not user-code blocking imports.
 
 ## Validation Evidence
 

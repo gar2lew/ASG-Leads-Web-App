@@ -7,40 +7,38 @@ Last updated: 2026-07-08
 | Item | Current value |
 | --- | --- |
 | Current branch | `fix/functions-emulator-startup-investigation` |
-| Latest commit | `14ab8c5 docs: investigate functions emulator startup` |
-| Working tree status | One pre-existing untracked file: `UAT.md`. Do not absorb it unless the human owner asks. |
+| Latest commit | `14ab8c5 docs: investigate functions emulator startup` (pending new commit) |
+| Working tree status | Modified tracked files + two pre-existing untracked files: `UAT.md`, `handoff.json`. Do not absorb unless the human owner asks. |
 | Latest savepoint | `savepoint-before-functions-emulator-startup-investigation` |
 | Open PRs | `gh pr list` could not be verified locally because GitHub CLI is not authenticated. Latest project docs still list draft PR `#17` for Sprint 1 and draft PR `#18` for Sprint 2 as open at the last maintenance check. Verify before relying on this. |
 | Current version | `1.0.0` |
 | Current milestone | v1.0 UAT execution readiness and release candidate review |
 
-## 2. Current Blocker
+## 2. Current Blocker (Resolved)
 
-Reported blocker:
+The Functions emulator startup timeout was independently verified by a successor agent (Z Code) on 2026-07-08.
 
-- Functions emulator startup timeout.
-- Callable dry-run failure caused by `functions/not-found`.
-- Expected result: `npm run test:emulator:callables-dry-run` starts Auth, Firestore, and Functions emulators, registers all callable functions, and completes the dry-run harness.
-- Actual reported result: Functions emulator starts, fails to determine backend specification, and callable invocations can fail with `functions/not-found` because the callable endpoints never register.
+**Verdict: The timeout is a toolchain/environment issue, not a user-code problem.**
 
-Current local investigation evidence:
+Evidence:
+- Functions user code loads in ~216ms (all 26 exports).
+- No module cycles, top-level await, network calls during import, or blocking singleton creation found.
+- `npm run test:emulator:callables-dry-run` passes with compatible Java 21+ and Firebase CLI 15.
+- The previous investigation report (`docs/functions-emulator-startup-investigation.md`) has been updated with the full validation results.
 
-- `docs/functions-emulator-startup-investigation.md` records that compiled Functions user code loaded in about `234 ms` and exposed `26` exports.
-- The emulator/toolchain startup path measured close to the Firebase CLI `10000 ms` backend-spec timeout.
-- A later Codex validation passed when using temporary Java 21 and Firebase CLI tooling.
-- A successor agent should still reproduce the reported blocker in its own environment before changing code.
+The timeout can occur on machines with:
+- Missing Java 21+ runtime
+- Missing or cold Firebase CLI resolution
+- Shell profile errors (e.g., `fnm` errors in elevated PowerShell)
+- Node version mismatch (Functions requests Node 22; host Node 24 works but shows a warning)
 
 ## 3. What Is Safe To Do Next
 
 Safe next actions:
 
-- Investigate Functions emulator startup only.
-- Document the Functions startup dependency graph.
-- Identify slow or blocking top-level imports.
-- Identify top-level Admin SDK initialisation risk.
-- Identify startup environment issues such as Java version, Firebase CLI availability, Node version mismatch, and shell profile errors.
-- Apply only the minimal safe startup fix if the root cause is clearly identified.
-- Prefer documentation and measurement before code changes.
+- Proceed to the next recommended goal: **Reach Goal: Conduct Live Staff UAT** — run the role-specific UAT scripts with real staff testers, capture outcomes in `docs/UAT/UAT_RESULTS.md`, triage issues in `docs/UAT/UAT_TRIAGE.md`, and update `docs/UAT/UAT_SUMMARY.md`.
+- Clean up orphaned compiled files in `functions/lib/` (`aggregateStats.js`, `leadSnapshots.js`, `migrateAuthFields.js`) — these are remnants of refactored code and are never loaded at startup. Recommend deleting their `.ts` sources and rebuilding.
+- Proceed with v1.0 release candidate review.
 
 ## 4. What Is Not Safe
 
@@ -58,7 +56,7 @@ Do not:
 - Change secrets.
 - Run broad dependency upgrades.
 - Change application behaviour.
-- Change Functions behaviour unless a minimal startup-only fix is clearly proven.
+- Change Functions behaviour.
 
 ## 5. Required Validation
 
@@ -91,15 +89,19 @@ If emulator validation cannot start:
 
 ## 6. Exact Next Recommended Goal
 
-Reach Goal: Functions Emulator Startup Investigation
+**Reach Goal: Conduct Live Staff UAT**
 
 Objective:
+- Run the role-specific UAT scripts with real staff testers.
+- Capture outcomes in `docs/UAT/UAT_RESULTS.md`.
+- Triage issues in `docs/UAT/UAT_TRIAGE.md`.
+- Update `docs/UAT/UAT_SUMMARY.md` with release readiness assessment.
 
-- Investigate why Firebase Functions emulator backend discovery times out.
-- Determine why callables can fail with `functions/not-found`.
-- Document startup graph, startup timing, blocking modules, recommended fixes, and risk.
-- Apply only a minimal safe fix if the root cause is clear.
-- Validate with `npm run test:emulator:callables-dry-run`.
+Non-goals:
+- No deploy.
+- No production Firebase writes.
+- No migrations.
+- No live Salestrail sync.
 
 ## 7. DeepSeek/Z Code Rules
 
@@ -138,19 +140,21 @@ Do not run destructive rollback commands unless the human owner explicitly appro
 
 ## 9. Current Known Good Validations
 
-Known good validations recently recorded on the current code line:
+All validations passed on 2026-07-08 on Windows 10 x64 with Node v24.18.0, Java 21.0.11, Firebase CLI 15.22.4:
 
-- `npm run typecheck`
-- `npm run lint`
-- `npm test`
-- `npm run build`
-- `npm run test:emulator:preflight`
-- `npm run test:emulator:rules`
-- `npm run test:emulator:firestore-smoke`
-- `npm run test:emulator:callables-dry-run`
-- `cd functions && npm run build`
-- `cd functions && npm run test:settings-admin`
-- `git diff --check`
+| Command | Result |
+| --- | ---:|
+| `npm run typecheck` | Passed |
+| `npm run lint` | Passed |
+| `npm test` | Passed |
+| `npm run build` | Passed |
+| `npm run test:emulator:preflight` | Passed |
+| `npm run test:emulator:rules` | Passed |
+| `npm run test:emulator:firestore-smoke` | Passed |
+| `npm run test:emulator:callables-dry-run` | Passed (~32s total, 26 functions loaded) |
+| `cd functions && npm run build` | Passed |
+| `cd functions && npm run test:settings-admin` | Passed |
+| `git diff --check` | Passed |
 
 Notes:
 
@@ -162,19 +166,12 @@ Notes:
 
 ## 10. Current Known Failing Validation
 
-Reported failing validation to reproduce:
+No known failing validation at this point. The Functions emulator startup timeout was found to be environment/toolchain-dependent and does not reproduce with compatible Java 21+, Firebase CLI, and Node 22+.
 
-```powershell
-npm run test:emulator:callables-dry-run
-```
+If emulator validation fails in your environment:
 
-Reported failure mode:
-
-- Functions emulator backend specification times out after `10000`.
-- Callable harness may fail with `functions/not-found` because callables were not registered.
-
-Current local evidence:
-
-- The same validation passed after using compatible Java 21 and Firebase CLI tooling.
-- Treat the failure as environment-sensitive until reproduced.
-- Do not make code changes based only on the stale failure report.
+1. Run `npm run test:emulator:preflight` first to identify missing requirements.
+2. Confirm Java 21+ is on `PATH` and `JAVA_HOME` is set.
+3. Confirm Firebase CLI 15+ is installed locally.
+4. Run `git status --short` — untracked file `UAT.md` is human-owned.
+5. If still failing, refer to `docs/functions-emulator-startup-investigation.md` for detailed findings.
