@@ -1,11 +1,15 @@
 # ASG CRM Project State
 
-Last updated: 7 July 2026
+Last updated: 8 July 2026
 
 ## Current Branch Context
 
-- Current working branch for this UAT tracking goal: `goal/staff-uat-run-and-triage`.
-- Savepoint for this goal: `savepoint-before-staff-uat-run-and-triage`.
+- Current working branch for the AI handoff pack: `fix/functions-emulator-startup-investigation`.
+- Current handoff commit before this goal: `14ab8c5 docs: investigate functions emulator startup`.
+- Latest savepoint: `savepoint-before-functions-emulator-startup-investigation`.
+- Pre-existing untracked file: `UAT.md`. Treat it as human-owned unless explicitly instructed otherwise.
+- Previous UAT tracking branch: `goal/staff-uat-run-and-triage`.
+- Savepoint for that goal: `savepoint-before-staff-uat-run-and-triage`.
 - Parent context: v1.0 release candidate package completed on `goal/v1-release-candidate`.
 - Sprint 1 PR: `#17`, open draft at this maintenance check, targeting `codex-foundation`.
 - Sprint 2 PR: `#18`, open draft at this maintenance check, stacked on `goal/sprint-validation`.
@@ -79,6 +83,21 @@ Functions runtime dependency remediation planning created:
 - High Functions advisories are transitive runtime paths through `@grpc/grpc-js`, `form-data`, and `fast-xml-builder`.
 - Recommendation is post-v1.0 unless the release owner decides unresolved Functions advisories block v1.0 or a Functions deploy is required before v1.0.
 - No Functions package files were changed during planning.
+
+Functions emulator startup investigation created:
+
+- `docs/functions-emulator-startup-investigation.md`: investigation report for the reported Functions emulator backend specification timeout and callable `functions/not-found` failure mode.
+- Current evidence shows compiled Functions user code loads quickly and exposes 26 exports.
+- The highest-risk startup factor is emulator toolchain discovery timing near the 10 second backend specification timeout, especially when Java, Firebase CLI, Node version, or shell profile setup is inconsistent.
+- No Firestore rules, emulator configuration, app code, or Functions code was changed during the investigation.
+- `npm run test:emulator:callables-dry-run` passed with compatible Java 21 and Firebase CLI tooling.
+
+AI agent handoff pack prepared:
+
+- `HANDOFF.md`: current repo state, blocker summary, safe next actions, unsafe actions, required validation, rollback instructions, known good validations, and known failing validation context.
+- `docs/AGENT_HANDOFF_TEMPLATE.md`: reusable handoff template for future agents.
+- `docs/Z_CODE_DEEPSEEK_HANDOFF_RULES.md`: explicit rules for Z Code, DeepSeek, or another coding agent.
+- The exact next recommended goal for a fresh external agent remains `Reach Goal: Functions Emulator Startup Investigation` if that agent is taking over from the reported emulator timeout state.
 
 Staff UAT execution pack created:
 
@@ -180,6 +199,7 @@ Known validation notes:
 - v1.0 requires execution of the UAT pack, completion of UAT tracking, and release go/no-go.
 - Current production decision is No-Go until UAT signoff, merge and tag verification, backup/recovery rehearsal, Firebase approval, and risk acceptance are complete.
 - `UAT-ISS-001` requires staff retest before v1.0 readiness can improve.
+- A reported Functions emulator startup timeout can cause callable dry-run failures with `functions/not-found` if callable endpoints never register. The current investigation points to emulator toolchain discovery timing rather than slow user-code imports, but a successor agent should reproduce this in its own environment before changing code.
 - Salestrail needs a no-network mock seam before broader executable dry-run coverage.
 - Dependency audit advisories have been reviewed. PDF runtime, transitive PDF sanitisation, and the Firebase Firestore `@grpc/grpc-js` transitive patch are complete. Firebase `undici` is reviewed and has a Firebase 12 upgrade plan. Functions runtime remediation now has a backend package plan. Functions package changes and tooling remediation remain open.
 - Existing release tags need verification against merged commits.
@@ -187,6 +207,25 @@ Known validation notes:
 - Production Firebase remains blocked without explicit approval and release manager sign-off.
 
 ## Next Recommended Goal
+
+Reach Goal: Functions Emulator Startup Investigation
+
+Objective:
+
+- Reproduce the reported Functions emulator backend specification timeout and callable `functions/not-found` failure in the successor agent environment, confirm or refine the startup investigation evidence, and apply only a minimal safe startup fix if the root cause is clearly identified.
+
+Non-goals:
+
+- No deploy.
+- No push.
+- No production Firebase writes.
+- No Firestore rules changes.
+- No emulator configuration changes unless explicitly approved.
+- No migrations.
+- No live Salestrail sync.
+- No phone backfill writes.
+
+Next product goal after emulator confidence:
 
 Reach Goal: Conduct Live Staff UAT
 

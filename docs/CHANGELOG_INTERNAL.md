@@ -2,6 +2,13 @@
 
 This changelog tracks engineering process and internal operating changes. Product-facing release notes belong elsewhere.
 
+## 2026-07-08
+
+- Added Functions emulator startup investigation documenting startup dependency graph, timing, blocking module review, recommended fixes, and risk assessment.
+- Confirmed no Firestore rules, emulator configuration, application code, or Functions code changes were made during the startup investigation.
+- Added AI agent handoff pack with `HANDOFF.md`, `docs/AGENT_HANDOFF_TEMPLATE.md`, and `docs/Z_CODE_DEEPSEEK_HANDOFF_RULES.md`.
+- Updated project state and risk register to track Functions emulator startup timeout risk and cross-agent handoff safety.
+
 ## 2026-07-07
 
 - Added Functions runtime dependency remediation plan for `firebase-admin`, `firebase-functions`, Google Cloud transitive packages, and deployable callable surfaces.
