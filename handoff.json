@@ -27,11 +27,30 @@
     "title": "v1.0 hardening, UAT preparation and lead import fixes",
     "base": "codex-foundation",
     "head": "goal/post-sprint-2-consolidation",
-    "status": "prepared only, not pushed and not created"
+    "status": "approved for draft PR creation after required validation passes"
+  },
+  "pr_review": {
+    "date": "2026-07-13",
+    "review_document": "docs/post-sprint-2-pr-review.md",
+    "classification": "Amber",
+    "diff_reviewed": "origin/codex-foundation...HEAD",
+    "known_consolidation_commit": "09262db",
+    "base_commit": "04d21e8",
+    "red_findings": [],
+    "remaining_amber_risks": [
+      "Staff UAT and signoff remain incomplete.",
+      "Backup and recovery rehearsal remains incomplete.",
+      "Corrected release tag evidence remains incomplete.",
+      "Dependency audit risk requires acceptance or follow-up remediation.",
+      "Firebase production deployment remains blocked without explicit approval.",
+      "Firestore rules and callable auth risks remain active before production deployment.",
+      "Emulator validation remains sensitive to local Java, Firebase CLI, Node, and ignored Functions build output state."
+    ],
+    "draft_pr_only": true
   },
   "validation": {
-    "status": "passed through functions settings-admin; final git checks pending",
-    "finding": "Callable emulator initially failed because ignored functions/lib output was stale after consolidation. Rebuilding functions refreshed lib output and callable dry-run passed.",
+    "status": "passed before draft PR push",
+    "finding": "Build regenerated release metadata and it was restored before commit. Callable emulator loaded functions and dry-run passed with Firebase CLI 15.23.0 against demo-asg-crm-emulator.",
     "completed": [
       "npm.cmd run typecheck",
       "npm.cmd run lint",
@@ -40,9 +59,11 @@
       "npm.cmd run test:emulator:preflight",
       "npm.cmd run test:emulator:rules",
       "npm.cmd run test:emulator:firestore-smoke",
-      "cd functions && npm.cmd run build",
       "npm.cmd run test:emulator:callables-dry-run",
-      "cd functions && npm.cmd run test:settings-admin"
+      "cd functions && npm.cmd run build",
+      "cd functions && npm.cmd run test:settings-admin",
+      "git diff --check",
+      "git status"
     ],
     "commands": [
       "npm run typecheck",

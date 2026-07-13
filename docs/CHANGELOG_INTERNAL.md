@@ -4,6 +4,9 @@ This changelog tracks engineering process and internal operating changes. Produc
 
 ## 2026-07-13
 
+- Prepared post-Sprint-2 consolidation PR review and classified the branch as Amber for draft PR review only.
+- Added `docs/post-sprint-2-pr-review.md` and updated project state, handoff, handoff JSON, risk register, and changelog for the pending draft PR.
+- Reran the required pre-push validation gate with `npm.cmd` commands and demo Firebase emulator checks; build-generated release metadata was restored before commit.
 - Created `goal/post-sprint-2-consolidation` from refreshed `origin/codex-foundation` at PR #18 merge commit `04d21e8`.
 - Applied 27 verified post-Sprint-2 commits from `fix/functions-emulator-startup-investigation` in chronological order with no cherry-pick conflicts.
 - Added `docs/post-sprint-2-consolidation-report.md` with applied and excluded commits, comparison results, proposed PR text, risks, and rollback instructions.

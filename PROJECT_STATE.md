@@ -237,6 +237,22 @@ Known validation notes:
 - Backup and recovery rehearsal remains incomplete.
 - Production Firebase remains blocked without explicit approval and release manager sign-off.
 
+## Post-Sprint-2 Consolidation PR Review
+
+Date: 2026-07-13
+
+- Branch confirmed: `goal/post-sprint-2-consolidation`.
+- Base confirmed: `origin/codex-foundation` at `04d21e8`.
+- Known consolidation commit confirmed before review work: `09262db docs: finalise post sprint 2 consolidation`.
+- Working tree was clean before PR review documentation started.
+- Reviewed diff: `origin/codex-foundation...HEAD`.
+- Review classification: Amber.
+- Review document: `docs/post-sprint-2-pr-review.md`.
+- Draft PR target: base `codex-foundation`, head `goal/post-sprint-2-consolidation`.
+- Required pre-push validation passed on 2026-07-13 using `npm.cmd` commands, Firebase CLI 15.23.0, and demo emulator project `demo-asg-crm-emulator`.
+- Build regenerated release metadata and it was restored before commit.
+- Production remains No-Go. Draft PR creation is for human review only and is not approval to deploy, merge, retag, migrate, run Salestrail live sync, or modify production Firebase.
+
 ## Next Recommended Goal
 
 Reach Goal: Functions Emulator Startup Investigation

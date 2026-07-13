@@ -230,3 +230,29 @@ Non-goals:
 - No release tag movement.
 - No branch deletion.
 - No production Firebase changes.
+
+## 12. Post-Sprint-2 PR Review Status
+
+Date: 2026-07-13
+
+- Current branch confirmed as `goal/post-sprint-2-consolidation`.
+- Working tree was clean before PR review documentation started.
+- Existing diff reviewed: `origin/codex-foundation...HEAD`.
+- Review classification: Amber.
+- Review document: `docs/post-sprint-2-pr-review.md`.
+- Required pre-push validation passed on 2026-07-13.
+- Build regenerated release metadata and it was restored before commit.
+- Draft PR metadata prepared:
+  - Title: `v1.0 hardening, UAT preparation and lead import fixes`
+  - Base: `codex-foundation`
+  - Head: `goal/post-sprint-2-consolidation`
+
+Remaining Amber risks:
+
+1. Staff UAT and signoff remain incomplete.
+2. Backup and recovery rehearsal remains incomplete.
+3. Corrected release tag evidence remains incomplete.
+4. Dependency audit risk requires acceptance or follow-up remediation.
+5. Firebase production deployment remains blocked without explicit approval.
+6. Firestore rules and callable auth risks remain active before production deployment.
+7. Emulator validation remains sensitive to local Java, Firebase CLI, Node, and ignored Functions build output state.
