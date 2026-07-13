@@ -522,8 +522,8 @@ export function LeadSidebar({
       {/* ── Outer container ───────────────────────────────────────────── */}
       <div
         className={
-            isPanel
-              ? "flex flex-col h-full w-full bg-[#141824] text-white"
+          isPanel
+            ? "flex flex-col h-full w-full bg-[#141824] text-white"
             : "fixed inset-0 z-[100] flex items-stretch justify-center p-0 sm:items-center sm:px-6 sm:py-6"
         }
       >
@@ -538,16 +538,16 @@ export function LeadSidebar({
         {!isPanel && (
           <button
             onClick={handleClose}
-            className="absolute top-3 right-3 z-10 min-h-11 min-w-11 p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] border border-[#3a3a3e] text-gray-400 hover:text-white transition-all duration-150 hover:scale-105 sm:top-4 sm:right-4 sm:min-h-0 sm:min-w-0"
+            className="absolute top-3 right-3 z-10 min-h-11 min-w-11 p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] border border-[#3a3a3e] text-gray-400 hover:text-white transition-all duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:top-4 sm:right-4"
             aria-label="Close"
           >
             <X size={16} />
           </button>
         )}
           {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div className="flex flex-col gap-3 px-3 sm:px-5 py-3 sm:py-4 border-b border-gray-200 dark:border-white/[0.06] flex-shrink-0 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-3 border-b border-gray-200 px-3 py-3 sm:flex-row sm:items-start sm:justify-between sm:px-5 sm:py-4 dark:border-white/[0.06] flex-shrink-0">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-0.5">
+              <div className="flex items-center gap-2 mb-1 pr-11 sm:pr-0">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
                   {lead.name}
                 </h2>
@@ -580,7 +580,7 @@ export function LeadSidebar({
               </p>
               <a
                 href={`tel:${lead.phone.replace(/\s/g, "")}`}
-                className="text-xs sm:text-sm text-amber-500 hover:underline flex items-center gap-1 mt-0.5 w-fit"
+                className="mt-1 flex min-h-8 w-fit items-center gap-1 rounded-md text-xs text-amber-500 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:text-sm"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Phone size={12} /> {lead.phone}
@@ -594,7 +594,7 @@ export function LeadSidebar({
             <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:w-auto sm:overflow-visible sm:pb-0 sm:ml-3 sm:flex-shrink-0">
               <button
                 onClick={() => onCall(lead)}
-                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition flex-shrink-0"
+                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex-shrink-0"
               >
                 <Phone size={14} /> <span className="hidden sm:inline">Log Call</span>
                 <span className="sm:hidden">Call</span>
@@ -605,7 +605,7 @@ export function LeadSidebar({
                 <button
                   onClick={handleMarkContacted}
                   title="Mark as Contacted — sets status to Booked and logs a quick contact entry"
-                  className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-500 transition flex-shrink-0"
+                  className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 text-white text-sm font-semibold hover:bg-green-500 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 flex-shrink-0"
                 >
                   <CheckCheck size={14} />
                   <span className="hidden sm:inline">Contacted</span>
@@ -619,7 +619,7 @@ export function LeadSidebar({
                   noteInputRef.current?.focus();
                 }}
                 title="Add a note"
-                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] text-sm font-medium transition flex-shrink-0"
+                className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-300 dark:border-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-[var(--hover)] text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex-shrink-0"
               >
                 <StickyNote size={14} />
                 <span className="hidden sm:inline">Note</span>
@@ -631,14 +631,15 @@ export function LeadSidebar({
                   confirmDelete
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : "border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
-                }`}
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400`}
               >
                 <Trash2 size={14} />
                 {confirmDelete ? "Confirm?" : <span className="hidden sm:inline">Delete</span>}
               </button>
               <button
                 onClick={handleClose}
-                className="min-h-11 min-w-11 p-2 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded-lg transition text-gray-500 flex-shrink-0"
+                className="min-h-11 min-w-11 p-2 hover:bg-gray-100 dark:hover:bg-[var(--hover)] rounded-lg transition text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex-shrink-0"
+                aria-label="Close lead details"
               >
                 <X size={18} />
               </button>

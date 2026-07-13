@@ -135,7 +135,7 @@ export function useDailyStats(params?: UseDailyStatsParams): {
 
     return () => unsubscribe();
     // Re-subscribe whenever any param changes (stringify for stable dep comparison)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [
     authLoading,
     currentUser,

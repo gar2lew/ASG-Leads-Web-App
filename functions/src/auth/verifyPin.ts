@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "../firestoreCompat";
 import * as bcrypt from "bcryptjs";
 import { requireAuth } from "../auth";
 
@@ -123,7 +124,7 @@ async function writeAudit(event: {
       authRole: event.authRole ?? null,
       authProvider: event.authProvider ?? null,
       source: "callable",
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: firestoreServerTimestamp(),
     });
   } catch {
     console.warn("[verifyPin] Failed to write audit log");
@@ -232,7 +233,7 @@ export const setPin = onCall(async (request) => {
   const update: Record<string, unknown> = {
     pinHash,
     isSetup: true,
-    pinUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    pinUpdatedAt: firestoreServerTimestamp(),
     pinUpdatedBy: auth.uid,
   };
 
@@ -309,7 +310,7 @@ export const changePin = onCall(async (request) => {
 
   await db.collection("reps").doc(String(repId)).update({
     pinHash: await bcrypt.hash(newPin, BCRYPT_ROUNDS),
-    pinUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    pinUpdatedAt: firestoreServerTimestamp(),
     pinUpdatedBy: auth.uid,
   });
 

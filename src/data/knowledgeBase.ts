@@ -460,27 +460,29 @@ hidden from assignment dropdowns.</p>
   <li>Logged in to Firebase: <code>firebase login</code></li>
 </ul>
 
-<h3>Deploy frontend (hosting)</h3>
+<p>
+  Deployments are release-manager actions. Do not deploy from a feature branch or without explicit approval for the target Firebase project.
+</p>
+
+<h3>Prepare frontend (hosting)</h3>
 <ol>
   <li>In the project root, run: <code>npm run build</code></li>
-  <li>If the build succeeds, run: <code>firebase deploy --only hosting</code></li>
-  <li>The live URL will be printed in the console when complete</li>
+  <li>Confirm <code>git status --short</code>, current branch, and target Firebase project</li>
+  <li>Ask the release manager to run the approved scoped hosting deploy</li>
 </ol>
 <p>
   The build script runs TypeScript compilation (<code>tsc</code>) first, then Vite's production bundler.
-  If TypeScript finds errors, the build will abort — fix all type errors before deploying.
+  If TypeScript finds errors, the build will abort. Fix all type errors before requesting deployment approval.
 </p>
 
-<h3>Deploy backend functions only</h3>
-<pre><code>firebase deploy --only functions</code></pre>
+<h3>Backend functions</h3>
+<p>Functions deploys require explicit approval and should be validated with emulator and callable tests first.</p>
 
-<h3>Deploy everything</h3>
-<pre><code>npm run deploy</code></pre>
-<p>This is a shortcut defined in <code>package.json</code> that runs build + hosting deploy in sequence.</p>
+<h3>Combined release</h3>
+<p>Use the governed release process, not an ad hoc full deploy. Confirm deploy surfaces, rollback, and approval before any command is run.</p>
 
-<h3>Deploy Firestore rules or indexes only</h3>
-<pre><code>firebase deploy --only firestore:rules
-firebase deploy --only firestore:indexes</code></pre>
+<h3>Firestore rules or indexes</h3>
+<p>Rules and index deploys are production-sensitive. Run emulator access tests and get explicit approval before a release manager deploys them.</p>
 
 <h3>Environment / config</h3>
 <p>

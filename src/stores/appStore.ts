@@ -14,7 +14,7 @@ interface AppState {
   drapsEntries: DrapsEntry[];
   commissions: CommissionEntry[];
   auditLog: AuditEntry[];
-  reportToLoad: Record<string, any> | null;
+  reportToLoad: Record<string, unknown> | null;
   piaPrefillClientId: string | null;
   piaPrefillClientName: string | null;
   activeRegion: Region;
@@ -30,7 +30,7 @@ interface AppState {
   setDrapsEntries: (entries: DrapsEntry[]) => void;
   setCommissions: (entries: CommissionEntry[]) => void;
   setAuditLog: (entries: AuditEntry[]) => void;
-  setReportToLoad: (report: Record<string, any> | null) => void;
+  setReportToLoad: (report: Record<string, unknown> | null) => void;
   setPiaPrefillContext: (clientId: string | null, clientName: string | null) => void;
   clearPiaPrefillContext: () => void;
   setActiveRegion: (region: Region) => void;

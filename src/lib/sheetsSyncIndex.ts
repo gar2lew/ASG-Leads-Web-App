@@ -77,8 +77,9 @@ export async function collectPagedSyncIndex<T>(
 ): Promise<T[]> {
   const all: T[] = [];
   let cursor: unknown = null;
+  let hasMore = true;
 
-  while (true) {
+  while (hasMore) {
     const page = await loadPage(cursor);
     if (page.entries.length === 0) break;
 
@@ -86,7 +87,7 @@ export async function collectPagedSyncIndex<T>(
     cursor = page.nextCursor;
     onProgress?.(all.length, [...all]);
 
-    if (page.done || all.length >= totalCount) break;
+    hasMore = !page.done && all.length < totalCount;
   }
 
   return all;

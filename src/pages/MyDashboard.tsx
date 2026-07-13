@@ -721,7 +721,7 @@ const NOTE_TYPE_COLORS: Record<UserNote["type"], string> = {
 /** Minimal markdown: **bold**, *italic*, `code`, [label](url) */
 function renderMd(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
-  const re = /\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g;
+  const re = /\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g;
   let last = 0, m: RegExpExecArray | null;
   let key = 0;
   while ((m = re.exec(text)) !== null) {

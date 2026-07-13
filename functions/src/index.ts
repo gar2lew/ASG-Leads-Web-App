@@ -1,6 +1,7 @@
 import { onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { sendNotification, sendNotificationToMany } from "./notifications";
 import {
   createDocuSignEnvelope,
@@ -88,12 +89,12 @@ export const getPropertyInsights = onCall(async (request) => {
   const lastSoldDate: string | null = null;
 
   // ---- Resolve value ----
-  let resolvedValue: number | null = baselineValue;
-  let resolvedValueSource: "api" | "appreciation_model" | "baseline" | null = "baseline";
+  const resolvedValue: number | null = baselineValue;
+  const resolvedValueSource: "api" | "appreciation_model" | "baseline" | null = "baseline";
 
   // ---- Equity calc ----
   let estimatedEquity: number | null = null;
-  let equityMethod: "full_model" | "appreciation_model" | "baseline_proxy" = "baseline_proxy";
+  const equityMethod: "full_model" | "appreciation_model" | "baseline_proxy" = "baseline_proxy";
 
   if (resolvedValue) {
     estimatedEquity = resolvedValue * 0.2; // proxy for now
@@ -119,8 +120,8 @@ export const getPropertyInsights = onCall(async (request) => {
 
     dataMode: "estimated",
 
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: firestoreServerTimestamp(),
+    fetchedAt: firestoreServerTimestamp(),
   };
 
   const ref = await db.collection("properties").add(propertyDoc);
@@ -250,8 +251,8 @@ export const aggregateDailyStats = onSchedule(
           presentations: drapsEntry?.presentations || 0,
           sales: drapsEntry?.sold || 0,
         },
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: firestoreServerTimestamp(),
+        updatedAt: firestoreServerTimestamp(),
       });
     }
 

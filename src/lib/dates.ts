@@ -53,7 +53,7 @@ function parseDate(input: string | number | Date | undefined | null): Date | nul
   }
 
   // DD/MM/YYYY or DD-MM-YYYY
-  const dmyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  const dmyMatch = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (dmyMatch) {
     const [, day, month, year] = dmyMatch;
     const d = new Date(Number(year), Number(month) - 1, Number(day));
@@ -61,7 +61,7 @@ function parseDate(input: string | number | Date | undefined | null): Date | nul
   }
 
   // MM/DD/YYYY (US format — only if we can't parse as DD/MM)
-  const mdyMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  const mdyMatch = s.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (mdyMatch) {
     const [, a, b, year] = mdyMatch;
     const fullYear = year.length === 2 ? 2000 + Number(year) : Number(year);

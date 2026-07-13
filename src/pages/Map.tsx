@@ -873,6 +873,32 @@ function PinActionPanel({
 void PinActionPanel;
 
 export function MapPage() {
+  if (!MAPS_API_KEY) {
+    return <MissingMapsApiKey />;
+  }
+
+  return <MapPageContent />;
+}
+
+function MissingMapsApiKey() {
+  return (
+    <div className="flex-1 flex items-center justify-center bg-[#f0f0ee] dark:bg-[#0e0e0d] p-6">
+      <div className="bg-white dark:bg-[#1a1a18] border border-[#e2e2de] dark:border-[#2e2e2b] rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
+        <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+          <MapPin className="text-red-500" size={24} />
+        </div>
+        <h2 className="text-base font-semibold text-[#1a1a18] dark:text-[#f0f0ee] mb-2">
+          Configuration Error
+        </h2>
+        <p className="text-xs text-[#6b6b65] dark:text-[#8a8a84] mb-3">
+          Google Maps API key is not configured. Please set the <code className="bg-gray-100 dark:bg-gray-900 px-1 py-0.5 rounded text-[11px]">VITE_GOOGLE_MAPS_API_KEY</code> environment variable.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function MapPageContent() {
   const { reps, currentUser, statusColors } = useAppStore();
   const { save: saveLead } = useSaveLead();
   const { remove: deleteLead } = useDeleteLead();
@@ -886,25 +912,6 @@ export function MapPage() {
   // Own Firestore subscriptions — map page may be visited without Leads page ever mounting
   const { leads } = useLeads();
   const { zones: allZones } = useKnockZones();
-
-  // Failsafe: prevent loading script if API key is missing
-  if (!MAPS_API_KEY) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-[#f0f0ee] dark:bg-[#0e0e0d] p-6">
-        <div className="bg-white dark:bg-[#1a1a18] border border-[#e2e2de] dark:border-[#2e2e2b] rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
-          <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-            <MapPin className="text-red-500" size={24} />
-          </div>
-          <h2 className="text-base font-semibold text-[#1a1a18] dark:text-[#f0f0ee] mb-2">
-            Configuration Error
-          </h2>
-          <p className="text-xs text-[#6b6b65] dark:text-[#8a8a84] mb-3">
-            Google Maps API key is not configured. Please set the <code className="bg-gray-100 dark:bg-gray-900 px-1 py-0.5 rounded text-[11px]">VITE_GOOGLE_MAPS_API_KEY</code> environment variable.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: MAPS_API_KEY,

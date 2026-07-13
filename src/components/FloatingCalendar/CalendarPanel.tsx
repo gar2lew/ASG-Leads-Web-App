@@ -438,7 +438,7 @@ export function CalendarPanel({ onClose, theme, onToggleTheme }: CalendarPanelPr
             const count = apptCountMap[cell.dateStr] || 0;
 
             let bg = cell.isCurrentMonth ? t.cellBg : t.cellMuted;
-            let textColor = cell.isCurrentMonth ? t.cellText : t.cellMutedText;
+            const textColor = cell.isCurrentMonth ? t.cellText : t.cellMutedText;
             let border = "transparent";
 
             if (isToday) {

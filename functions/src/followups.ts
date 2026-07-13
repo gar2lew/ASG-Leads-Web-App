@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { sendNotification } from "./notifications";
 
@@ -32,7 +33,7 @@ export const followUpEngine = onSchedule(
         leadName: lead.name ?? null,
         dqRep: lead.dqRep ?? null,
         nextContactDate: lead.nextContactDate ?? today,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: firestoreServerTimestamp(),
       });
 
       batch.set(db.collection("notifications").doc(), {
@@ -40,7 +41,7 @@ export const followUpEngine = onSchedule(
         message: `Follow-up due: ${lead.name ?? "Unknown"}`,
         leadId: doc.id,
         read: false,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: firestoreServerTimestamp(),
       });
     }
 

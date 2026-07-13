@@ -1,5 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
+import { firestoreServerTimestamp } from "./firestoreCompat";
 import { requireAuth } from "./auth";
 
 interface AuditPayload {
@@ -49,7 +50,7 @@ export function buildAuditEvent(data: AuditPayload, auth: ReturnType<typeof requ
       authRole: auth.role ?? null,
       authProvider: auth.signInProvider ?? null,
       source: "callable",
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: firestoreServerTimestamp(),
     },
     log: {
       action,

@@ -38,7 +38,7 @@ function lead(overrides) {
     id: 1,
     name: "Test Lead",
     suburb: "Perth",
-    status: "contacted",
+    status: "Revisit",
     callHistory: [{ date: "2026-05-08", time: "09:00", result: "connected" }],
     lastCall: "2026-05-08T09:00:00+08:00",
     ...overrides,
@@ -64,7 +64,7 @@ const scheduledCallback = workflow.getWorkflowState(
 );
 assert.equal(scheduledCallback.queueType, "callback");
 assert.equal(scheduledCallback.priority, "medium");
-assert.equal(getNextAction(scheduledCallback.lead ?? lead({ callbackDate: "2026-05-15", callbackTime: "11:00" })).type, "callback");
+assert.equal(getNextAction(lead({ callbackDate: "2026-05-15", callbackTime: "11:00" })).type, "callback");
 
 const dueFollowUp = workflow.getWorkflowState(
   lead({ callbackDate: undefined, callbackTime: undefined, nextContactDate: "2026-05-10" }),
@@ -99,7 +99,7 @@ assert.equal(workflow.getOperationalLeadBucket(dqLead), "new");
 const mixedSet = [
   dqLead,
   lead({ id: 2, status: "Revisit", callbackDate: "2026-05-09", callbackTime: "10:30" }),
-  lead({ id: 3, status: "contacted", callbackDate: undefined, nextContactDate: "2026-05-09" }),
+  lead({ id: 3, status: "Revisit", callbackDate: undefined, nextContactDate: "2026-05-09" }),
   lead({ id: 4, status: "Booked" }),
   lead({ id: 5, status: "Wrong Number" }),
 ];

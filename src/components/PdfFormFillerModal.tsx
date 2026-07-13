@@ -508,7 +508,7 @@ export function PdfFormFillerModal({ template, onClose }: { template: FormTempla
     return () => {
       cancelled = true;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Display scale ──────────────────────────────────────────────────────────
 

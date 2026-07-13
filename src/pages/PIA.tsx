@@ -302,7 +302,7 @@ function PIAPage() {
         console.warn("[PIA] Failed to load state:", err);
       }
     })();
-  }, [selectedClientId, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedClientId, loaded]);
 
   // Memoize selected client lookup
   const selectedClient = (leads || []).find(

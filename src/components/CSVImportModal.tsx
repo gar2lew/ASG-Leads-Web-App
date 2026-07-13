@@ -147,7 +147,7 @@ export function CSVImportModal({ onClose, onImport }: CSVImportModalProps) {
           const field = mapping[h];
           if (field && row[i]?.trim()) {
             const raw = row[i].trim();
-            (lead as any)[field] = field === "phone" ? normalizeAUPhone(raw) : raw;
+            (lead as Partial<Record<keyof Lead, unknown>>)[field] = field === "phone" ? normalizeAUPhone(raw) : raw;
           }
         });
         return lead as Lead;

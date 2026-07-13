@@ -141,7 +141,6 @@ export function useAIGuidance(
     // ---------- Guidance generation ----------
     let suggestion: string = "";
     let defaultScript: string = "";
-    let action: string; // will become `action` field
 
     // Determine suggestion and default script based on nextAction
     switch (nextAction.type) {
@@ -151,12 +150,13 @@ export function useAIGuidance(
           defaultScript = `Hi ${fn}, this is [Your Name] from ASG. We specialise in helping WA ${ownerOrRenter(client)} build long-term wealth through property. I just wanted to introduce myself — do you have two minutes?`;
         }
         break;
-      case "followup":
+      case "followup": {
         const when = daysSinceStr(client.lastCall);
         const referencePoint = client.callHistory?.length ? "your last conversation" : "your initial reach-out";
         suggestion = `${name} last heard from you ${when}. Reference ${referencePoint} to re-engage naturally — avoid starting from scratch.`;
         defaultScript = `Hi ${fn}, it's [Your Name] from ASG — we spoke recently about building your financial position. I just wanted to follow up and see where things are at on your end.`;
         break;
+      }
       case "confirm":
         suggestion = `${name} has an upcoming appointment. A quick confirmation call reduces no-show risk significantly and builds rapport ahead of the meeting.`;
         defaultScript = `Hi ${fn}, it's [Your Name] from ASG. I'm calling to confirm our upcoming appointment — is that time still working for you? Great, I'll send through a reminder.`;
@@ -165,17 +165,17 @@ export function useAIGuidance(
         suggestion = `${name} requested a callback. Call at the scheduled time — they're expecting your call, so lead with confidence.`;
         defaultScript = `Hi ${fn}, it's [Your Name] from ASG — you asked me to call back around this time. Is now still a good moment?`;
         break;
-      case "booked":
+      case "booked": {
         const apptType = client.fcAppt?.date ? "Finance Review" : "Finance Consult";
         suggestion = `${name} is at the right stage for a ${apptType}. Lock in a time while momentum is high — offer two specific time slots rather than an open-ended question.`;
         defaultScript = `Based on what we've discussed, the natural next step is to book a ${apptType}. I have availability on [Day 1] or [Day 2] — which works better for you?`;
         break;
+      }
       default:
         return null;
     }
 
-    // Assign action (the suggestion text)
-    action = suggestion;
+    const action = suggestion;
 
     // ---------- Script selection with light variation ----------
     // Define multiple script variations per objection type
