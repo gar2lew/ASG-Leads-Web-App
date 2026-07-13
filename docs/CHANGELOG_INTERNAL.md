@@ -2,6 +2,15 @@
 
 This changelog tracks engineering process and internal operating changes. Product-facing release notes belong elsewhere.
 
+## 2026-07-13
+
+- Audited repository branch, PR, tag, stash, worktree, generated-output, and UAT note state before further development.
+- Confirmed PR #17 and PR #18 are merged into `origin/codex-foundation`, replacing stale handoff assumptions that they were still open or stacked.
+- Documented that local `codex-foundation` remains stale at `b88c417` while `origin/codex-foundation` is `04d21e8`.
+- Added repository cleanup audit, branch consolidation plan, and release tag correction plan.
+- Documented that existing release tags should not be moved and that corrected release evidence should use new tag names.
+- Updated project state, handoff, handoff JSON, and risk register for post-Sprint-2 consolidation.
+
 ## 2026-07-08
 
 - Added Functions emulator startup investigation documenting startup dependency graph, timing, blocking module review, recommended fixes, and risk assessment.

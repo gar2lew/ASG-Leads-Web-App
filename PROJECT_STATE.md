@@ -4,15 +4,34 @@ Last updated: 8 July 2026
 
 ## Current Branch Context
 
-- Current working branch for the AI handoff pack: `fix/functions-emulator-startup-investigation`.
-- Current handoff commit before this goal: `14ab8c5 docs: investigate functions emulator startup`.
+- Current working branch for repository cleanup audit: `fix/functions-emulator-startup-investigation`.
+- Current branch is tracking `origin/fix/functions-emulator-startup-investigation`.
+- Latest audited commit before this cleanup documentation: `c287dbc docs: add live UAT notes`.
 - Latest savepoint: `savepoint-before-functions-emulator-startup-investigation`.
-- Pre-existing untracked file: `UAT.md`. Treat it as human-owned unless explicitly instructed otherwise.
+- Working tree was clean at repository cleanup preflight.
+- `UAT.md` is now tracked and committed. It records `UAT-ISS-001` and should be retained as useful live-UAT source evidence.
 - Previous UAT tracking branch: `goal/staff-uat-run-and-triage`.
 - Savepoint for that goal: `savepoint-before-staff-uat-run-and-triage`.
 - Parent context: v1.0 release candidate package completed on `goal/v1-release-candidate`.
-- Sprint 1 PR: `#17`, open draft at this maintenance check, targeting `codex-foundation`.
-- Sprint 2 PR: `#18`, open draft at this maintenance check, stacked on `goal/sprint-validation`.
+- Sprint 1 PR: `#17`, merged into `codex-foundation` at `96630a2` on 2026-07-13.
+- Sprint 2 PR: `#18`, merged into `codex-foundation` at `04d21e8` on 2026-07-13.
+- `origin/codex-foundation` is `04d21e8`.
+- Local `codex-foundation` is stale at `b88c417` and must be fast-forwarded before it is used as a base.
+
+## Repository Cleanup Audit
+
+Repository cleanup audit created:
+
+- `docs/repository-cleanup-audit.md`: Stage 0 preflight, PR and branch topology, tag audit, UAT.md classification, stashes, worktrees, and safe cleanup findings.
+- `docs/branch-consolidation-plan.md`: recommended consolidation order, current PR merge state, commands to prepare a post-Sprint-2 consolidation branch, validation gate, and branch hygiene cautions.
+- `docs/release-tag-correction-plan.md`: release tag target audit and new-name correction plan.
+
+Current topology:
+
+- PR #17 and PR #18 are already merged into `origin/codex-foundation`.
+- Current branch is ahead of `origin/codex-foundation` by 26 commits and behind it by 2 merge commits.
+- Merge base between current branch and `origin/codex-foundation` is `9e53dc3 docs: add sprint 2 validation review`.
+- The next repository action should be a post-Sprint-2 consolidation PR from an updated `codex-foundation` base, not more work on the stale local base.
 
 ## Current Product State
 
