@@ -18,18 +18,18 @@ Quality gate:
 Exit criteria:
 ```
 
-## Current Goal: Engineering Handbook Setup
+## Current Goal: Operational Documentation Layer
 
-- Objective: establish the ASG CRM engineering handbook and Codex operating structure.
+- Objective: establish the living operational documentation layer for known issues, pending decisions, ideas, backlog, product releases, version planning, documentation discovery, and project state.
 - Scope: documentation and process files only.
 - Non-goals: app source changes, dependency installs, Firebase config changes, deploys, migrations, production data changes.
-- Branch name: `goal/engineering-handbook-setup`.
-- Savepoint tag: `savepoint-before-engineering-handbook-setup`.
-- Expected deliverables: `AGENTS.md` plus handbook docs under `docs/`.
-- Validation commands: status check, documentation search checks, cached diff check.
-- Rollback command: `git switch codex-foundation; git branch -D goal/engineering-handbook-setup`.
-- Quality gate: docs contain the required safety model, goal structure, roadmap, validation, rollback, and prompt templates.
-- Exit criteria: docs committed with `docs: add ASG CRM engineering handbook`.
+- Branch name: `docs/operational-documentation-layer`.
+- Savepoint tag: `savepoint-before-operational-documentation-layer`.
+- Expected deliverables: `PROJECT_STATE.md`, `docs/KNOWN_ISSUES.md`, `docs/DECISIONS_PENDING.md`, `docs/IDEAS.md`, `docs/FEATURE_BACKLOG.md`, `docs/PRODUCT_RELEASES.md`, `docs/VERSION_PLAN_V1.md`, and `docs/DOCUMENTATION_INDEX.md`.
+- Validation commands: `git diff --check`, documentation dash character check, and documentation-only status check.
+- Rollback command: `git switch docs/operational-documentation-layer; git reset --hard savepoint-before-operational-documentation-layer`.
+- Quality gate: docs are practical, version-based, safety-aware, and do not claim production readiness without merge, tag, validation, and approval evidence.
+- Exit criteria: docs committed with `docs: add operational documentation layer`.
 
 ## Goal Backlog
 
@@ -43,4 +43,6 @@ Exit criteria:
 | Salestrail emulator dry-run tests | 14 | `goal/salestrail-emulator-tests` | Proposed |
 | Phone normalisation dry-run validation | 13 | `goal/phone-normalisation-validation` | Proposed |
 | UI workflow audit | 11 | `goal/ui-workflow-audit` | Proposed |
+| Operational documentation layer | 19 | `docs/operational-documentation-layer` | In progress |
+| v1.0 release planning | 21 | `goal/v1-internal-production-release-planning` | Proposed |
 | ASG-X discovery | 25 | `goal/asg-x-discovery` | Future |

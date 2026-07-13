@@ -2,6 +2,79 @@
 
 This changelog tracks engineering process and internal operating changes. Product-facing release notes belong elsewhere.
 
+## 2026-07-13
+
+- Completed final human review of PR #19 and classified it as Green for Ready for Review with Amber merge and production blockers.
+- Added `docs/post-sprint-2-human-review.md` and updated project state, handoff, handoff JSON, risk register, and changelog.
+- Reran the full validation gate for human review; build-generated release metadata was restored before commit.
+- Prepared post-Sprint-2 consolidation PR review and classified the branch as Amber for draft PR review only.
+- Added `docs/post-sprint-2-pr-review.md` and updated project state, handoff, handoff JSON, risk register, and changelog for the pending draft PR.
+- Reran the required pre-push validation gate with `npm.cmd` commands and demo Firebase emulator checks; build-generated release metadata was restored before commit.
+- Created `goal/post-sprint-2-consolidation` from refreshed `origin/codex-foundation` at PR #18 merge commit `04d21e8`.
+- Applied 27 verified post-Sprint-2 commits from `fix/functions-emulator-startup-investigation` in chronological order with no cherry-pick conflicts.
+- Added `docs/post-sprint-2-consolidation-report.md` with applied and excluded commits, comparison results, proposed PR text, risks, and rollback instructions.
+- Callable emulator validation initially timed out because ignored `functions/lib` output was stale after consolidation. Rebuilding Functions output refreshed the emulator entry point and `npm.cmd run test:emulator:callables-dry-run` passed.
+- Audited repository branch, PR, tag, stash, worktree, generated-output, and UAT note state before further development.
+- Confirmed PR #17 and PR #18 are merged into `origin/codex-foundation`, replacing stale handoff assumptions that they were still open or stacked.
+- Documented that local `codex-foundation` remains stale at `b88c417` while `origin/codex-foundation` is `04d21e8`.
+- Added repository cleanup audit, branch consolidation plan, and release tag correction plan.
+- Documented that existing release tags should not be moved and that corrected release evidence should use new tag names.
+- Updated project state, handoff, handoff JSON, and risk register for post-Sprint-2 consolidation.
+
+## 2026-07-08
+
+- Added Functions emulator startup investigation documenting startup dependency graph, timing, blocking module review, recommended fixes, and risk assessment.
+- Confirmed no Firestore rules, emulator configuration, application code, or Functions code changes were made during the startup investigation.
+- Added AI agent handoff pack with `HANDOFF.md`, `docs/AGENT_HANDOFF_TEMPLATE.md`, and `docs/Z_CODE_DEEPSEEK_HANDOFF_RULES.md`.
+- Updated project state and risk register to track Functions emulator startup timeout risk and cross-agent handoff safety.
+- Successor agent (Z Code) independently verified the Functions emulator startup investigation. Functions user code loads in 216ms, all 26 exports register successfully, and `npm run test:emulator:callables-dry-run` passes with compatible Java 21 and Firebase CLI tooling.
+- Root cause confirmed as toolchain/environment timing, not user-code blocking imports.
+- Updated investigation report with validation results, environment details, and orphaned compiled files note.
+
+## 2026-07-07
+
+- Added Functions runtime dependency remediation plan for `firebase-admin`, `firebase-functions`, Google Cloud transitive packages, and deployable callable surfaces.
+- Added Functions runtime upgrade risk register covering Admin SDK, Functions SDK, callable auth, timestamp compatibility, Salestrail, phone normalisation, DocuSign, SMSF, scheduled jobs, emulator compatibility, and deploy gating.
+- Documented that current Functions audit remains 16 advisories with 3 high advisories and no Functions package files changed during planning.
+- Recommended post-v1.0 timing for Functions runtime package remediation unless the release owner blocks v1.0 on unresolved Functions advisories or requires a Functions deploy before v1.0.
+- Added v1.0 UAT execution pack with role-specific scripts for sales reps, managers, admins, and directors.
+- Added UAT checklist, issue report template, signoff form, test data guide, severity matrix, and v1.0 exit criteria.
+- Added chief engineer status review documenting current version, release milestone, No-Go production posture, Needs Review release-candidate posture, and the single next goal.
+- Updated project state and risk register to treat the UAT execution pack as the next v1.0 quality gate.
+- Prepared live staff UAT tracking files for results, issue triage, UAT-driven changes, and release readiness summary.
+- Confirmed no live UAT feedback was invented or recorded during tracking preparation.
+- Recorded `UAT-ISS-001` for initial lead loading, Quick Pull date preservation, and 100-row reporting.
+- Updated lead loading to include legacy-compatible records without writing production data.
+- Updated Quick Pull to use a full paged lead index, preserve valid source dates, apply a clear fallback for missing or invalid dates, and report imported, updated, skipped, failed, fallback date, invalid date, and possible limit counts.
+
+## 2026-07-06
+
+- Added Master Architect documentation as the product and engineering north star.
+- Added operational documentation layer for known issues, pending decisions, ideas, feature backlog, product releases, v1.0 planning, documentation discovery, and current project state.
+- Updated roadmap and goals to prefer version-based planning from v1.0 onward.
+- Documented release-tag verification risk because release tags exist while Sprint 1 and Sprint 2 PRs still require merge confirmation.
+- Added AI foundation data audit covering lead timeline, history, notes, calls, appointments, status history, documents, tasks, and recommendations.
+- Added internal production readiness Go/No-Go report.
+- Added staff UAT plan with scripts, checklists, feedback forms, issue tracking, and success criteria.
+- Prepared v1.0 release candidate docs for release notes, known issues, upgrade guide, deployment checklist, rollback checklist, and final risk assessment.
+- Ran weekly maintenance validation and added `docs/WEEKLY_HEALTH_REPORT.md`.
+- Updated project state and risk register with dependency advisory counts, UAT status, open PRs, stale branch notes, and production deployment blockers.
+- Added dependency security review and staged remediation plan for root and Functions audit advisories.
+- Updated project state, risk register, and known issues to track dependency remediation as an active release blocker.
+- Updated `jspdf` from `4.2.0` to `4.2.1` to remove the direct critical app runtime PDF advisory.
+- Added PDF workflow validation checklist for commissions, Document Centre, form filler, O&A, and reporting PDF entry points.
+- Updated transitive optional `dompurify` under `jspdf` from `3.3.3` to `3.4.11` through the lockfile to remove the remaining PDF sanitisation advisory.
+- Updated the root Firebase Firestore transitive `@grpc/grpc-js` lockfile entry from `1.9.15` to `1.9.16`.
+- Confirmed no same-major Firebase 10.x SDK update is available beyond the installed `firebase@10.14.1`.
+- Deferred Firebase `undici` remediation because Firebase 10.14.1 pins `undici@6.19.7` exactly and an override needs separate compatibility approval.
+- Reduced root `npm audit` from 27 to 26 advisories and high severity from 5 to 4.
+- Reviewed Firebase `undici` compatibility and confirmed no safe Firebase 10 patch path exists.
+- Classified the `undici` advisory as not found in the built browser bundle but still present for Node, audit, local tooling, and emulator surfaces.
+- Deferred `undici` overrides because they would force exact Firebase dependency declarations; recommended a separate Firebase 11 or 12 upgrade compatibility goal.
+- Added Firebase web SDK major upgrade plan targeting Firebase 12 and matching rules-unit-testing migration.
+- Added Firebase web SDK upgrade risk register covering auth, Firestore, Functions, Storage, messaging, emulator tests, bundle output, audit, and release timing.
+- Recommended post-v1.0 timing for the Firebase 12 upgrade unless release ownership blocks v1.0 on the remaining `undici` advisory.
+
 ## 2026-07-04
 
 - Established the validation baseline on `fix/validation-baseline`.

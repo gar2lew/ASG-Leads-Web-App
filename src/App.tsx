@@ -1,10 +1,21 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { Lead, Region, Rep } from "./types";
+import { effectiveRegion, Lead, Region, Rep } from "./types";
 import { ToastProvider, useToast } from "./context/ToastContext";
 import { LeadsPage } from "./pages/Leads"; // eager — it's the landing page
 import { db } from "./lib/firebase";
-import { doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  documentId,
+  getDocs,
+  orderBy,
+  query,
+  limit,
+  startAfter,
+  updateDoc,
+} from "firebase/firestore";
+import type { DocumentData, Query, QueryDocumentSnapshot, QuerySnapshot } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { useAppStore } from "./stores/appStore";
 import {
@@ -17,7 +28,7 @@ import {
   useSaveSettings,
   useAddAuditEntry,
 } from "./hooks/useFirebase";
-import { deriveOperationalCounters } from "./lib/workflowState";
+import { currentPerthDate, deriveOperationalCounters } from "./lib/workflowState";
 import { AppSidebar } from "./components/navigation/AppSidebar";
 import { getRegionIdentity } from "./lib/regionIdentity";
 import { PAGE_DESCRIPTIONS, PAGE_LABELS, type NavigationPageKey } from "./lib/navigationConfig";
@@ -48,6 +59,20 @@ import {
   Inbox,
 } from "lucide-react";
 import { exportLeadsCSV, exportCallHistoryCSV, normalizeAUPhone } from "./lib/utils";
+import {
+  createQuickPullSummary,
+  findQuickPullColumn,
+  formatQuickPullSummary,
+  normalizeQuickPullStatus,
+  QUICK_PULL_DATE_ALIASES,
+  resolveQuickPullLeadDate,
+} from "./lib/quickPullImport";
+import {
+  collectPagedSyncIndex,
+  pickSyncLeadIndexFields,
+  SYNC_INDEX_BATCH_SIZE,
+  type SyncLeadIndexEntry,
+} from "./lib/sheetsSyncIndex";
 import { linkRepToFirebaseUser, resolveRepForSession } from "./lib/authIdentity";
 
 // ── Lazy-loaded pages (split into separate JS chunks) ─────────────────────────
@@ -103,6 +128,26 @@ import { auth, functions } from "./lib/firebase";
 const SHEETS_API = "https://sheets.googleapis.com/v4/spreadsheets";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_SHEETS_API_KEY ?? "";
 const DEV_AUTH_BYPASS_ENABLED = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_AUTH_BYPASS === "true";
+
+async function loadQuickPullLeadIndex(): Promise<SyncLeadIndexEntry[]> {
+  const base = collection(db, "leads");
+  return collectPagedSyncIndex<SyncLeadIndexEntry>(Number.POSITIVE_INFINITY, async (cursor) => {
+    const pageQuery: Query<DocumentData> = cursor
+      ? query(
+          base,
+          orderBy(documentId()),
+          startAfter(cursor as QueryDocumentSnapshot<DocumentData>),
+          limit(SYNC_INDEX_BATCH_SIZE),
+        )
+      : query(base, orderBy(documentId()), limit(SYNC_INDEX_BATCH_SIZE));
+    const snap: QuerySnapshot<DocumentData> = await getDocs(pageQuery);
+    return {
+      entries: snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => pickSyncLeadIndexFields(d.id, d.data())),
+      nextCursor: snap.docs[snap.docs.length - 1] ?? null,
+      done: snap.empty || snap.size < SYNC_INDEX_BATCH_SIZE,
+    };
+  });
+}
 
 if (!GOOGLE_API_KEY) {
   console.warn(
@@ -1078,6 +1123,7 @@ function AppShell() {
       const phoneIdx = col(["phone", "mobile", "contact number", "contact", "ph"]);
       const suburbIdx = col(["suburb", "city", "town"]);
       const statusIdx = col(["status", "lead status"]);
+      const dateIdx = findQuickPullColumn(headers, QUICK_PULL_DATE_ALIASES);
       const addrIdx = col(["address", "full address", "property address", "street address"]);
       const houseIdx = col(["house num", "house #", "housenum", "house no"]);
       const streetIdx = col(["street"]);
@@ -1086,94 +1132,116 @@ function AppShell() {
 
       const get = (row: string[], idx: number) => (idx >= 0 ? (row[idx] ?? "").trim() : "");
 
-      // Build phone→lead map from current leads
+      // Build phone→lead map from the full CRM index, not the 100-lead dashboard window.
       const phoneMap = new globalThis.Map<string, Lead>();
-      allLeads.forEach((l) => {
+      const crmLeadIndex = await loadQuickPullLeadIndex();
+      crmLeadIndex
+        .filter((l) => effectiveRegion(l.region) === activeRegion)
+        .forEach((l) => {
         const p = normalizeAUPhone(l.phone ?? "");
-        if (p) phoneMap.set(p, l);
-      });
+          if (p) phoneMap.set(p, l as Lead);
+        });
 
-      let added = 0,
-        updated = 0;
       const dataRows = rows.slice(1);
+      const summary = createQuickPullSummary(dataRows.length);
+      const fallbackDate = currentPerthDate();
 
       for (const row of dataRows) {
-        const name = get(row, nameIdx);
-        const rawPhone = get(row, phoneIdx);
-        const phone = normalizeAUPhone(rawPhone);
-        const suburb = get(row, suburbIdx);
-        if (!name && !phone && !suburb) continue; // skip empty rows
-
-        const rawStatus = get(row, statusIdx);
-        // Simple status normalisation
-        const normaliseStatus = (s: string): string => {
-          const lower = s.toLowerCase().replace(/[-_]/g, " ");
-          if (lower === "dq") return "DQ";
-          if (lower === "live" || lower === "booked") return "Booked";
-          if (lower === "revisit" || lower === "callback" || lower === "call back") return "Revisit";
-          if (lower === "not interested" || lower === "ni") return "Not Interested";
-          if (lower === "wrong number" || lower === "wn") return "Wrong Number";
-          if (lower === "no answer" || lower === "na") return "No Answer";
-          return "DQ";
-        };
-        const status = rawStatus ? normaliseStatus(rawStatus) : "DQ";
-
-        const existing = phone ? phoneMap.get(phone) : undefined;
-        if (existing) {
-          // Update status if changed
-          if (String(existing.status) !== status) {
-            await saveLead({ ...existing, status: status as import("./types").LeadStatus });
-            updated++;
+        try {
+          const name = get(row, nameIdx);
+          const rawPhone = get(row, phoneIdx);
+          const phone = normalizeAUPhone(rawPhone);
+          const suburb = get(row, suburbIdx);
+          if (!name && !phone && !suburb) {
+            summary.skipped++;
+            continue;
           }
-        } else {
-          // Create new lead
-          const repName = get(row, repIdx);
-          const rep = reps.find((r) => r.name.toLowerCase() === repName.toLowerCase());
-          const newLead: import("./types").Lead = {
-            id: Date.now() + Math.random(),
-            name: name || "Unknown",
-            phone,
-            suburb,
-            houseNum: houseIdx >= 0 ? get(row, houseIdx) || undefined : undefined,
-            street: streetIdx >= 0 ? get(row, streetIdx) || undefined : undefined,
-            postcode: postcodeIdx >= 0 ? get(row, postcodeIdx) || undefined : undefined,
-            status: status as import("./types").LeadStatus,
-            dqRep: rep?.id ?? currentUser?.id ?? 1,
-            createdAt: Date.now(),
-            callHistory: [],
-            // Parse address if a combined address column exists
-            ...(addrIdx >= 0 && get(row, addrIdx)
-              ? (() => {
-                  const parts = get(row, addrIdx).split(/\s+/);
-                  const hasHouse = parts.length > 1 && /^\d+[A-Za-z]?$/.test(parts[0]);
-                  const body = hasHouse ? parts.slice(1) : parts;
-                  const pc = /^\d{4}$/.test(body[body.length - 1] ?? "") ? body[body.length - 1] : undefined;
-                  const bodyNoPc = pc ? body.slice(0, -1) : body;
-                  const parsedSuburb = bodyNoPc.length > 1 ? bodyNoPc[bodyNoPc.length - 1] : "";
-                  const parsedStreet = bodyNoPc.slice(0, parsedSuburb ? -1 : undefined).join(" ") || undefined;
-                  return {
-                    houseNum: hasHouse ? parts[0] : undefined,
-                    street: parsedStreet,
-                    suburb: suburb || parsedSuburb,
-                    postcode: pc,
-                  };
-                })()
-              : {}),
-          };
-          await saveLead(newLead);
-          if (phone) phoneMap.set(phone, newLead);
-          added++;
+
+          const rawStatus = get(row, statusIdx);
+          const status = rawStatus ? normalizeQuickPullStatus(rawStatus) : "DQ";
+          const dateResolution = resolveQuickPullLeadDate(get(row, dateIdx), fallbackDate);
+          if (dateResolution.source === "fallback") summary.fallbackDates++;
+          if (dateResolution.warning === "invalid") summary.invalidDates++;
+
+          const existing = phone ? phoneMap.get(phone) : undefined;
+          if (existing) {
+            const updates: Partial<Lead> = {};
+            if (String(existing.status) !== status) updates.status = status;
+            if (dateResolution.source === "sheet" && existing.leadDate !== dateResolution.leadDate) {
+              updates.leadDate = dateResolution.leadDate;
+            }
+            if (Object.keys(updates).length > 0) {
+              const ok = await saveLead({ ...existing, ...updates } as Lead);
+              if (ok) summary.updated++;
+              else summary.failed++;
+            } else {
+              summary.skipped++;
+            }
+          } else {
+            // Create new lead
+            const repName = get(row, repIdx);
+            const rep = reps.find((r) => r.name.toLowerCase() === repName.toLowerCase());
+            const newLead: import("./types").Lead = {
+              id: Date.now() + Math.floor(Math.random() * 1000),
+              name: name || "Unknown",
+              phone,
+              suburb,
+              houseNum: houseIdx >= 0 ? get(row, houseIdx) || undefined : undefined,
+              street: streetIdx >= 0 ? get(row, streetIdx) || undefined : undefined,
+              postcode: postcodeIdx >= 0 ? get(row, postcodeIdx) || undefined : undefined,
+              status,
+              leadDate: dateResolution.leadDate,
+              dqRep: rep?.id ?? currentUser?.id ?? 1,
+              createdAt: Date.now(),
+              callHistory: [],
+              // Parse address if a combined address column exists
+              ...(addrIdx >= 0 && get(row, addrIdx)
+                ? (() => {
+                    const parts = get(row, addrIdx).split(/\s+/);
+                    const hasHouse = parts.length > 1 && /^\d+[A-Za-z]?$/.test(parts[0]);
+                    const body = hasHouse ? parts.slice(1) : parts;
+                    const pc = /^\d{4}$/.test(body[body.length - 1] ?? "") ? body[body.length - 1] : undefined;
+                    const bodyNoPc = pc ? body.slice(0, -1) : body;
+                    const parsedSuburb = bodyNoPc.length > 1 ? bodyNoPc[bodyNoPc.length - 1] : "";
+                    const parsedStreet = bodyNoPc.slice(0, parsedSuburb ? -1 : undefined).join(" ") || undefined;
+                    return {
+                      houseNum: hasHouse ? parts[0] : undefined,
+                      street: parsedStreet,
+                      suburb: suburb || parsedSuburb,
+                      postcode: pc,
+                    };
+                  })()
+                : {}),
+            };
+            const ok = await saveLead(newLead);
+            if (ok) {
+              if (phone) phoneMap.set(phone, newLead);
+              summary.added++;
+            } else {
+              summary.failed++;
+            }
+          }
+        } catch (rowError) {
+          summary.failed++;
+          console.warn("[QuickPull] row failed", rowError);
         }
       }
 
-      showToast(`✅ Pull complete — ${added} new, ${updated} updated`, "success");
+      const summaryText = formatQuickPullSummary(summary);
+      showToast(`Pull complete: ${summaryText}`, summary.failed > 0 ? "error" : "success");
+      if (summary.invalidDates > 0) {
+        showToast(`${summary.invalidDates} invalid date${summary.invalidDates === 1 ? "" : "s"} used fallback ${fallbackDate}`, "error");
+      }
+      if (summary.possibleLimitReached) {
+        showToast("Quick Pull read exactly 100 rows. Check the sheet range/source if more rows were expected.", "error");
+      }
       // Persist sync timestamp
       saveSettings({
         sheets: {
           ...(sheetsConfig as import("./types").SyncConfig),
           lastSyncAt: Date.now(),
-          lastSyncResult: "success",
-          lastSyncSummary: `↓${added} new, ${updated} updated`,
+          lastSyncResult: summary.failed > 0 ? "partial" : "success",
+          lastSyncSummary: summaryText,
         },
       }).catch(() => {});
     } catch (e: unknown) {
@@ -1181,7 +1249,7 @@ function AppShell() {
     } finally {
       setQuickPulling(false);
     }
-  }, [appSettings, allLeads, reps, currentUser, saveLead, saveSettings, showToast]);
+  }, [activeRegion, appSettings, reps, currentUser, saveLead, saveSettings, showToast]);
 
   const handleCallFromDashboard = useCallback((lead: Lead) => {
     setPage("leads");

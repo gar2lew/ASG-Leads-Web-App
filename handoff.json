@@ -1,0 +1,129 @@
+{
+  "current_goal": "Post-Sprint-2 Consolidation PR Preparation",
+  "branch": "goal/post-sprint-2-consolidation",
+  "source_branch": "fix/functions-emulator-startup-investigation",
+  "source_commit": "b6fdb5a",
+  "base_branch": "origin/codex-foundation",
+  "base_commit": "04d21e8",
+  "source_savepoint": "savepoint-before-post-sprint-2-consolidation",
+  "application_savepoint": "savepoint-before-post-sprint-2-commit-application",
+  "applied_commit_count": 27,
+  "conflicts": [],
+  "tree_comparison": {
+    "compared_to": "origin/fix/functions-emulator-startup-investigation",
+    "result": "match before final consolidation documentation updates"
+  },
+  "preserved": [
+    "UAT.md",
+    "handoff.json",
+    "docs/UAT",
+    "dependency remediation package files",
+    "Quick Pull import date and limit fix",
+    "Functions emulator investigation",
+    "AI handoff files",
+    "repository cleanup audit files"
+  ],
+  "proposed_pr": {
+    "title": "v1.0 hardening, UAT preparation and lead import fixes",
+    "base": "codex-foundation",
+    "head": "goal/post-sprint-2-consolidation",
+    "status": "approved for draft PR creation after required validation passes"
+  },
+  "pr_review": {
+    "date": "2026-07-13",
+    "review_document": "docs/post-sprint-2-pr-review.md",
+    "classification": "Amber",
+    "diff_reviewed": "origin/codex-foundation...HEAD",
+    "known_consolidation_commit": "09262db",
+    "base_commit": "04d21e8",
+    "red_findings": [],
+    "remaining_amber_risks": [
+      "Staff UAT and signoff remain incomplete.",
+      "Backup and recovery rehearsal remains incomplete.",
+      "Corrected release tag evidence remains incomplete.",
+      "Dependency audit risk requires acceptance or follow-up remediation.",
+      "Firebase production deployment remains blocked without explicit approval.",
+      "Firestore rules and callable auth risks remain active before production deployment.",
+      "Emulator validation remains sensitive to local Java, Firebase CLI, Node, and ignored Functions build output state."
+    ],
+    "draft_pr_only": true
+  },
+  "human_review": {
+    "date": "2026-07-13",
+    "review_document": "docs/post-sprint-2-human-review.md",
+    "pr_url": "https://github.com/gar2lew/ASG-Leads-Web-App/pull/19",
+    "base": "codex-foundation",
+    "head": "goal/post-sprint-2-consolidation",
+    "classification": "Green for Ready for Review, Amber for merge and production release",
+    "ready_for_review_recommendation": true,
+    "red_findings": [],
+    "preflight": {
+      "pr_open": true,
+      "pr_was_draft_before_review": true,
+      "mergeable": "MERGEABLE",
+      "merge_state_status": "CLEAN",
+      "comments": 0,
+      "review_threads": 0,
+      "reviews": 0,
+      "local_matches_remote_head": true,
+      "base_commit": "04d21e8",
+      "head_commit_before_report": "d57dbf5"
+    },
+    "merge_blockers": [
+      "Staff UAT execution and signoff.",
+      "Staff retest of UAT-ISS-001.",
+      "Backup and recovery rehearsal evidence.",
+      "Dependency risk acceptance or follow-up remediation decision.",
+      "Corrected release tag evidence using new tag names.",
+      "Explicit Firebase approval for any production deployment surface.",
+      "Release owner decision on remaining auth, callable, and Firestore rules risks."
+    ]
+  },
+  "validation": {
+    "status": "passed before draft PR push and passed again during human review",
+    "finding": "Build regenerated release metadata and it was restored before commit. Callable emulator loaded functions and dry-run passed with Firebase CLI 15.23.0 against demo-asg-crm-emulator.",
+    "completed": [
+      "npm.cmd run typecheck",
+      "npm.cmd run lint",
+      "npm.cmd test",
+      "npm.cmd run build",
+      "npm.cmd run test:emulator:preflight",
+      "npm.cmd run test:emulator:rules",
+      "npm.cmd run test:emulator:firestore-smoke",
+      "npm.cmd run test:emulator:callables-dry-run",
+      "cd functions && npm.cmd run build",
+      "cd functions && npm.cmd run test:settings-admin",
+      "git diff --check",
+      "git status"
+    ],
+    "commands": [
+      "npm run typecheck",
+      "npm run lint",
+      "npm test",
+      "npm run build",
+      "npm run test:emulator:preflight",
+      "npm run test:emulator:rules",
+      "npm run test:emulator:firestore-smoke",
+      "npm run test:emulator:callables-dry-run",
+      "cd functions && npm run build",
+      "cd functions && npm run test:settings-admin",
+      "git diff --check",
+      "git status",
+      "git fsck --full"
+    ]
+  },
+  "safety_rules": [
+    "Do not deploy.",
+    "Do not push without explicit approval.",
+    "Do not create the PR without explicit approval.",
+    "Do not merge, retarget, rebase, reset, or force-push shared branches.",
+    "Do not delete branches or stashes without explicit approval.",
+    "Do not move or delete existing release tags.",
+    "Do not alter production Firebase, Firestore rules, Firebase config, migrations, Salestrail live sync, or phone backfill writes."
+  ],
+  "rollback": {
+    "to_clean_base": "git reset --hard savepoint-before-post-sprint-2-commit-application",
+    "to_source_branch": "git switch fix/functions-emulator-startup-investigation",
+    "source_branch_reset_requires_approval": "git reset --hard savepoint-before-post-sprint-2-consolidation"
+  }
+}

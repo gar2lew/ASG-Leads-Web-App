@@ -5,6 +5,7 @@
 
 import React from "react";
 import { Inbox, FileText, BarChart3, AlertCircle } from "lucide-react";
+import { Button } from "./Button";
 
 type EmptyStateIconKey = "inbox" | "document" | "chart" | "alert";
 
@@ -40,12 +41,9 @@ export function EmptyState({ title, description, icon = "inbox", action, classNa
         <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs mb-4">{description}</p>
       )}
       {action && (
-        <button
-          onClick={action.onClick}
-          className="px-4 py-2 text-xs font-semibold text-white bg-[var(--brass)] hover:bg-[var(--brass-dark)] rounded-md transition-all active:scale-95"
-        >
+        <Button size="sm" variant="primary" onClick={action.onClick}>
           {action.label}
-        </button>
+        </Button>
       )}
     </div>
   );

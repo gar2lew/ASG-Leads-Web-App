@@ -43,3 +43,27 @@ The CRM roadmap favours production stability, reversible change, and strong Fire
 4. Close callable auth gaps.
 5. Tighten Firestore rules collection by collection.
 6. Stabilise Salestrail and phone normalisation behind dry-run evidence.
+
+## Version-Based Planning Layer
+
+Future roadmap work should connect goals to product versions where practical:
+
+| Version | Focus | Planning File |
+| --- | --- | --- |
+| v1.0 | Internal Production Release | `docs/VERSION_PLAN_V1.md` |
+| v1.1 | Salestrail | `docs/PRODUCT_RELEASES.md` |
+| v1.2 | Reporting | `docs/PRODUCT_RELEASES.md` |
+| v1.3 | AI Assistant | `docs/PRODUCT_RELEASES.md` |
+| v1.4 | Document Centre | `docs/PRODUCT_RELEASES.md` |
+| v1.5 | Client Timeline | `docs/PRODUCT_RELEASES.md` |
+| v2.0 | ASG-X Online | `docs/PRODUCT_RELEASES.md` |
+
+Operational planning files:
+
+- `PROJECT_STATE.md`
+- `docs/KNOWN_ISSUES.md`
+- `docs/DECISIONS_PENDING.md`
+- `docs/IDEAS.md`
+- `docs/FEATURE_BACKLOG.md`
+- `docs/PRODUCT_RELEASES.md`
+- `docs/DOCUMENTATION_INDEX.md`
