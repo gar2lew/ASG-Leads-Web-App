@@ -48,8 +48,39 @@
     ],
     "draft_pr_only": true
   },
+  "human_review": {
+    "date": "2026-07-13",
+    "review_document": "docs/post-sprint-2-human-review.md",
+    "pr_url": "https://github.com/gar2lew/ASG-Leads-Web-App/pull/19",
+    "base": "codex-foundation",
+    "head": "goal/post-sprint-2-consolidation",
+    "classification": "Green for Ready for Review, Amber for merge and production release",
+    "ready_for_review_recommendation": true,
+    "red_findings": [],
+    "preflight": {
+      "pr_open": true,
+      "pr_was_draft_before_review": true,
+      "mergeable": "MERGEABLE",
+      "merge_state_status": "CLEAN",
+      "comments": 0,
+      "review_threads": 0,
+      "reviews": 0,
+      "local_matches_remote_head": true,
+      "base_commit": "04d21e8",
+      "head_commit_before_report": "d57dbf5"
+    },
+    "merge_blockers": [
+      "Staff UAT execution and signoff.",
+      "Staff retest of UAT-ISS-001.",
+      "Backup and recovery rehearsal evidence.",
+      "Dependency risk acceptance or follow-up remediation decision.",
+      "Corrected release tag evidence using new tag names.",
+      "Explicit Firebase approval for any production deployment surface.",
+      "Release owner decision on remaining auth, callable, and Firestore rules risks."
+    ]
+  },
   "validation": {
-    "status": "passed before draft PR push",
+    "status": "passed before draft PR push and passed again during human review",
     "finding": "Build regenerated release metadata and it was restored before commit. Callable emulator loaded functions and dry-run passed with Firebase CLI 15.23.0 against demo-asg-crm-emulator.",
     "completed": [
       "npm.cmd run typecheck",
