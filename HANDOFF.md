@@ -1,18 +1,36 @@
 # ASG CRM AI Agent Handoff
 
-Last updated: 2026-07-08
+Last updated: 2026-07-13
 
 ## 1. Current Repository State
 
 | Item | Current value |
 | --- | --- |
 | Current branch | `fix/functions-emulator-startup-investigation` |
-| Latest commit | `14ab8c5 docs: investigate functions emulator startup` (pending new commit) |
-| Working tree status | Modified tracked files + two pre-existing untracked files: `UAT.md`, `handoff.json`. Do not absorb unless the human owner asks. |
+| Latest commit | `c287dbc docs: add live UAT notes` before repository cleanup docs |
+| Working tree status | Clean at repository cleanup preflight |
 | Latest savepoint | `savepoint-before-functions-emulator-startup-investigation` |
-| Open PRs | `gh pr list` could not be verified locally because GitHub CLI is not authenticated. Latest project docs still list draft PR `#17` for Sprint 1 and draft PR `#18` for Sprint 2 as open at the last maintenance check. Verify before relying on this. |
+| Open PRs | PR #17 and PR #18 were verified through GitHub CLI as merged into `codex-foundation` on 2026-07-13 |
+| Remote base | `origin/codex-foundation` is `04d21e8`, PR #18 merge commit |
+| Local base caution | Local `codex-foundation` is stale at `b88c417`; fast-forward before using it as a base |
 | Current version | `1.0.0` |
-| Current milestone | v1.0 UAT execution readiness and release candidate review |
+| Current milestone | Post-Sprint-2 consolidation and v1.0 UAT execution readiness |
+
+## 1A. Repository Cleanup Audit
+
+Current audit documents:
+
+- `docs/repository-cleanup-audit.md`
+- `docs/branch-consolidation-plan.md`
+- `docs/release-tag-correction-plan.md`
+
+Key facts:
+
+- PR #17 merged at `96630a2`.
+- PR #18 merged at `04d21e8`.
+- Current branch is ahead of `origin/codex-foundation` by 26 commits and behind by 2 merge commits.
+- `UAT.md` is tracked and committed as useful live-UAT source evidence.
+- Existing release tags are historical but misleading for Sprint merge evidence; use new corrected tag names after approval.
 
 ## 2. Current Blocker (Resolved)
 
@@ -36,8 +54,9 @@ The timeout can occur on machines with:
 
 Safe next actions:
 
-- Proceed to the next recommended goal: **Reach Goal: Conduct Live Staff UAT** — run the role-specific UAT scripts with real staff testers, capture outcomes in `docs/UAT/UAT_RESULTS.md`, triage issues in `docs/UAT/UAT_TRIAGE.md`, and update `docs/UAT/UAT_SUMMARY.md`.
-- Clean up orphaned compiled files in `functions/lib/` (`aggregateStats.js`, `leadSnapshots.js`, `migrateAuthFields.js`) — these are remnants of refactored code and are never loaded at startup. Recommend deleting their `.ts` sources and rebuilding.
+- Proceed to the next recommended goal: **Reach Goal: Post-Sprint-2 Consolidation PR Preparation**. Refresh local `codex-foundation`, prepare one consolidation branch from the updated base, validate fully, and prepare one PR.
+- After consolidation is planned, conduct live staff UAT with real staff testers, capture outcomes in `docs/UAT/UAT_RESULTS.md`, triage issues in `docs/UAT/UAT_TRIAGE.md`, and update `docs/UAT/UAT_SUMMARY.md`.
+- Clean up orphaned compiled files in `functions/lib/` (`aggregateStats.js`, `leadSnapshots.js`, `migrateAuthFields.js`) in a separate approved hygiene goal. These are remnants of refactored code and are never loaded at startup. Recommend deleting their `.ts` sources and rebuilding.
 - Proceed with v1.0 release candidate review.
 
 ## 4. What Is Not Safe
@@ -110,7 +129,7 @@ For DeepSeek, Z Code, or any other coding agent:
 1. Read `AGENTS.md` first.
 2. Read `HANDOFF.md` second.
 3. Read `PROJECT_STATE.md` third.
-4. Do not continue if the working tree is dirty, except for explicitly acknowledged human-owned files such as the current untracked `UAT.md`.
+4. Do not continue if the working tree is dirty, except for explicitly acknowledged human-owned files.
 5. Create a new branch before changes.
 6. Create a savepoint before changes.
 7. Make small commits.
@@ -173,5 +192,25 @@ If emulator validation fails in your environment:
 1. Run `npm run test:emulator:preflight` first to identify missing requirements.
 2. Confirm Java 21+ is on `PATH` and `JAVA_HOME` is set.
 3. Confirm Firebase CLI 15+ is installed locally.
-4. Run `git status --short` — untracked file `UAT.md` is human-owned.
+4. Run `git status --short` and classify any changed or untracked files before work.
 5. If still failing, refer to `docs/functions-emulator-startup-investigation.md` for detailed findings.
+
+## 11. Exact Next Recommended Goal
+
+Reach Goal: Post-Sprint-2 Consolidation PR Preparation
+
+Objective:
+
+- Fast-forward local `codex-foundation` to `origin/codex-foundation`.
+- Create a new consolidation branch from the updated base.
+- Apply the post-Sprint-2 commit range from `origin/goal/sprint-2-validation-review..origin/fix/functions-emulator-startup-investigation`.
+- Run the full validation gate.
+- Prepare one consolidation PR for review.
+
+Non-goals:
+
+- No deploy.
+- No push until explicitly approved.
+- No release tag movement.
+- No branch deletion.
+- No production Firebase changes.

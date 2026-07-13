@@ -1,39 +1,76 @@
 {
-  "current_goal": "Functions Emulator Startup Investigation (Completed)",
+  "current_goal": "Repository Branch and Release Cleanup",
   "branch": "fix/functions-emulator-startup-investigation",
-  "last_commit": "c748967",
-  "working_tree": "dirty (docs updates only + untracked UAT.md, handoff.json)",
-  "next_validation": [
-    "typecheck",
-    "lint",
-    "tests",
-    "build",
-    "emulator:preflight",
-    "emulator:rules",
-    "emulator:firestore-smoke",
-    "emulator:callables-dry-run",
-    "functions:build",
-    "functions:test:settings-admin",
-    "git diff --check"
+  "upstream": "origin/fix/functions-emulator-startup-investigation",
+  "last_audited_commit": "c287dbc",
+  "working_tree_at_preflight": "clean",
+  "github_account": "gar2lew",
+  "base_state": {
+    "origin_codex_foundation": "04d21e8",
+    "local_codex_foundation": "b88c417",
+    "local_base_warning": "Local codex-foundation is stale and must be fast-forwarded before future work starts from it."
+  },
+  "pull_requests": [
+    {
+      "number": 17,
+      "title": "Sprint 1: CRM stabilisation review",
+      "head": "goal/sprint-validation",
+      "base": "codex-foundation",
+      "state": "MERGED",
+      "merge_commit": "96630a2",
+      "merged_at_utc": "2026-07-13T05:21:09Z"
+    },
+    {
+      "number": 18,
+      "title": "Sprint 2: Staff Experience and Workflow",
+      "head": "goal/sprint-2-validation-review",
+      "base": "codex-foundation",
+      "state": "MERGED",
+      "merge_commit": "04d21e8",
+      "merged_at_utc": "2026-07-13T05:22:43Z"
+    }
   ],
-  "blockers": [
-    "Functions emulator startup timeout — root cause confirmed: toolchain/environment timing, not user code. Verified: 216ms load time, 26 exports, all emulator checks pass with Java 21+/Firebase CLI 15."
+  "current_branch_topology": {
+    "ahead_of_origin_codex_foundation": 26,
+    "behind_origin_codex_foundation": 2,
+    "merge_base": "9e53dc3",
+    "merge_base_subject": "docs: add sprint 2 validation review"
+  },
+  "uat_md": {
+    "status": "tracked",
+    "latest_commit": "c287dbc",
+    "classification": "Useful live-UAT source note for UAT-ISS-001. Retain."
+  },
+  "release_tag_findings": [
+    {
+      "tag": "release/sprint-1-stable",
+      "target": "b88c417",
+      "assessment": "Pre-Sprint-1 merge evidence. Misleading for Sprint 1."
+    },
+    {
+      "tag": "release/sprint-1-stable-v2",
+      "target": "9e53dc3",
+      "assessment": "Points to Sprint 2 branch tip, not PR #17 merge commit."
+    },
+    {
+      "tag": "release/sprint-2-staff-workflow",
+      "target": "9e53dc3",
+      "assessment": "Points to Sprint 2 branch tip, not PR #18 merge commit."
+    }
   ],
-  "production": false,
-  "next_recommended_goal": "Reach Goal: Conduct Live Staff UAT",
-  "findings": {
-    "user_code_load_time_ms": 216,
-    "export_count": 26,
-    "emulator_callables_dry_run": "passed (32s total)",
-    "root_cause": "Firebase CLI emulator toolchain startup near 10s timeout on incompatible environments (missing Java 21+, cold npx resolution, Node version mismatch, shell profile errors)",
-    "no_code_changes_needed": true,
-    "docs_updated": [
-      "docs/functions-emulator-startup-investigation.md",
-      "HANDOFF.md",
-      "handoff.json",
-      "PROJECT_STATE.md",
-      "docs/RISK_REGISTER.md",
-      "docs/CHANGELOG_INTERNAL.md"
-    ]
-  }
+  "new_docs": [
+    "docs/repository-cleanup-audit.md",
+    "docs/branch-consolidation-plan.md",
+    "docs/release-tag-correction-plan.md"
+  ],
+  "next_recommended_goal": "Reach Goal: Post-Sprint-2 Consolidation PR Preparation",
+  "safety_rules": [
+    "Do not deploy.",
+    "Do not push without explicit approval.",
+    "Do not merge, retarget, rebase, reset, or force-push during audit.",
+    "Do not delete branches or stashes without explicit approval.",
+    "Do not move or delete existing release tags.",
+    "Do not alter production Firebase, Firestore rules, Firebase config, migrations, Salestrail live sync, or phone backfill writes."
+  ],
+  "rollback": "git reset --hard c287dbc"
 }
