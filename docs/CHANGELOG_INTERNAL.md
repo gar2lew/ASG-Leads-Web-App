@@ -4,6 +4,10 @@ This changelog tracks engineering process and internal operating changes. Produc
 
 ## 2026-07-13
 
+- Created `goal/post-sprint-2-consolidation` from refreshed `origin/codex-foundation` at PR #18 merge commit `04d21e8`.
+- Applied 27 verified post-Sprint-2 commits from `fix/functions-emulator-startup-investigation` in chronological order with no cherry-pick conflicts.
+- Added `docs/post-sprint-2-consolidation-report.md` with applied and excluded commits, comparison results, proposed PR text, risks, and rollback instructions.
+- Callable emulator validation initially timed out because ignored `functions/lib` output was stale after consolidation. Rebuilding Functions output refreshed the emulator entry point and `npm.cmd run test:emulator:callables-dry-run` passed.
 - Audited repository branch, PR, tag, stash, worktree, generated-output, and UAT note state before further development.
 - Confirmed PR #17 and PR #18 are merged into `origin/codex-foundation`, replacing stale handoff assumptions that they were still open or stacked.
 - Documented that local `codex-foundation` remains stale at `b88c417` while `origin/codex-foundation` is `04d21e8`.

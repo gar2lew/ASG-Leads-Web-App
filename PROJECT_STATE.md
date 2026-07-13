@@ -4,6 +4,17 @@ Last updated: 8 July 2026
 
 ## Current Branch Context
 
+- Current working branch for consolidation: `goal/post-sprint-2-consolidation`.
+- Consolidation branch was created from refreshed `origin/codex-foundation` at `04d21e8`.
+- Source branch for replayed work: `fix/functions-emulator-startup-investigation` at `b6fdb5a`.
+- Source savepoint: `savepoint-before-post-sprint-2-consolidation`.
+- Consolidation base savepoint: `savepoint-before-post-sprint-2-commit-application`.
+- Applied post-Sprint-2 commit count: 27.
+- Cherry-pick conflicts: none.
+- Source branch tree and consolidation tree matched before final consolidation documentation updates.
+- Proposed PR: `v1.0 hardening, UAT preparation and lead import fixes`, base `codex-foundation`, head `goal/post-sprint-2-consolidation`.
+- Consolidation callable validation initially timed out because ignored `functions/lib` output was stale after cherry-picking. Rebuilding Functions output refreshed the emulator entry point and `npm.cmd run test:emulator:callables-dry-run` passed.
+
 - Current working branch for repository cleanup audit: `fix/functions-emulator-startup-investigation`.
 - Current branch is tracking `origin/fix/functions-emulator-startup-investigation`.
 - Latest audited commit before this cleanup documentation: `c287dbc docs: add live UAT notes`.

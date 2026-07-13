@@ -6,15 +6,32 @@ Last updated: 2026-07-13
 
 | Item | Current value |
 | --- | --- |
-| Current branch | `fix/functions-emulator-startup-investigation` |
-| Latest commit | `c287dbc docs: add live UAT notes` before repository cleanup docs |
-| Working tree status | Clean at repository cleanup preflight |
-| Latest savepoint | `savepoint-before-functions-emulator-startup-investigation` |
+| Current branch | `goal/post-sprint-2-consolidation` |
+| Source branch | `fix/functions-emulator-startup-investigation` at `b6fdb5a` |
+| Refreshed base | `origin/codex-foundation` at `04d21e8` |
+| Working tree status | Clean after post-Sprint-2 cherry-pick application before final docs updates |
+| Latest savepoint | `savepoint-before-post-sprint-2-commit-application` |
+| Source savepoint | `savepoint-before-post-sprint-2-consolidation` |
 | Open PRs | PR #17 and PR #18 were verified through GitHub CLI as merged into `codex-foundation` on 2026-07-13 |
 | Remote base | `origin/codex-foundation` is `04d21e8`, PR #18 merge commit |
-| Local base caution | Local `codex-foundation` is stale at `b88c417`; fast-forward before using it as a base |
+| Local base caution | Local `codex-foundation` was fast-forwarded to `04d21e8` before creating the consolidation branch |
 | Current version | `1.0.0` |
 | Current milestone | Post-Sprint-2 consolidation and v1.0 UAT execution readiness |
+
+## 1B. Post-Sprint-2 Consolidation
+
+Current consolidation document:
+
+- `docs/post-sprint-2-consolidation-report.md`
+
+Key facts:
+
+- 27 post-Sprint-2 commits were applied in order.
+- No cherry-pick conflicts occurred.
+- Sprint 1 and Sprint 2 commits were excluded because they are already present through PR #17 and PR #18.
+- The consolidation tree matched `origin/fix/functions-emulator-startup-investigation` before final consolidation documentation updates.
+- `UAT.md`, `handoff.json`, UAT files, dependency remediation, Quick Pull fix, emulator investigation, AI handoff files, and repository cleanup audit files are preserved.
+- Validation initially stopped at `npm.cmd run test:emulator:callables-dry-run` because stale ignored `functions/lib` output caused the Functions emulator backend specification timeout and callable requests returned `functions/not-found`. After `cd functions && npm.cmd run build`, callable dry-run passed.
 
 ## 1A. Repository Cleanup Audit
 
@@ -197,15 +214,14 @@ If emulator validation fails in your environment:
 
 ## 11. Exact Next Recommended Goal
 
-Reach Goal: Post-Sprint-2 Consolidation PR Preparation
+Reach Goal: Review Post-Sprint-2 Consolidation PR
 
 Objective:
 
-- Fast-forward local `codex-foundation` to `origin/codex-foundation`.
-- Create a new consolidation branch from the updated base.
-- Apply the post-Sprint-2 commit range from `origin/goal/sprint-2-validation-review..origin/fix/functions-emulator-startup-investigation`.
-- Run the full validation gate.
-- Prepare one consolidation PR for review.
+- Review the prepared `goal/post-sprint-2-consolidation` branch.
+- Confirm validation results.
+- Approve or revise the prepared PR body.
+- Push and create the PR only after explicit human approval.
 
 Non-goals:
 
