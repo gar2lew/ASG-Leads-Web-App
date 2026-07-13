@@ -578,6 +578,12 @@ export function LeadSidebar({
                   </span>
                 )}
               </p>
+              {nextAction.type !== "none" && nextAction.type !== "settled" && nextAction.type !== "lost" && (
+                <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-amber-600 dark:text-amber-300">
+                  <CalendarClock size={13} className="flex-shrink-0" />
+                  Next step: {nextAction.label}
+                </p>
+              )}
               <a
                 href={`tel:${lead.phone.replace(/\s/g, "")}`}
                 className="mt-1 flex min-h-8 w-fit items-center gap-1 rounded-md text-xs text-amber-500 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 sm:text-sm"
@@ -593,10 +599,17 @@ export function LeadSidebar({
             </div>
             <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch] sm:w-auto sm:overflow-visible sm:pb-0 sm:ml-3 sm:flex-shrink-0">
               <button
+                type="button"
                 onClick={() => onCall(lead)}
+                aria-label={`Log call for ${lead.name}`}
                 className="flex min-h-11 items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-400 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex-shrink-0"
               >
-                <Phone size={14} /> <span className="hidden sm:inline">Log Call</span>
+                <Phone size={14} />
+                <span className="hidden sm:inline">
+                  {nextAction.type === "call" || nextAction.type === "followup" || nextAction.type === "callback"
+                    ? "Call Now"
+                    : "Log Call"}
+                </span>
                 <span className="sm:hidden">Call</span>
               </button>
 

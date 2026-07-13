@@ -20,7 +20,7 @@ import {
 import { deriveOperationalCounters } from "./lib/workflowState";
 import { AppSidebar } from "./components/navigation/AppSidebar";
 import { getRegionIdentity } from "./lib/regionIdentity";
-import { PAGE_LABELS, type NavigationPageKey } from "./lib/navigationConfig";
+import { PAGE_DESCRIPTIONS, PAGE_LABELS, type NavigationPageKey } from "./lib/navigationConfig";
 import {
   LayoutDashboard,
   MessageCircle,
@@ -1446,9 +1446,14 @@ function AppShell() {
           </button>
 
           {/* Page title */}
-          <h1 className="text-sm font-semibold text-gray-800 dark:text-gray-200 flex-1 min-w-0 truncate">
-            {PAGE_LABELS[effectivePage] ?? ""}
-          </h1>
+          <div className="flex-1 min-w-0">
+            <h1 className="truncate text-sm font-semibold leading-tight text-gray-800 dark:text-gray-200">
+              {PAGE_LABELS[effectivePage] ?? ""}
+            </h1>
+            <p className="hidden truncate text-[11px] leading-tight text-gray-500 dark:text-gray-400 sm:block">
+              {PAGE_DESCRIPTIONS[effectivePage] ?? ""}
+            </p>
+          </div>
 
           <span
             className="flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-semibold"
@@ -1472,16 +1477,18 @@ function AppShell() {
 
           {callbackBadge > 0 && (
             <button
+              type="button"
               onClick={() => {
                 setLeadsFilter("callbacks");
                 setPage("leads");
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition hover:opacity-80"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
               style={{
                 background: "var(--region-accent-soft)",
                 color: "var(--region-accent)",
                 border: "1px solid var(--region-accent-border)",
               }}
+              aria-label={`${callbackBadge} callback${callbackBadge === 1 ? "" : "s"} in the actionable queue`}
               title="Callbacks in the actionable queue"
             >
               {callbackBadge} Callback{callbackBadge === 1 ? "" : "s"}
@@ -1491,16 +1498,18 @@ function AppShell() {
           {/* Actionable follow-ups badge */}
           {followUpBadge > 0 && (
             <button
+              type="button"
               onClick={() => {
                 setLeadsFilter("followups");
                 setPage("leads");
               }}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition hover:opacity-80"
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
               style={{
                 background: "var(--region-accent-soft)",
                 color: "var(--region-accent)",
                 border: "1px solid var(--region-accent-border)",
               }}
+              aria-label={`${followUpBadge} follow-up${followUpBadge === 1 ? "" : "s"} in the operational queue`}
               title="Actionable follow-ups in the operational queue"
             >
               {followUpBadge} Follow-up{followUpBadge === 1 ? "" : "s"}

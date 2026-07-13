@@ -3941,25 +3941,87 @@ export function AdminPage({ onOpenSheetsSync }: { onOpenSheetsSync?: () => void 
   }, [leads]);
 
   const tabs = [
-    { id: "reps" as const, label: "Rep Roster", icon: <ShieldCheck size={14} /> },
-    { id: "leadstats" as const, label: "Lead Stats", icon: <BarChart2 size={14} /> },
-    { id: "performance" as const, label: "Rep Performance", icon: <TrendingUp size={14} /> },
+    {
+      id: "reps" as const,
+      label: "Rep Roster",
+      description: "People, roles, login emails, PINs, and roster status.",
+      icon: <ShieldCheck size={14} />,
+    },
+    {
+      id: "leadstats" as const,
+      label: "Lead Stats",
+      description: "Lead mix, status breakdowns, and operational trends.",
+      icon: <BarChart2 size={14} />,
+    },
+    {
+      id: "performance" as const,
+      label: "Rep Performance",
+      description: "Rep activity, target progress, and coaching signals.",
+      icon: <TrendingUp size={14} />,
+    },
     {
       id: "operations" as const,
       label: "Operations",
+      description: "Overdue callbacks, stale leads, bookings, and live workload.",
       icon: <AlertCircle size={14} />,
       badge: overdueCount > 0 ? overdueCount : undefined,
     },
-    { id: "sync" as const, label: "Sync", icon: <RefreshCw size={14} /> },
-    { id: "data-tools" as const, label: "Data Tools", icon: <Database size={14} /> },
-    { id: "settings" as const, label: "CRM Settings", icon: <Settings size={14} /> },
-    { id: "system-settings" as const, label: "System Controls", icon: <Zap size={14} /> },
-    { id: "settings-history" as const, label: "Control History", icon: <History size={14} /> },
-    { id: "system-health" as const, label: "System Health", icon: <HeartPulse size={14} /> },
-    { id: "daily-report" as const, label: "Daily Report", icon: <BarChart2 size={14} /> },
-    { id: "audit" as const, label: "Audit Log", icon: <ClipboardList size={14} /> },
-    { id: "calendar-settings" as const, label: "Calendar", icon: <CalendarDays size={14} /> },
+    {
+      id: "sync" as const,
+      label: "Sync",
+      description: "Google Sheets configuration and manual sync entry points.",
+      icon: <RefreshCw size={14} />,
+    },
+    {
+      id: "data-tools" as const,
+      label: "Data Tools",
+      description: "Imports, exports, bulk tools, and guarded maintenance utilities.",
+      icon: <Database size={14} />,
+    },
+    {
+      id: "settings" as const,
+      label: "CRM Settings",
+      description: "Routine CRM settings such as targets, colours, and calendar defaults.",
+      icon: <Settings size={14} />,
+    },
+    {
+      id: "system-settings" as const,
+      label: "System Controls",
+      description: "Production-sensitive controls, failsafes, Salestrail, and migrations.",
+      icon: <Zap size={14} />,
+    },
+    {
+      id: "settings-history" as const,
+      label: "Control History",
+      description: "Change history for app settings and control updates.",
+      icon: <History size={14} />,
+    },
+    {
+      id: "system-health" as const,
+      label: "System Health",
+      description: "Operational health checks and release metadata.",
+      icon: <HeartPulse size={14} />,
+    },
+    {
+      id: "daily-report" as const,
+      label: "Daily Report",
+      description: "Daily business rhythm, staff activity, and management reporting.",
+      icon: <BarChart2 size={14} />,
+    },
+    {
+      id: "audit" as const,
+      label: "Audit Log",
+      description: "Audit visibility for user and system activity.",
+      icon: <ClipboardList size={14} />,
+    },
+    {
+      id: "calendar-settings" as const,
+      label: "Calendar",
+      description: "Appointment service types and calendar categories.",
+      icon: <CalendarDays size={14} />,
+    },
   ];
+  const activeTabMeta = tabs.find((tab) => tab.id === activeTab);
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 px-4 py-5 sm:px-6 dark:bg-[var(--bg)] space-y-6">
@@ -3967,6 +4029,9 @@ export function AdminPage({ onOpenSheetsSync }: { onOpenSheetsSync?: () => void 
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">Admin</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Manage roster, operations, system controls, sync tools, and audit visibility.
+        </p>
+        <p className="text-xs text-amber-600 dark:text-amber-300">
+          Current area: {activeTabMeta?.label}. {activeTabMeta?.description}
         </p>
       </div>
 

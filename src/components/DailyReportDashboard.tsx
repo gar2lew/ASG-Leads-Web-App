@@ -381,11 +381,16 @@ export function DailyReportDashboard() {
     <div className="space-y-4">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <BarChart2 className="w-6 h-6 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Daily Performance Report
-          </h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-6 h-6 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Daily Performance Report
+            </h2>
+          </div>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Daily rhythm view for calls, appointments, deals, training, and DRAPS activity.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -442,6 +447,16 @@ export function DailyReportDashboard() {
           </button>
         </div>
       </div>
+
+      {!loading && (
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-xs text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+          {isLiveMode
+            ? "Today is using live CRM activity because aggregated daily stats are not available yet."
+            : hasAggregated
+              ? "This report is using aggregated dailyStats records for the selected date."
+              : "No report rows are available for the selected date."}
+        </div>
+      )}
 
       {/* ── Data states (loading / error / empty / content) ─────────────────── */}
       <DataStateWrapper

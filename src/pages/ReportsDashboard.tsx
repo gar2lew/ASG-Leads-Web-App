@@ -1373,6 +1373,42 @@ export function ReportsDashboardPage() {
             </select>
           </div>
 
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800/50 dark:bg-amber-900/20">
+              <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                <Clock size={13} />
+                Review Window
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{dateRange.label}</p>
+              <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">
+                {dateRange.from} to {dateRange.to}
+              </p>
+            </div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 dark:border-blue-800/50 dark:bg-blue-900/20">
+              <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                <Target size={13} />
+                Use For
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">Performance review</p>
+              <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">
+                Compare pipeline, targets, rep outcomes, and settlement risk.
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800/50 dark:bg-emerald-900/20">
+              <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                <Gauge size={13} />
+                Active Filter
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {filteredDeals.length.toLocaleString()} deal{filteredDeals.length === 1 ? "" : "s"} in scope
+              </p>
+              <p className="mt-0.5 text-xs text-gray-600 dark:text-gray-300">
+                {repFilter === "all" ? "All reps" : repName(repFilter, reps)} |{" "}
+                {statusFilter === "all" ? "all statuses" : ST[statusFilter]?.label}
+              </p>
+            </div>
+          </div>
+
           {/* KPI Cards */}
           <KPICards kpis={kpis} />
 
